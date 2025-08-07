@@ -1,0 +1,29 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  harness_infos: MetadataRepository
+  target_metadatas: MetadataRepository
+  points_of_interest: MetadataRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons: FilesystemRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+  crashing_commits: MetadataRepository
+  vds_records: MetadataRepository
+  local_variable_reports: MetadataRepository
+
+
+imports:
+  dyva:
+    path: ../pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      full_functions_indices: full_functions_indices
+      full_functions_jsons: full_functions_jsons
+      harness_infos: harness_infos
+      points_of_interest: points_of_interest
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+      crashing_commits: crashing_commits
+      vds_records: vds_records
+      local_variable_reports: local_variable_reports

@@ -1,0 +1,60 @@
+services:
+  runner:
+    build:
+      context: .
+      target: runner
+    working_dir: /app/
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app:rw
+      - ./volumes/output:/var/output:rw
+      - /tmp:/tmp:rw
+      - /var/jenkins:/var/jenkins:rw
+    environment:
+      - "OPENAI_API_KEY=${OPENAI_API_KEY}"
+    command: python3 /app/query_guy/src/main.py
+  debug:
+    build:
+      context: .
+      target: debug
+    ports:
+      - 5678:5678
+    working_dir: /app/
+    volumes:
+      - .:/app:rw
+      - ./volumes:/app/volumes:rw
+      - ./volumes/output:/var/output:rw
+      - /tmp:/tmp:rw
+      - /var/jenkins:/var/jenkins:rw
+    environment:
+      - "OPENAI_API_KEY=${OPENAI_API_KEY}"
+    command: python3 -m debugpy --listen 0.0.0.0:5678 --wait-for-client /app/query_guy/src/main.py webguy
+  display:
+    build:
+      context: .
+      target: runner
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app:rw
+      - ./volumes:/app/volumes:rw
+      - /tmp:/tmp:rw
+    environment:
+      - "OPENAI_API_KEY=${OPENAI_API_KEY}"
+    command: /app/query_guy/src/main.py display --host 0.0.0.0 --port 5000
+  display-debug:
+    build:
+      context: .
+      target: debug
+    ports:
+      - 5000:5000
+      - 5678:5678
+    volumes:
+      - .:/app:rw
+      - ./volumes:/app/volumes:rw
+      - /tmp:/tmp:rw
+    environment:
+      - "OPENAI_API_KEY=${OPENAI_API_KEY}"
+    command: python3 -m debugpy --listen 0.0.0.0:5678 --wait-for-client /app/query_guy/src/main.py display --host 0.0.0.0 --port 5000
+    

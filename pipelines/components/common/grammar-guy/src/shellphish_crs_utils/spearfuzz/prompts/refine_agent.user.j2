@@ -1,0 +1,15 @@
+# Current Task
+Right now we are working on the following specific task:
+{{ current_step.description }}
+
+{# If we are retrying because we failed this attempt #}
+{% if last_attempt %}
+# Previous Attempt Review
+{% if last_attempt.critic_review %}
+The last attempt failed with the following feedback.
+```
+{{ last_attempt.critic_review.feedback }}
+```
+Please take that feedback into consideration and try to complete the task again!
+{% endif %}
+{% endif %}

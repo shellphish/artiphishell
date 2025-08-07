@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/10.2 457\nTranSfer-Encoding:chunked\n\r\n5\t=8\n]COPY\n5\tr"

@@ -1,0 +1,6 @@
+repo_classes: {}
+
+imports:
+  patchery:
+    path: ../../pipeline.yaml
+    repos: {}

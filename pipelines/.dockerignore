@@ -1,0 +1,6 @@
+*
+
+!pipeline*.y*ml
+!**/pipeline*.y*ml
+!meta-components/
+

@@ -1,0 +1,15 @@
+cp_harness_id: id_1
+cp_harness_name: filein_harness
+crash_action:
+  access: unknown
+  size: unknown
+crash_report_id: bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5
+crash_type: global-buffer-overflow
+fuzzer: aflplusplus
+harness_info_id: 6731804955553314404
+sanitizer: 'AddressSanitizer: global-buffer-overflow'
+stack_traces:
+  main: ''
+target_id: 1
+triggered_sanitizer_cp_ids: !!set
+  id_1: null

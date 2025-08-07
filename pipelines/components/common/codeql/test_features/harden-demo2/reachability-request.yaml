@@ -1,0 +1,6 @@
+target_id: "1"
+name: 'harden-demo2-diff'
+
+target_functions:
+  - core_sys_select
+  - put_itimerval

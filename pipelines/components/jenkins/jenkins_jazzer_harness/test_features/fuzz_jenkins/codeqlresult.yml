@@ -1,0 +1,84 @@
+java-string-literals:
+  '#select':
+    columns:
+    - kind: String
+    tuples:
+    - - "\0"
+    - - unsupported method picker
+    - - breakin the law
+    - - x-evil-backdoor
+    - - 'Error: empty result'
+    - - 'Error: Only Admin Users Are Permitted'
+java_reaching_funcs:
+  '#select':
+    columns:
+    - kind: String
+    tuples:
+    - - com.aixcc.jenkins.harnesses.two.JenkinsTwo.fuzzerTestOneInput
+    - - <anonymous class>.execute 
+CommandInjection:
+  '#select':
+    columns:
+    - kind: Entity
+      name: prevcall
+    - kind: Entity
+      name: inbetween
+    - kind: String
+    - kind: Integer
+    - kind: String
+    - kind: Integer
+    - kind: String
+    - kind: Integer
+    - kind: String
+    - kind: Entity
+    tuples:
+    - - label: fuzzerTestOneInput
+      - label: fuzz
+      - /src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+      - 39
+      - /src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+      - 38
+      - /src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+      - 48
+      - OS Command Injection
+      - label: file:///BCDEFG/java.base/java/lang/ProcessBuilder.sig:0:0:0:0
+    - - label: createUtils
+      - label: ProcessBuilder
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 191
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 182
+      - /BCDEFG/java.base/java/lang/ProcessBuilder.sig
+      - 0
+      - OS Command Injection
+      - label: file:///BCDEFG/java.base/java/lang/ProcessBuilder.sig:0:0:0:0
+    - - label: doexecCommandUtils
+      - label: createUtils
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 157
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 142
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 182
+      - OS Command Injection
+      - label: file:///BCDEFG/java.base/java/lang/ProcessBuilder.sig:0:0:0:0
+    - - label: doexecCommandUtils
+      - label: createUtils
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 167
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 142
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 182
+      - OS Command Injection
+      - label: file:///BCDEFG/java.base/java/lang/ProcessBuilder.sig:0:0:0:0
+    - - label: fuzz
+      - label: doexecCommandUtils
+      - /src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+      - 80
+      - /src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+      - 48
+      - /src/plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+      - 142
+      - OS Command Injection
+      - label: file:///BCDEFG/java.base/java/lang/ProcessBuilder.sig:0:0:0:0

@@ -1,0 +1,76 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  cp_image_ready: MetadataRepository
+  target_metadatas: MetadataRepository
+  target_directed_seeds: FilesystemRepository
+
+  full_functions_indices: BlobRepository
+  full_functions_index_csvs: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  harness_infos: MetadataRepository
+
+  libfuzzer_reaching_functions_dicts: BlobRepository
+  libfuzzer_reaching_files_dicts: BlobRepository
+
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  to_triage_harness_inputs: {"cls": BlobRepository, "required": false}
+  to_triage_harness_inputs_metadatas: {"cls": MetadataRepository, "required": false}
+
+  parsed_asan_reports: { "cls": MetadataRepository, "required": false }
+  fuzz_requests: MetadataRepository
+  info_extraction_requests: MetadataRepository
+  info_extraction_results: MetadataRepository
+  points_of_interest: MetadataRepository
+
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+imports:
+  # libfuzzer:
+  #   path: ../../components/generic_c/libfuzzer/pipeline.yaml
+  #   repos:
+  #     targets_with_sources: targets_with_sources
+  #     cp_image_ready: cp_image_ready
+  #     fuzz_requests_seeds: target_directed_seeds
+  #     crashes: crashing_harness_inputs
+  #     crashes_meta: crashing_harness_inputs_metadatas
+  #     fuzz_requests: fuzz_requests
+  #     libfuzzer_harness_infos: harness_infos
+  #     benign_harness_inputs: benign_harness_inputs
+  #     benign_harness_inputs_meta: benign_harness_inputs_metadatas
+  #     libfuzzer_reaching_functions_dicts: libfuzzer_reaching_functions_dicts
+  #     libfuzzer_reaching_files_dicts: libfuzzer_reaching_files_dicts
+
+  aflplusplus:
+    path: ../../components/generic_c/aflplusplus/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      cp_image_ready: cp_image_ready
+      target_harness_infos: harness_infos
+      fuzz_requests: fuzz_requests
+      fuzz_requests_seeds: target_directed_seeds
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      reaching_functions_dicts: libfuzzer_reaching_functions_dicts
+      reaching_files_dicts: libfuzzer_reaching_files_dicts
+      info_extraction_results: info_extraction_results
+
+  crash_tracer:
+    path: ../../components/generic_c/crash_tracer/pipeline.yaml
+    repos:
+      representative_crash_metadatas: pov_report_representative_crashing_input_metadatas
+      target_metadatas: target_metadatas
+      parsed_asan_reports: parsed_asan_reports
+
+  poiguy_asan:
+    path: ../../components/common/poiguy/pipeline_poiguy_asan.yaml
+    repos:
+      parsed_asan_reports: parsed_asan_reports
+      full_functions_index_csvs: full_functions_index_csvs
+      points_of_interest: points_of_interest
+
+  

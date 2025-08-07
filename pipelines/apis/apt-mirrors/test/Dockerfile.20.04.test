@@ -1,0 +1,13 @@
+FROM ubuntu:20.04
+
+# Avoid prompts from apt
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update && apt install wget gnupg -y
+RUN echo "deb [trusted=yes arch=amd64] http://apt-mirror-$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\./-/g'):80 $(grep DISTRIB_CODENAME /etc/lsb-release | cut -d= -f2) main universe" > /etc/apt/sources.list
+
+# Add your aptly mirror as a source
+#RUN wget http://172.18.0.2/gpg -o /trusted_key.gpg
+#RUN apt-key add /trusted_key.gpg
+
+
+CMD ["bash"]

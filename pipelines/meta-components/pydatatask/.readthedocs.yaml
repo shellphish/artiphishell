@@ -1,0 +1,18 @@
+version: 2
+
+formats:
+  - epub
+  - pdf
+
+python:
+  version: "3.8"
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - doc
+        - all
+
+sphinx:
+  configuration: docs/conf.py
+

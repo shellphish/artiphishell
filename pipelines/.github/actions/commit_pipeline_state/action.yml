@@ -1,0 +1,52 @@
+name: CommitPipelineResults
+description: "Commit the updated pipeline results to the CI-results repo"
+inputs:
+  pipeline:
+    description: 'Pipeline to commit results for'
+    required: true
+
+  github_deploy_token:
+    description: 'Github token to checkout the CI-results repo'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    # - name: Remove old artifacts
+    #   uses: c-hive/gha-remove-artifacts@v1
+    #   with:
+    #     age: '1 day' # '<number> <unit>', e.g. 5 days, 2 years, 90 seconds, parsed by Moment.js
+    #     skip-recent: 1 # number of recent artifacts to keep
+    - name: Checkout the CI-results repo
+      uses: actions/checkout@v3
+      with:
+        repository: shellphish-support-syndicate/CI-results
+        token: ${{ inputs.github_deploy_token }}
+        path: CI-results
+        persist-credentials: true
+
+    - name: Save non-backup results
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE/CI-results
+        git config user.name "CI"
+        git config user.email "${{runner.name}}@ci"
+        rm -rf ./${{ inputs.pipeline }}/
+        rsync --exclude=backup -raz /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }} .
+        git add ./${{ inputs.pipeline }}/
+        git commit -m "CI: Update latest CI run results (${{ inputs.pipeline }})"
+        git push
+
+
+    - name: Tar the results, this is necessary to avoid too-many-open-files errors during the artifact upload
+      shell: bash
+      run: |
+        cd /tmp/latest_pipeline_ci_run/${{ runner.name }}/
+        tar -czf ${{ inputs.pipeline }}.tar.gz ${{ inputs.pipeline }}
+
+    # - name: Upload the pipeline results artifact
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: pipeline_results_${{ inputs.pipeline }}
+    #     path: /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}.tar.gz
+    #     retention-days: 7

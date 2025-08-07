@@ -1,0 +1,538 @@
+  {
+    "components": [
+        {
+            "name": "pipeline_inputs",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "queries_suck__pov_reports",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "queries_suck__pov_report_representative_crashing_inputs",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "queries_suck__pov_report_representative_crashing_input_metadatas",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "analyze_target",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "harness_splitter",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "fuzz_requestor",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "debug_build",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "povguy",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "start_time_task",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "svaultbard_corpus_dump",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "antlr4_commit_java_parser",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+        },
+        {
+            "name": "antlr4_full_java_parser",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+        },
+        {
+            "name": "clang_index",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "clang_index_by_commit",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "grammar_guy_fuzz",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "generate_full_function_index",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "generate_commit_function_index",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "generate_function_reachability_request",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "codeql_image_build",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "codeql_create_db",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "codeql_run_info_extraction",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "extract_kernel_reachability_results",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "extract_generic_c_fuzzer_dicts",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "pushpull",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "aflpp_build_image",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "aflpp_build",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "aflpp_build_cmplog",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "aflpp_build_coverage_filter",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "aflpp_fuzz",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "aflpp_fuzz_main_replicant",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "aflpp_fuzz_merge",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "asan2report",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "poiguy_asan",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "snapchangeBuild",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "snapchangeTakeSnapshot",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "snapchangeFuzz",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "SyzGrammarGenerate",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "jenkins_build_for_jazzer",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+        },
+        {
+            "name": "jenkins_jazzer_fuzz",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+        },
+        {
+            "name": "jenkins_jazzer_fuzz_merge",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+        },
+        {
+            "name": "quick_seed_no_coverage",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+        },
+        {
+            "name": "poiguy_jazzer",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+        },
+        {
+            "name": "coverage_build",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "coverage_trace",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "coverage_query",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "invariant_build",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "invariant_find_c",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+        },
+        {
+            "name": "invariant_find_java",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+        },
+        {
+            "name": "invariant_find_kernel",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "find_first_crash_commit",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "patchery",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "patchery_debuginfo",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "patchery_invariants",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "debug_build_for_patch_verification",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "patch_verification_rerun_requester",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "patch_verification_povguy_run",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "patchery_ranking",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "submitter",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "aflpp_patch_build",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "aflpp_patch_build_cmplog",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "aflpp_patch_fuzz",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "dyva_locals",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+        },
+        {
+            "name": "dyva_reasoning",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "poiguy_syzkaller",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": false
+        },
+        {
+            "name": "libfuzzer_build",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": true
+          },
+          {
+            "name": "libfuzzer_corpus_minimize",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": true
+          },
+          {
+            "name": "libfuzzer_fuzz",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": true
+          },
+          {
+            "name": "commit_analyzer",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "invariant_build",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "invariant_find_c",
+            "kernel": false,
+            "jenkins": false,
+            "generic-c": true
+          },
+          {
+            "name": "invariant_find_java",
+            "kernel": false,
+            "jenkins": true,
+            "generic-c": false
+          },
+          {
+            "name": "invariant_find_kernel",
+            "kernel": true,
+            "jenkins": false,
+            "generic-c": false
+          },
+          {
+            "name": "poiguy_codeql",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "poiguy_codeql_qlpack",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "poiguy_semgrep",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "poiguy_snyk",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "poiguy_mango",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "submitter_fake_gp",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "repro_guy",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "fuck__pov_reports",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "fuck__get_inputs",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "fuck__get_input_metadatas",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "fuzzer_1",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "fuzzer_2",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "builder",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "task0",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "task1",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          },
+          {
+            "name": "task",
+            "kernel": true,
+            "jenkins": true,
+            "generic-c": true
+          }        
+    ]
+}

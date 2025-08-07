@@ -1,0 +1,10 @@
+(declare-fun k!0 () (_ BitVec 8))
+(declare-fun k!10 () (_ BitVec 8))
+(declare-fun k!20 () (_ BitVec 8))
+(declare-fun k!30 () (_ BitVec 8))
+(assert (= k!0 #xff))
+(assert (not (= k!10 #xff)))
+(assert (not (= k!10 #xd8)))
+(assert (and (= k!30 #x53) (= k!20 #x50) (= k!10 #x42) (= k!0 #x38)))
+
+(check-sat)

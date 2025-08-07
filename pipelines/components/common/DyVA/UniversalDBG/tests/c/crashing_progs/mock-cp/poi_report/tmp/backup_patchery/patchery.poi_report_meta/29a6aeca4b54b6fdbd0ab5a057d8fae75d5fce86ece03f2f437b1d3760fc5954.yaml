@@ -1,0 +1,188 @@
+additional_information:
+  asan_report_data:
+    cp_harness_binary_path: out/filein_harness
+    cp_harness_id: id_1
+    cp_harness_name: filein_harness
+    cp_harness_source_path: src/test/filein_harness.c
+    crash_action:
+      access: write
+      size: 40
+    crash_report_id: 29a6aeca4b54b6fdbd0ab5a057d8fae75d5fce86ece03f2f437b1d3760fc5954
+    crash_type: global-buffer-overflow
+    fuzzer: aflplusplus
+    harness_info_id: 7995481644139123086
+    sanitizer: 'AddressSanitizer: global-buffer-overflow'
+    stack_traces:
+      main:
+      - depth: 0
+        func_name: fgets
+        line: 1204
+        signature: fgets
+        src_file: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+        src_loc: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:1204
+        type: source
+      - depth: 1
+        func_name: func_a
+        line: 14
+        signature: func_a
+        src_file: samples/mock_vp.c
+        src_loc: samples/mock_vp.c:14
+        type: source
+      - depth: 2
+        func_name: LLVMFuzzerTestOneInput
+        line: 54
+        signature: LLVMFuzzerTestOneInput
+        src_file: test/filein_harness.c
+        src_loc: test/filein_harness.c:54
+        type: source
+      - depth: 3
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 4
+        func_name: fuzzer::Fuzzer::TryDetectingAMemoryLeak
+        line: 690
+        signature: fuzzer::Fuzzer::TryDetectingAMemoryLeak(unsigned char const*, unsigned
+          long, bool)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:690
+        type: source
+      - depth: 5
+        func_name: fuzzer::RunOneTest
+        line: 332
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:332
+        type: source
+      - depth: 6
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 7
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 8
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      - binary: ../(/out/filein_harness+0x3c6fd)
+        depth: 9
+        func_name: _start
+        signature: _start
+        type: maybe_asan_interceptor
+    target_id: 1
+    triggered_sanitizer_cp_ids:
+    - id_1
+  sanitizer: 'AddressSanitizer: global-buffer-overflow'
+crash_id: 29a6aeca4b54b6fdbd0ab5a057d8fae75d5fce86ece03f2f437b1d3760fc5954
+crash_reason: global-buffer-overflow
+detection_strategy: fuzzing
+harness_id: id_1
+pois:
+- reason: global-buffer-overflow
+  source_location:
+    function_name: func_a
+    function_signature: void func_a()
+    key_index: src/samples/mock_vp.c:7:1::void func_a()
+    line_number: 14
+    line_text: '        fgets(buff, 40, stdin);'
+    relative_file_path: samples/mock_vp.c
+    symbol_offset: 0
+    symbol_size: 0
+scanner: asan
+stack_traces:
+- call_locations:
+  - function: fgets
+    key_index: null
+    line_number: 1204
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fgets
+  - function: void func_a()
+    key_index: src/samples/mock_vp.c:7:1::void func_a()
+    line_number: 14
+    line_text: '        fgets(buff, 40, stdin);'
+    relative_file_path: samples/mock_vp.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: func_a
+  - function: int LLVMFuzzerTestOneInput(const uint8_t *, size_t)
+    key_index: src/test/filein_harness.c:50:1::int LLVMFuzzerTestOneInput(const uint8_t
+      *, size_t)
+    line_number: 54
+    line_text: '  func_a();'
+    relative_file_path: test/filein_harness.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: LLVMFuzzerTestOneInput
+  - function: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)
+    key_index: null
+    line_number: 614
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)
+  - function: fuzzer::Fuzzer::TryDetectingAMemoryLeak(unsigned char const*, unsigned
+      long, bool)
+    key_index: null
+    line_number: 690
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::Fuzzer::TryDetectingAMemoryLeak(unsigned char const*, unsigned
+      long, bool)
+  - function: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+    key_index: null
+    line_number: 332
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+  - function: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned
+      long))
+    key_index: null
+    line_number: 862
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+      unsigned long))
+  - function: main
+    key_index: null
+    line_number: 20
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: main
+  - function: __libc_start_main
+    key_index: null
+    line_number: 0
+    line_text: null
+    relative_file_path: ../../lib/x86_64-linux-gnu/libc.so.6
+    symbol_offset: 147586
+    symbol_size: 0
+    trace_line: __libc_start_main
+  reason: Not specified
+target_id: '1'

@@ -1,0 +1,5 @@
+H / HTTP/1.0
+Content-Length:8
+
+request: "H / HTTP/1.0\nContentx-Length:8\n\nx"
+reply: "H / HTTP/1.0\nContent-Length:8\n\nx"

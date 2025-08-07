@@ -1,0 +1,5 @@
+target_id: '004'
+cp_harness_id: 'id_1'
+cp_harness_name: 'pov_harness'
+cp_harness_source_path: 'src/harnesses/pov_harness.cc'
+cp_harness_binary_path: 'out/pov_harness'

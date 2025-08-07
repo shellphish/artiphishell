@@ -1,0 +1,23 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# RUN --mount=from=llvm,target=/llvm  mkdir -p /opt && chmod 777 /opt && cd /opt && \
+# 	cat /llvm/clang-17-22.04.tar.gz | tar -xJv --one-top-level=clang --strip-components=1 && chmod 777 /opt/clang
+ARG ISOLATED=
+RUN test -z "${ISOLATED}" || echo "deb [trusted=yes arch=amd64] http://apt-mirror-$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\./-/g'):$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\.//g') $(grep DISTRIB_CODENAME /etc/lsb-release | cut -d= -f2) main universe" > /etc/apt/sources.list
+RUN apt update && apt install make -y && apt install python3 clang clang++ -y
+
+COPY ./shellphish/ /shellphish/
+RUN mv /usr/bin/ld /usr/bin/ld.real
+RUN cp /shellphish/wrap-lib/fucked_up_ld /usr/bin/ld
+RUN make -C /shellphish/wrap-lib/
+
+RUN ln -s /shellphish/grammar_guy/target_building/fake-clang.sh /shellphish/clang
+RUN ln -s /shellphish/grammar_guy/target_building/fake-clang.sh /shellphish/clang++
+
+# RUN cd /shellphish/ && /shellphish/clang -fprofile-instr-generate -fcoverage-mapping -fno-sanitize-recover=all -g --grammar-guy-things -c -o generic_harness.o generic_harness.c
+
+RUN sed -i 's/-fsanitize=fuzzer-no-link//g' $BINS/cp_build* || true
+RUN sed -i 's/-fsanitize=fuzzer-no-link//g' /usr/local/sbin/container_scripts/cp_build* || true
+RUN sed -i 's/-fsanitize=fuzzer//g' $BINS/cp_build* || true
+RUN sed -i 's/-fsanitize=fuzzer//g' /usr/local/sbin/container_scripts/cp_build* || true

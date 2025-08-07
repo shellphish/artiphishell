@@ -1,0 +1,7 @@
+cp_harness_id: id_1
+cp_harness_binary_path: out/pov_harness
+cp_harness_name: pov_harness
+cp_harness_source_path: src/harnesses/pov_harness.cc
+fuzzer: aflpp
+harness_info_id: 5fbea12c024ff26e952c3f056938b75d
+target_id: 1

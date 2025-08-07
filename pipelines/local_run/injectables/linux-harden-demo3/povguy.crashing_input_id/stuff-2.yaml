@@ -1,0 +1,7 @@
+cp_harness_id: id_2
+cp_harness_binary_path: out/even_nilo_can_hack_this
+cp_harness_name: even_nilo_can_hack_this
+cp_harness_source_path: src/harnesses/even_nilo_can_hack_this.c
+fuzzer: snapchange
+harness_info_id: 1b0b9bcfcc54d720f9fdbde8f25992aa 
+target_id: 2

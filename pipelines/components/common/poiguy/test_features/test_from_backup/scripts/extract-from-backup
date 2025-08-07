@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -eux
+
+POIGUY_KIND="${1}"
+FULL_BACKUP_DIR="${2}"
+OUT_BACKUP_DIR_NAME="${3}"
+
+if [ "$POIGUY_KIND" != "asan" ] && [ "$POIGUY_KIND" != "jazzer" ]; then
+    echo "POIGUY_KIND must be either 'asan' or 'jazzer'"
+    exit 1
+fi
+
+rm -rf "$OUT_BACKUP_DIR_NAME"
+mkdir -p "$OUT_BACKUP_DIR_NAME"
+cp -Lr "${FULL_BACKUP_DIR}/poiguy_${POIGUY_KIND}"* "${OUT_BACKUP_DIR_NAME}"

@@ -1,0 +1,77 @@
+---
+name: Test API
+permissions: read-all
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install API
+        run: poetry install
+      - name: Run tests
+        run: poetry run pytest --cov=competition_api --junitxml=junit/test-results.xml --cov-report=xml --cov-report=html --verbose
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: junit/test-results.xml
+        if: ${{ always() }}
+  e2e:
+    env:
+      AUDIT_LOG: ./capi_logs/audit.log
+      MAX_SECONDS: 600
+      POLL_SECONDS: 5
+    runs-on:
+      group: large-runners
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install jq
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+      - name: Set up GHCR auth tokens
+        run: |
+          echo "GITHUB_TOKEN=${{ github.token }}" > ./env
+          echo "GITHUB_USER=gha" >> ./env
+      - name: Add SSH key
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          mkdir -p /home/runner/.ssh
+          ssh-keyscan github.com >> /home/runner/.ssh/known_hosts
+          echo "${{ secrets.CRS_EVALUATOR_EXEMPLAR_CLONE_SSH_KEY }}" > /home/runner/.ssh/github_actions
+          chmod 600 /home/runner/.ssh/github_actions
+          ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
+          ssh-add /home/runner/.ssh/github_actions
+      - name: Run e2e test
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          make e2e
+      - name: Verify audit log content
+        run: |
+          if [ -z "$(jq <"$AUDIT_LOG" '. | select( .event_type | match("vd_submission_success"))')" ]; then
+            echo "No successful VDS logged"
+            exit 1
+          fi
+          if [ -z "$(jq <"$AUDIT_LOG" '. | select( .event_type | match("gp_submission_success"))')" ]; then
+            echo "No successful GP logged"
+            exit 1
+          fi

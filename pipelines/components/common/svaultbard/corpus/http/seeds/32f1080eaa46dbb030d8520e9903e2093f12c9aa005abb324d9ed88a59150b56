@@ -1,0 +1,2 @@
+request: "I / HTTP/1.0\n\n"
+reply: "HTTP/3.6 291\nLocation:X\n\n"

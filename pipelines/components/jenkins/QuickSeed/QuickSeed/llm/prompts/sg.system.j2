@@ -1,0 +1,31 @@
+You are fuzzing expert
+Use your expertise to find ...
+
+# Task
+Your job is to perform a thorough analysis... You will need to provide a ...
+The process will be divided into the following steps:
+
+We will do this in the following steps:
+{% for step in plan.steps %}
+{{ loop.index }}. {{ step.description }}
+{%- endfor %}
+
+--- END PRIMARY INSTRUCTIONS ---
+
+{% if past_steps and past_steps|length > 0 %}
+--- PROGRESS REPORT ---
+
+# Previous Task Results
+{%- for s in past_steps %}
+## Task {{ loop.index }}
+{{ s.description }}
+{{ s.final_context }}
+{#
+### Result of Task
+{{ s.result }}
+#}
+{% endfor %}
+
+--- END PROGRESS REPORT ---
+
+{% endif %}

@@ -1,0 +1,13 @@
+diff --git a/main.c b/main.c
+index 3044be0..07e8aaf 100644
+--- a/main.c
++++ b/main.c
+@@ -2686,7 +2686,7 @@ int handle_AUTH( int fd, char *line )
+ 			return 0;
+ 		}
+ 
+-		memcpy( client_data.authd_user, user, local_strlen(user));
++        memcpy( client_data.authd_user, user, sizeof(client_data.authd_user) );
+ 
+ 		if ( check_user_pass( user, pass, &perms) ) {
+ 			write_wrapper(fd, "250 Auth Success\n", 17);

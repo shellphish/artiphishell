@@ -1,0 +1,3 @@
+| BadRoleCheck.java:15:21:15:30 | checkRoles | Potentially unsafe Callable implementation StubCallable#checkRoles |
+| BadRoleCheck.java:21:21:21:30 | checkRoles | Potentially unsafe Callable implementation WrongCallable#checkRoles |
+| BadRoleCheck.java:30:21:30:30 | checkRoles | Potentially unsafe Callable implementation InheritedOverrideCallable#checkRoles |

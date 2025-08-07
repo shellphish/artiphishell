@@ -1,0 +1,129 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rhelmot/pydatatask/main/schema/pipeline.json
+
+repo_classes:
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+  target_metadatas: MetadataRepository
+  target_harness_infos: MetadataRepository
+  target_fuzz_configs: MetadataRepository
+
+
+
+
+  symcts_symcc_built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+  symcts_aflpp_built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+  symcts_aflpp_upstream_built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+  symcts_aflpp_upstream_cmplog_built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+
+  seeds: BlobRepository
+  seeds_metadata: MetadataRepository
+  crashes: BlobRepository
+  crashes_metadata: MetadataRepository
+
+tasks:
+  symcts_fuzz:
+    links:
+      harness_info:
+        repo: target_harness_infos
+        kind: InputMetadata
+      harness_pdt_id:
+        repo: target_harness_infos
+        kind: InputId
+
+      symcts_symcc_built_target:
+        repo: symcts_symcc_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+      symcts_aflpp_built_target:
+        repo: symcts_aflpp_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+      symcts_aflpp_upstream_built_target:
+        repo: symcts_aflpp_upstream_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+      symcts_aflpp_upstream_cmplog_built_target:
+        repo: symcts_aflpp_upstream_cmplog_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      target_fuzz_config:
+        repo: target_fuzz_configs
+        kind: InputMetadata
+        key: harness_info.target_id
+      target_fuzz_config_path:
+        repo: target_fuzz_configs
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      seeds_dir:
+        repo: seeds
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: seeds_metadata
+        auto_meta: meta
+        auto_values:
+          target_id: '{{harness_info.target_id}}'
+          harness_pdt_id: '{{harness_pdt_id}}'
+          cp_harness_id: '{{harness_info.cp_harness_id}}'
+          cp_harness_name: '{{harness_info.cp_harness_name}}'
+          fuzzer: 'symcts'
+      
+      crashes_dir:
+        repo: crashes
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: crashes_metadata
+        auto_meta: meta
+        auto_values:
+          target_id: '{{harness_info.target_id}}'
+          harness_pdt_id: '{{harness_pdt_id}}'
+          cp_harness_id: '{{harness_info.cp_harness_id}}'
+          cp_harness_name: '{{harness_info.cp_harness_name}}'
+          fuzzer: 'symcts'
+
+
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-symcts
+
+        host_mounts:
+          "/shared": "/shared"
+          "/var/run/docker.sock": "/var/run/docker.sock"
+        template: |
+          set -ex
+
+          HARNESS_BINARY_RELPATH={{ harness_info.cp_harness_binary_path | shquote }}
+          HARNESS_CP_NAME={{ harness_info.cp_harness_name}}
+          AFL_TARGET={{ symcts_aflpp_built_target | shquote }}/"${HARNESS_BINARY_RELPATH}"
+          SYMCC_TARGET={{ symcts_symcc_built_target | shquote }}/"${HARNESS_BINARY_RELPATH}"
+          AFLPP_UPSTREAM_TARGET={{ symcts_aflpp_upstream_built_target | shquote }}/"${HARNESS_BINARY_RELPATH}"
+          AFLPP_UPSTREAM_CMPLOG_TARGET={{ symcts_aflpp_upstream_cmplog_built_target | shquote }}/"${HARNESS_BINARY_RELPATH}"
+
+          # look up the number of cores for this harness
+          NUM_CORES=$(yq -r '.cores_per_harness["'${HARNESS_CP_NAME}'"] // 0' {{ target_fuzz_config_path }})
+          if [ $NUM_CORES -eq 0 ]; then
+            echo "No cores found for harness ${HARNESS_CP_NAME}"
+            exit 0
+          else
+            /fuzz.sh \
+              "$HARNESS_CP_NAME" {{ target_fuzz_config_path }} \
+              "$AFLPP_UPSTREAM_TARGET" "$AFLPP_UPSTREAM_CMPLOG_TARGET" "$AFL_TARGET" "$SYMCC_TARGET" \
+              {{ seeds_dir | shquote }} {{ crashes_dir | shquote }}
+          fi

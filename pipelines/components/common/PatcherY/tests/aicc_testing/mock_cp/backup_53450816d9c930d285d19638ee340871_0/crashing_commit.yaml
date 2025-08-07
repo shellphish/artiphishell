@@ -1,0 +1,7 @@
+cp_source: samples
+crash_id: c27047267322dcff09ff44dfc06e5538
+crash_report_id: c27047267322dcff09ff44dfc06e5538
+crashing_commit: 22e7f707e16ab7f6ef8a7e9adbb60b24bde49e27
+harness_id: id_1
+sanitizer_ids:
+- id_2

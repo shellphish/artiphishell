@@ -1,0 +1,60 @@
+repo_classes:
+  vds_records: MetadataRepository
+  # the final target with the patch applied
+  patch_diffs: BlobRepository
+  # any available metadata about the patch: reasoning, verification results, comments, previous attempts? etc.
+  patch_metadatas: MetadataRepository
+  patch_verification_results: MetadataRepository
+
+  patch_rankings: MetadataRepository
+  targets_with_sources: 
+    cls: FilesystemRepository
+    compress_backup: True
+    compress_backend: True
+
+
+tasks:
+  patchery_ranking:
+    require_success: true
+    # first, the component interface
+    links:
+      target_id:
+        repo: targets_with_sources
+        kind: InputId
+      patch:
+        repo: patch_diffs
+        kind: StreamingInputFilepath
+        required_for_start: true
+      patch_metadata:
+        repo: patch_metadatas
+        kind: StreamingInputFilepath
+      patch_verification_results_dir:
+        repo: patch_verification_results
+        kind: StreamingInputFilepath
+
+      patch_ranking:
+        repo: patch_rankings
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patchery
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          
+          while true;
+          do
+            patchery --rank-patches {{ patch | shquote }} \
+                     --rank-patch-metadatas {{ patch_metadata | shquote }} \
+                     --rank-patch-verifications {{ patch_verification_results_dir | shquote }} \
+                     --rank-output-dir {{ patch_ranking | shquote }} \
+                     --rank-timeout 10 \
+                     --rank-wait-time 3
+            sleep 5m
+          done

@@ -1,0 +1,2 @@
+request: "T / HTTP/1.0\n\n"
+reply: "HTTP/6.2 073\nLocation:0\n\n"

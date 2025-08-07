@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/2.0 176\nVary\nVAry\nVary\nVary\n\n"

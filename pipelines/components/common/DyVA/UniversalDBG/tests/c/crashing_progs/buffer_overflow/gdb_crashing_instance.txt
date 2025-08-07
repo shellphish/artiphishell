@@ -1,0 +1,69 @@
+gef➤  r < input.txt                                                                                                                                                                                                                                  
+Starting program: /home/saastha/aicc/UniversalDBG/tests/c/crashing_progs/buffer_overflow/prog.debug < input.txt                                                                                                                                      
+                                                                                                                                                                                                                                                     
+--- Menu ---                                                                                                                                                                                                                                         
+1. Perform Task 1                                                                                                                                                                                                                                    
+2. Perform Task 2                                                                                                                                                                                                                                    
+3. Enter Data                                                                                                                                                                                                                                        
+4. Exit                                                                                                                                                                                                                                              
+Select an option: Data entry not yet allowed. Please explore other options.                                                                                                                                                                          
+                                                                                                                                                                                                                                                     
+--- Menu ---                                                                                                                                                                                                                                         
+1. Perform Task 1                                                                                                                                                                                                                                    
+2. Perform Task 2                                                                                                                                                                                                                                    
+3. Enter Data                                                                                                                                                                                                                                        
+4. Exit                                                                                                                                                                                                                                              
+Select an option: Data entry not yet allowed. Please explore other options.                                                                                                                                                                          
+                                                                                                                                                                                                                                                     
+--- Menu ---                                                                                                                                                                                                                                         
+1. Perform Task 1                                                                                                                                                                                                                                    
+2. Perform Task 2                                                                                                                                                                                                                                    
+3. Enter Data                                                                                                                                                                                                                                        
+4. Exit                                                                                                                                                                                                                                              
+Select an option: Enter some text: Processing modified data: HeLlO ThIs iS YoUr cAr iNsUrAnCe, I'M TrY12345                                                                                                                                          
+Another function called with buffer: HeLlO ThIs iS YoUr cAr iNsUrAnCe, I'M TrY12345                                                                                                                                                                  
+                                                                                                                                                                                                                                                     
+Program received signal SIGSEGV, Segmentation fault.                                                                                                                                                                                                 
+0x0000353433323159 in ?? ()                                                                                                                                                                                                                          
+[ Legend: Modified register | Code | Heap | Stack | String ]                                                                                                                                                                                         
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x54              
+$rbx   : 0x0000555555555680  →  <__libc_csu_init+0> endbr64 
+$rcx   : 0x0               
+$rdx   : 0x0               
+$rsp   : 0x00007fffffffe0b0  →  0x00007fffffffe0d0  →  0x00007fffffffe0e0  →  0x0000000000000000
+$rbp   : 0x7254204d2749202c (", I'M Tr"?)
+$rsi   : 0x00005555555592a0  →  "Another function called with buffer: HeLlO ThIs iS[...]"
+$rdi   : 0x00007ffff7fb87e0  →  0x0000000000000000
+$rip   : 0x353433323159    
+$r8    : 0x0               
+$r9    : 0x54              
+$r10   : 0x0000555555556077  →  0x207265746e45000a ("\n"?)
+$r11   : 0x246             
+$r12   : 0x00005555555551a0  →  <_start+0> endbr64 
+$r13   : 0x00007fffffffe1d0  →  0x0000000000000001
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [zero carry parity adjust sign trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x33 $ss: 0x2b $ds: 0x00 $es: 0x00 $fs: 0x00 $gs: 0x00 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffe0b0│+0x0000: 0x00007fffffffe0d0  →  0x00007fffffffe0e0  →  0x0000000000000000     ← $rsp
+0x00007fffffffe0b8│+0x0008: 0x0000555555555625  →  <menu+213> jmp 0x555555555654 <menu+260>
+0x00007fffffffe0c0│+0x0010: 0x0000000300000000
+0x00007fffffffe0c8│+0x0018: 0x0100555500000003
+0x00007fffffffe0d0│+0x0020: 0x00007fffffffe0e0  →  0x0000000000000000
+0x00007fffffffe0d8│+0x0028: 0x0000555555555674  →  <main+18> mov eax, 0x0
+0x00007fffffffe0e0│+0x0030: 0x0000000000000000                         
+0x00007fffffffe0e8│+0x0038: 0x00007ffff7dee083  →  <__libc_start_main+243> mov edi, eax                                                        
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────                                         
+[!] Cannot disassemble from $PC                                        
+[!] Cannot access memory at address 0x353433323159                     
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ────                                         
+[#0] Id 1, Name: "prog.debug", stopped 0x353433323159 in ?? (), reason: SIGSEGV                                                                
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────                                         
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────                                         
+gef➤  backtrace                                                        
+#0  0x0000353433323159 in ?? ()                                        
+#1  0x00007fffffffe0d0 in ?? ()                                        
+#2  0x0000555555555625 in menu () at prog.c:83                         
+Backtrace stopped: Cannot access memory at address 0x7254204d27492034 

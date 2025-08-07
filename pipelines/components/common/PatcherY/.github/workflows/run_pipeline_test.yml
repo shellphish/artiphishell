@@ -1,0 +1,28 @@
+name: Test Crashing Commit on Last Good Pipeline Run
+on:
+    - push
+    - workflow_dispatch
+env:
+  # Setting an environment variable with the value of a configuration variable
+  AIXCC_LITELLM_HOSTNAME: ${{ vars.AIXCC_LITELLM_HOSTNAME }}
+  LITELLM_KEY: ${{ vars.LITELLM_KEY }}
+
+jobs:
+  tests:
+    runs-on: self-hosted
+    name: Test this component on last good working pipeline
+    steps:
+      - uses: shellphish-support-syndicate/action-test-component@main
+        timeout-minutes: 60
+        with:
+          ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          ci-ssh-key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          component-dir: components/common/PatcherY
+          task-name: patchery
+          maintainers: '<@593280144962224138>'
+          discord-webhook: ${{ secrets.DISCORD_CI_WEBHOOK }}
+

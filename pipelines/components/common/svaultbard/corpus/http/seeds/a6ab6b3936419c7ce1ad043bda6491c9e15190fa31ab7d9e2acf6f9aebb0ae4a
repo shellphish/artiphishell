@@ -1,0 +1,2 @@
+request: "GET /%00\n"
+reply: ""

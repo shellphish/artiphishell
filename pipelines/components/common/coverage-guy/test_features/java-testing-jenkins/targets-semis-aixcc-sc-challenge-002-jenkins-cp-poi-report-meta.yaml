@@ -1,0 +1,120 @@
+additional_information:
+  crash: null
+  description: '== Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical:
+    OS Command Injection
+
+    Executing OS commands with attacker-controlled data can lead to remote code execution.
+
+    Found in argument 0
+
+    '
+  sanitizer: 'com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical: OS Command
+    Injection'
+crash_id: '5748570422177663831'
+crash_reason: Jazzer
+detection_strategy: fuzzing
+harness_id: id_1
+harness_info_id: '911'
+pois:
+- reason: '== Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical:
+    OS Command Injection
+
+    Executing OS commands with attacker-controlled data can lead to remote code execution.
+
+    Found in argument 0
+
+    '
+  source_location:
+    function_signature: io.jenkins.plugins.UtilPlug.UtilMain.String createUtils(Stringcmd)
+    key_index: src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java:182:4::io.jenkins.plugins.UtilPlug.UtilMain.String
+      createUtils(Stringcmd)
+    line_number: 194
+    line_text: not_found_error
+    relative_file_path: src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+    symbol_offset: 0
+    symbol_size: 0
+- reason: '== Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical:
+    OS Command Injection
+
+    Executing OS commands with attacker-controlled data can lead to remote code execution.
+
+    Found in argument 0
+
+    '
+  source_location:
+    function_signature: io.jenkins.plugins.UtilPlug.UtilMain.void doexecCommandUtils(@QueryParameterStringcmdSeq2,StaplerRequestrequest,StaplerResponseresponse)
+    key_index: src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java:142:11::io.jenkins.plugins.UtilPlug.UtilMain.void
+      doexecCommandUtils(@QueryParameterStringcmdSeq2,StaplerRequestrequest,StaplerResponseresponse)
+    line_number: 157
+    line_text: not_found_error
+    relative_file_path: src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+    symbol_offset: 0
+    symbol_size: 0
+scanner: jazzer
+stack_traces:
+- call_locations:
+  - function: com.code_intelligence.jazzer.sanitizers.OsCommandInjection.ProcessImplStartHook
+    function_name: com.code_intelligence.jazzer.sanitizers.OsCommandInjection:ProcessImplStartHook
+    key_index: null
+    line_number: 35
+    line_text: not_found_error
+    relative_file_path: OsCommandInjection.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: com.code_intelligence.jazzer.sanitizers.OsCommandInjection.ProcessImplStartHook(OsCommandInjection.java:35)
+  - function: java.base/java.lang.ProcessBuilder.start
+    function_name: java.base/java.lang.ProcessBuilder:start
+    key_index: null
+    line_number: 1110
+    line_text: not_found_error
+    relative_file_path: ProcessBuilder.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1110)
+  - function: java.base/java.lang.ProcessBuilder.start
+    function_name: java.base/java.lang.ProcessBuilder:start
+    key_index: null
+    line_number: 1073
+    line_text: not_found_error
+    relative_file_path: ProcessBuilder.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1073)
+  - function: io.jenkins.plugins.UtilPlug.UtilMain.createUtils
+    function_name: io.jenkins.plugins.UtilPlug.UtilMain:createUtils
+    key_index: blablabla
+    line_number: 194
+    line_text: not_found_error
+    relative_file_path: UtilMain.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: io.jenkins.plugins.UtilPlug.UtilMain.createUtils(UtilMain.java:194)
+  - function: io.jenkins.plugins.UtilPlug.UtilMain.doexecCommandUtils
+    function_name: io.jenkins.plugins.UtilPlug.UtilMain:doexecCommandUtils
+    key_index: blablabla
+    line_number: 157
+    line_text: not_found_error
+    relative_file_path: UtilMain.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: io.jenkins.plugins.UtilPlug.UtilMain.doexecCommandUtils(UtilMain.java:157)
+  - function: PipelineCommandUtilFuzzer.fuzzerTestOneInput
+    function_name: PipelineCommandUtilFuzzer:fuzzerTestOneInput
+    key_index: null
+    line_number: 66
+    line_text: not_found_error
+    relative_file_path: PipelineCommandUtilFuzzer.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: PipelineCommandUtilFuzzer.fuzzerTestOneInput(PipelineCommandUtilFuzzer.java:66)
+  - function: PipelineCommandUtilPovRunner.fuzzerTestOneInput
+    function_name: PipelineCommandUtilPovRunner:fuzzerTestOneInput
+    key_index: null
+    line_number: 9
+    line_text: not_found_error
+    relative_file_path: PipelineCommandUtilPovRunner.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: PipelineCommandUtilPovRunner.fuzzerTestOneInput(PipelineCommandUtilPovRunner.java:9)
+  reason: bla bla bla
+target_id: '004'

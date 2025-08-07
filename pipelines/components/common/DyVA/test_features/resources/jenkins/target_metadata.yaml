@@ -1,0 +1,28 @@
+cp_name: Jenkins
+cp_sources:
+  jenkins:
+    address: "https://github.com/shellphish-support-syndicate/aixcc-sc-challenge-002-jenkins-source.git"
+    ref: v3.0.0
+    artifacts:
+      - src/jenkins/war/target/jenkins.war
+  plugins/pipeline-util-plugin:
+    address: "https://github.com/shellphish-support-syndicate/aixcc-sc-challenge-002-jenkins-plugins.git"
+    ref: v2.0.0
+    artifacts:
+      - src/plugins/pipeline-util-plugin/target/UtilPlug.jar
+      - src/plugins/pipeline-util-plugin/target/UtilPlug.hpi
+
+language: java
+docker_image: "ghcr.io/aixcc-sc/challenge-002-jenkins-cp:v3.1.0"
+harnesses:
+  id_1:
+    name: JenkinsTwo
+    source: src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+    binary: out/harnesses/two/aixcc-harness.jar
+
+sanitizers:
+  id_1: "FuzzerSecurityIssueCritical: OS Command Injection"
+shellphish:
+  files_by_language:
+    c: 2
+  known_sources: {}

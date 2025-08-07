@@ -1,0 +1,22 @@
+mworlSizeTransformment {
+f_id {
+ 
+      source {
+        cons {
+        }
+      }
+      size {
+        binop {
+          op: SLT
+          left {
+            binop {
+              op: SLT
+              left {
+                binop {
+                  op: SLT
+                  left {
+                    binop {
+                      op: SLT
+                      lm: -infin644
+           }
+    }

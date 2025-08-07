@@ -1,0 +1,3 @@
+| FileFromRestOfPath.java:7:17:7:31 | doPathTraversal | Potential CSRF vulnerability: If FileFromRestOfPath#doPathTraversal connects to user-specified URLs, modifies state, or is expensive to run, it should be annotated with @POST or @RequirePOST |
+| FileFromRestOfPath.java:12:19:12:27 | doNotCare | Potential CSRF vulnerability: If FileFromRestOfPath#doNotCare connects to user-specified URLs, modifies state, or is expensive to run, it should be annotated with @POST or @RequirePOST |
+| WebMethodMissingPostAnnotation.java:12:17:12:31 | doCheckWhatever | Potential CSRF vulnerability: If WebMethodMissingPostAnnotation#doCheckWhatever connects to user-specified URLs, modifies state, or is expensive to run, it should be annotated with @POST or @RequirePOST |

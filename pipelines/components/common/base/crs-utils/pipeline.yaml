@@ -1,0 +1,54 @@
+repo_classes:
+  cp_image_ready: MetadataRepository
+  targets_with_sources: FilesystemRepository
+  all_non_kernel_targets_with_sources: FilesystemRepository
+  debug_built_targets_with_sources: FilesystemRepository
+
+  # 1 - 1 relationship with targets_with_sources (cokeyed)
+  target_metadatas: MetadataRepository
+  target_directed_fuzz_requests: MetadataRepository
+  info_extraction_requests: MetadataRepository
+
+  # 1 - N relationship with targets_with_sources (1 per harness, linked with target_harness_info.target_id
+  target_harness_infos: MetadataRepository
+
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  crash_run_pov_result_metadatas: MetadataRepository
+  pov_reports: MetadataRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+imports:
+  target_analysis:
+    path: components/target_identifier/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+
+  target_harness_splitter:
+    path: components/target_harness_splitter/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_harness_infos: target_harness_infos
+
+
+  target_fuzz_requestor:
+    path: components/target_fuzz_requestor/pipeline.yaml
+    repos:
+      target_harness_infos: target_harness_infos
+      info_extraction_requests:  info_extraction_requests
+      target_directed_fuzz_requests: target_directed_fuzz_requests
+
+  povguy:
+    path: components/povguy/pipeline.yaml
+    repos:
+      cp_image_ready: cp_image_ready
+      targets_with_sources: all_non_kernel_targets_with_sources
+      debug_built_targets_with_sources: debug_built_targets_with_sources
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      crash_run_pov_result_metadatas: crash_run_pov_result_metadatas
+      pov_reports: pov_reports
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas

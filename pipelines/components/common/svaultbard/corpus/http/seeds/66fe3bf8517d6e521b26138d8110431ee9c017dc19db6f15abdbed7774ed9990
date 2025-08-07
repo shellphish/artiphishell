@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.20 020\nTranSfer-Encoding:chunked\n`ni\n\n1\n=\r\n1 un:\n~\r\n1\n=\r\n1\n=\r\n1\t\n0\r\n1\n=\r\n1\t\n0\r\n1\n=\r\n"

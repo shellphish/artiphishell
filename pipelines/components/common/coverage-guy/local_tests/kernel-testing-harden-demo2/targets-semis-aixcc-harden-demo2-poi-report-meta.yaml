@@ -1,0 +1,129 @@
+additional_information:
+  cash_report: "==================================================================\n\
+    BUG: KASAN: stack-out-of-bounds in max_select_fd fs/select.c:444 [inline]\nBUG:\
+    \ KASAN: stack-out-of-bounds in do_select+0x14f1/0x1750 fs/select.c:490\nRead\
+    \ of size 8 at addr ffff888118e2fdd0 by task syz-executor.3/17386\n\nCPU: 0 PID:\
+    \ 17386 Comm: syz-executor.3 Not tainted 6.6.25 #1\nHardware name: QEMU Standard\
+    \ PC (i440FX + PIIX, 1996), BIOS 1.15.0-1 04/01/2014\nCall Trace:\n <TASK>\n __dump_stack\
+    \ lib/dump_stack.c:88 [inline]\n dump_stack_lvl+0x72/0xa0 lib/dump_stack.c:106\n\
+    \ print_address_description mm/kasan/report.c:364 [inline]\n print_report+0xcc/0x620\
+    \ mm/kasan/report.c:475\n kasan_report+0xb0/0xe0 mm/kasan/report.c:588\n max_select_fd\
+    \ fs/select.c:444 [inline]\n do_select+0x14f1/0x1750 fs/select.c:490\n core_sys_select+0x304/0x570\
+    \ fs/select.c:664\n </TASK>\n\nThe buggy address belongs to stack of task syz-executor.3/17386\n\
+    \ and is located at offset 408 in frame:\n core_sys_select+0x0/0x570 fs/select.c:1269\n\
+    \nThis frame has 2 objects:\n [48, 96) 'fds'\n [128, 384) 'stack_fds'\n\nThe buggy\
+    \ address belongs to the physical page:\npage:000000004be7d4b7 refcount:0 mapcount:0\
+    \ mapping:0000000000000000 index:0x0 pfn:0x118e2f\nflags: 0x200000000000000(node=0|zone=2)\n\
+    page_type: 0xffffffff()\nraw: 0200000000000000 0000000000000000 dead000000000122\
+    \ 0000000000000000\nraw: 0000000000000000 0000000000000000 00000000ffffffff 0000000000000000\n\
+    page dumped because: kasan: bad access detected\n\nMemory state around the buggy\
+    \ address:\n ffff888118e2fc80: 00 00 00 f2 f2 f2 f2 00 00 00 00 00 00 00 00 00\n\
+    \ ffff888118e2fd00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n>ffff888118e2fd80:\
+    \ 00 00 00 00 00 00 00 f3 f3 f3 f3 f3 f3 f3 f3 00\n                          \
+    \                       ^\n ffff888118e2fe00: 00 00 00 00 00 00 00 00 00 00 00\
+    \ f1 f1 f1 f1 00\n ffff888118e2fe80: 00 f2 f2 00 00 f3 f3 00 00 00 00 00 00 00\
+    \ 00 00\n==================================================================\n"
+crash_reason: 'KASAN: stack-out-of-bounds Read in do_select'
+detection_strategy: fuzzing
+harness_id: 'id_1'
+harness_info_id: 911
+pois:
+- reason: 'BUG: KASAN: stack-out-of-bounds in max_select_fd fs/select.c:444 [inline]'
+  source_location:
+    function_signature: max_select_fd
+    key_index: not_found
+    line_number: 444
+    line_text: not_found_error
+    relative_file_path: fs/select.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: 'BUG: KASAN: stack-out-of-bounds in do_select+0x14f1/0x1750 fs/select.c:490'
+  source_location:
+    function_signature: do_select
+    key_index: not_found
+    line_number: 490
+    line_text: not_found_error
+    relative_file_path: fs/select.c
+    symbol_offset: 5361
+    symbol_size: 5968
+scanner: syzkaller
+stack_traces:
+- call_locations:
+  - function: __dump_stack
+    function_name: __dump_stack
+    key_index: null
+    line_number: 88
+    line_text: ''
+    relative_file_path: lib/dump_stack.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: __dump_stack lib/dump_stack.c:88 [inline]
+  - function: dump_stack_lvl
+    function_name: dump_stack_lvl
+    key_index: null
+    line_number: 106
+    line_text: ''
+    relative_file_path: lib/dump_stack.c
+    symbol_offset: 114
+    symbol_size: 160
+    trace_line: dump_stack_lvl+0x72/0xa0 lib/dump_stack.c:106
+  - function: void print_address_description(void *, int, struct kasan_report_info
+      *)
+    function_name: print_address_description
+    key_index: mm/kasan/report.c:279:1::void print_address_description(void *, int,
+      struct kasan_report_info *)
+    line_number: 364
+    line_text: Error
+    relative_file_path: mm/kasan/report.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: print_address_description mm/kasan/report.c:364 [inline]
+  - function: void print_report(struct kasan_report_info *)
+    function_name: print_report
+    key_index: mm/kasan/report.c:384:1::void print_report(struct kasan_report_info
+      *)
+    line_number: 475
+    line_text: Error
+    relative_file_path: mm/kasan/report.c
+    symbol_offset: 204
+    symbol_size: 1568
+    trace_line: print_report+0xcc/0x620 mm/kasan/report.c:475
+  - function: int kasan_report(unsigned long, size_t, int, unsigned long)
+    function_name: kasan_report
+    key_index: mm/kasan/report.c:470:1::int kasan_report(unsigned long, size_t, int,
+      unsigned long)
+    line_number: 588
+    line_text: Error
+    relative_file_path: mm/kasan/report.c
+    symbol_offset: 176
+    symbol_size: 224
+    trace_line: kasan_report+0xb0/0xe0 mm/kasan/report.c:588
+  - function: max_select_fd
+    function_name: max_select_fd
+    key_index: blablabla
+    line_number: 444
+    line_text: ''
+    relative_file_path: fs/select.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: max_select_fd fs/select.c:444 [inline]
+  - function: do_select
+    function_name: do_select
+    key_index: blablabla
+    line_number: 490
+    line_text: ''
+    relative_file_path: fs/select.c
+    symbol_offset: 5361
+    symbol_size: 5968
+    trace_line: do_select+0x14f1/0x1750 fs/select.c:490
+  - function: core_sys_select
+    function_name: core_sys_select
+    key_index: blablabla
+    line_number: 664
+    line_text: ''
+    relative_file_path: fs/select.c
+    symbol_offset: 772
+    symbol_size: 1392
+    trace_line: core_sys_select+0x304/0x570 fs/select.c:664
+  reason: bla bla bla
+target_id: '004'

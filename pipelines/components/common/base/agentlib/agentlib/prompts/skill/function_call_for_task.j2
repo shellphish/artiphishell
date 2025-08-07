@@ -1,0 +1,34 @@
+# Generate Signatures
+You are an expert in python. You need to generate a python3 function named `run_task`, which will act as a wrapper around a target function.
+
+## `run_task` Function Signature and example
+```python
+def run_task(self):
+    # Assign local variables with inputs for the task
+    return self.targetFunctionNameHere('baz', foo=1, bar='hello')
+```
+
+# Examples
+
+## Example Task Description
+retrieve_funcs_w_name retrives all functions with the name "createFreeStyleProject" from the database, and returns them in a dataframe
+
+## Example Target Function Signature
+```python
+def retrieve_funcs_w_name(self,func_name):
+    pass
+```
+
+## Example Output
+```python
+def run_task(self):
+    target_function_name = "createFreeStyleProject"
+    return self.retrieve_funcs_w_name(target_function_name)
+```
+
+# Requirements
+- The function must take self as the first argument
+- All indents should be 4 spaces `    `
+- Only use type annotations for primitive types like dict, list, str etc
+- function_name_should_be_in_snake_case
+- Keep the arguments straightforward

@@ -1,0 +1,14 @@
+# Base image
+FROM neo4j:5.15
+LABEL org.opencontainers.image.source=https://github.com/aixcc-sc/asc-crs-shellphish
+
+RUN apt-get update && apt-get install -y wget curl git python3 python3-pip python3-venv python3-virtualenvwrapper
+RUN apt-get update && apt-get install -y python-is-python3
+RUN apt-get update && apt-get install -y unar zip tmux vim htop
+RUN pip install --progress-bar off --upgrade pip neo4j gitpython neomodel ipdb python-dateutil numpy pandas tqdm requests unidiff flask
+
+COPY ./ /workspaces/knowledge-base/
+RUN pip install -e /workspaces/knowledge-base/
+WORKDIR /workspaces/knowledge-base/
+
+CMD [ "/bin/bash", "-l", "-c", "ls"]

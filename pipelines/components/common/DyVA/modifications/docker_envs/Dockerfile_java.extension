@@ -1,0 +1,8 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} 
+
+COPY jazzer_replacement /jazzer_replacement
+COPY replace.sh /replace.sh
+
+RUN chmod +x /replace.sh
+RUN /replace.sh

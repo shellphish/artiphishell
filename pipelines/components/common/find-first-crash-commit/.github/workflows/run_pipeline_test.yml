@@ -1,0 +1,22 @@
+name: Test Crashing Commit on Last Good Pipeline Run
+on:
+    - push
+    - workflow_dispatch
+jobs:
+  tests:
+    runs-on: self-hosted
+    name: Test this component on last good working pipeline
+    steps:
+      - uses: shellphish-support-syndicate/action-test-component@main
+        timeout-minutes: 15
+        with:
+          ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          ci-ssh-key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          component-dir: components/common/find-first-crash-commit
+          task-name: find_first_crash_commit
+          maintainers: '<@320594955779309569> & <@272835764965081090>'
+          discord-webhook: ${{ secrets.DISCORD_CI_WEBHOOK }}

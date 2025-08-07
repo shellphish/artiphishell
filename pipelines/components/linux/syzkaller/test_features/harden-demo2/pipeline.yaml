@@ -1,0 +1,83 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  target_metadatas: MetadataRepository
+  kernel_reachability_results: MetadataRepository
+
+  clang_indexer_meta_csvs: BlobRepository
+  target_functions_indices: BlobRepository
+  target_functions_jsons_dirs: FilesystemRepository
+  target_functions_by_commit_jsons_dirs: FilesystemRepository
+
+  target_harness_infos: MetadataRepository
+
+  syzlang_crashes_reports: BlobRepository
+  syzlang_crashes_reports_metadatas: MetadataRepository
+  syzlang_crashes_descriptions: BlobRepository
+  syzlang_crashes_descriptions_metadatas: MetadataRepository
+  syzlang_crashes_logs: BlobRepository
+  syzlang_crashes_logs_metadatas: MetadataRepository
+
+imports:
+  crs_utils:
+    path: ../../../../common/base/crs-utils/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      target_harness_infos: target_harness_infos
+
+  # clang_indexer:
+  #   path: ../../../../common/clang-indexer/pipeline.yaml
+  #   repos:
+  #     targets_with_sources: targets_with_sources
+  #     full_json_output_dirs: target_functions_jsons_dirs
+  #     by_commit_json_output_dirs: target_functions_by_commit_jsons_dirs
+
+  # function_index_generator:
+  #   path: ../../../../common/function_index_generator/pipeline.yaml
+  #   repos:
+  #     target_full_functions_jsons_dirs: target_functions_jsons_dirs
+  #     meta_full_index_csvs: clang_indexer_meta_csvs
+  #     target_full_functions_indices: target_functions_indices
+
+  # poiguy:
+  #   path: ../../../../common/poiguy/pipeline.yaml
+  #   repos:
+  #     clang_index_csvs: clang_indexer_meta_csvs
+  #     # target_harness_infos: target_harness_infos
+  #     syzlang_crashes_reports: syzlang_crashes_reports
+  #     syzlang_crashes_reports_metadatas: syzlang_crashes_reports_metadatas
+  #     syzlang_crashes_descriptions: syzlang_crashes_descriptions
+  #     syzlang_crashes_descriptions_metadatas: syzlang_crashes_descriptions_metadatas
+
+  # clang_indexer:
+  #   path: ../../../../common/clang-indexer/pipeline.yaml
+  #   repos:
+  #     targets_with_sources: targets_with_sources
+  #     json_output_dir: target_functions_jsons_dirs
+
+  # function_index_generator:
+  #   path: ../../../../common/function_index_generator/pipeline.yaml
+  #   repos:
+  #     target_functions_jsons_dirs: target_functions_jsons_dirs
+  #     target_functions_indices: target_functions_indices
+
+
+  codeql:
+    path: ../../../../common/codeql/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      kernel_reachability_results: kernel_reachability_results
+
+  syzkaller:
+    path: ../../pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      kernel_reachability_results: kernel_reachability_results
+      syzlang_crashes_reports: syzlang_crashes_reports
+      syzlang_crashes_reports_metadatas: syzlang_crashes_reports_metadatas
+      syzlang_crashes_descriptions: syzlang_crashes_descriptions
+      syzlang_crashes_descriptions_metadatas: syzlang_crashes_descriptions_metadatas
+      syzlang_crashes_logs: syzlang_crashes_logs
+      syzlang_crashes_logs_metadatas: syzlang_crashes_logs_metadatas

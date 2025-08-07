@@ -1,0 +1,773 @@
+name: PipelineBuild
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Dispatched workflow for {0} target for {1} mins | {2}', github.event.inputs.target-name, github.event.inputs.run-duration, github.event.inputs.inject-crash == 'true' && 'Crash Injected' || 'No Injection') || format('Running on commit - {0}',(github.event.head_commit.message || github.event.workflow_run.head_commit.message )) }}
+on:
+  # Don't trigger this when we push to main (want to wait for the apt-cache to bump), but want to trigger when we push to a branch (lulz does anyone even do that)
+  push:
+    branches-ignore:
+      - main
+
+  # Do trigger after the apt-cache is successful
+  workflow_run:
+    workflows: [apt-cache-check]
+    types:
+      - completed
+      
+  schedule:
+    - cron: '0 8,12,16,20 * * *'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      target-name:
+        type: choice
+        description: Which target to run
+        default: all-supported
+        options:
+          - nginx
+          - mock-cp
+          - jenkins
+          - linux-cp
+          - linux-harden-demo3
+          - all
+          - all-supported
+          - oniguruma-53041
+          - selinux-32675
+          - selinux-31124
+          - libredwg-62367
+          - libredwg-57589
+          - libdwarf-57766
+          - wasm3-33318
+          - libdwarf-47150
+          - libredwg-63537
+          - oniguruma-25893
+          - jenkins_cp_promax
+          - jenkins_cp_promax_2
+          - jenkins_cp_promax_3
+      build-run-id:
+        default: fresh
+        description: What run-id to start from using the  backup and shared
+        type: string
+      run-duration:
+        type: choice
+        description: How long to run the pipeline (in mins)
+        default: 10
+        options:
+          - 5
+          - 10
+          - 30
+          - 60
+          - 120
+          - 180
+          - 240
+      inject-crash:
+        type: boolean
+        description: Do you want to inject crashes (all targets - check injectables)
+        default: false
+      dont-test-build:
+        type: boolean
+        description: Directly run the pipeline without testing the build
+        default: true
+      monitor-docker:
+        type: boolean
+        description: Monitor docker runs
+        default: false
+      debug-workflow:
+        type: boolean
+        description: Do you want to debug the run via ssh
+        default: false
+      skip-components:
+        type: boolean
+        description: Do you want to debug the run via ssh
+        default: false
+
+env:
+  # Setting an environment variable with the value of a configuration variable
+  AIXCC_LITELLM_HOSTNAME: ${{ vars.AIXCC_LITELLM_HOSTNAME }}
+  LITELLM_KEY: ${{ vars.LITELLM_KEY }}
+
+jobs:
+  build-local-pipeline:
+    runs-on: self-hosted
+    name: Test building the pipeline and test the full pipeline pdt connections
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: shellphish-support-syndicate/action-setup-pipeline@main
+        id: build-pipeline
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        with:
+          ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+
+
+      - name: Big ping cause we can't build
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: |
+            🤡 @everyone in 🎪 because the pipeline can't build!
+
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        if: failure() && steps.build-pipeline.conclusion == 'failure'  && github.ref == 'refs/heads/main'
+
+      - name: Test full pipeline pdt connections
+        id: test-pipeline
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        working-directory: ./pipelines/
+        run: |
+          pdl --no-lockstep --no-launch-agent
+
+      - name: do nothing
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: echo "doing nothing"
+
+      - name: Big ping cause pdt can't load pipeline
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: |
+            🤡 @everyone in 🎪 because pdt can't load the pipeline with `pdl --no-lockstep --no-launch-agent`
+
+            This might mean that pdt is broken or that the pipeline isn't hooked up correctly
+
+            🤡🚗: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+        if: failure() && steps.test-pipeline.conclusion == 'failure'  && github.ref == 'refs/heads/main'
+
+  extract-data:
+    runs-on: self-hosted
+    name: "Extract data that we need"
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      targets: ${{ steps.data.outputs.targets }}
+      targets-full-ready: ${{ steps.data.outputs.targets-full-ready }}
+    steps:
+      # do our own extraction here b/c we only need the damn json file
+      - name: checkout this repo temporarily
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: pipelines-lite
+          persist-credentials: true
+          lfs: false
+          submodules: false
+          fetch-depth: 1
+      - name: extract all data we need
+        id: data
+        working-directory: pipelines-lite/.github/workflows
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]
+          then
+            if [ "${{ github.event.inputs.target-name }}"  = "all" ]; then
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready")]' < ./data.json) >> $GITHUB_OUTPUT
+            elif [ "${{ github.event.inputs.target-name }}"  = "all-supported" ]; then
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."supported-target")]' < ./data.json) >> $GITHUB_OUTPUT
+            else
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."short-name" == "${{ github.event.inputs.target-name }}")]' < ./data.json) >> $GITHUB_OUTPUT
+            fi
+          else
+            echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."only-on-manual-run" == false)]' < ./data.json) >> $GITHUB_OUTPUT
+          fi
+
+  test-full-pipeline:
+    runs-on: self-hosted
+    name: Test full pipeline on ${{ matrix.targets.short-name }}
+    needs: [build-local-pipeline, extract-data]
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        targets: ${{ fromJson(needs.extract-data.outputs.targets-full-ready) }}
+
+    steps:
+      - name: Start as clean as possible
+        run: |
+          set -x
+          sudo systemctl restart docker
+          docker rm -f $(docker ps -aq) || true
+          sudo rm -rf /crs_scratch/*
+          sudo rm -rf /shared/*
+          rm -rf /tmp/container_plots/*
+          rm -rf /tmp/task_durations.html
+          touch /tmp/STOP_THE_PYTHON_LOGGER
+          sudo rm -rf /tmp/pydatatask-*
+          sudo kill -9 $(ps aux | grep python | grep pydatatask  | grep agent-http | awk '{print $2}') || true
+          sudo kill -9 $(ps aux | grep ipython | awk '{print $2}') || true
+          sudo kill -9 $(ps aux | grep ingest.sh | grep bash | awk '{print $2}') || true
+          sudo kill -9 $(ps aux | grep upterm | grep server | awk '{print $2}') || true
+          sudo umount /mnt/tmpfs || true
+          sudo rm -rf /tmp/ci/long-running
+          if [ -f /tmp/STOP_THE_PYTHON_LOGGER ]
+          then
+            rm /tmp/STOP_THE_PYTHON_LOGGER
+          fi
+    
+      - name: Setup upterm session
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug-workflow }}
+        uses: lhotari/action-upterm@v1
+    
+      - name: Set running timeout based on event type (push 10 minutes and scheduled 4 hours)
+        run: |
+          if [ ${{ github.event_name }} = "schedule" ]
+          then
+            echo "PIPELINE_RUN_TIMEOUT_MINUTES=240" >> "$GITHUB_ENV"
+            echo "PIPELINE_RUN_TYPE=long" >> "$GITHUB_ENV"
+          else
+            if [ ${{ github.event_name }} = "workflow_dispatch" ]
+            then
+              echo "PIPELINE_RUN_TIMEOUT_MINUTES=${{ github.event.inputs.run-duration }}" >> "$GITHUB_ENV"
+              echo "PIPELINE_RUN_TYPE=short" >> "$GITHUB_ENV"
+            else
+              echo "PIPELINE_RUN_TIMEOUT_MINUTES=10" >> "$GITHUB_ENV"
+              echo "PIPELINE_RUN_TYPE=short" >> "$GITHUB_ENV"
+            fi
+          fi
+
+      - uses: shellphish-support-syndicate/action-setup-pipeline@main
+        id: build-pipeline
+        with:
+          ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+
+
+
+      - name: Cache Target ${{ matrix.targets.short-name }}
+        id: cache-target
+        uses: actions/cache@v4
+        with:
+          path: ./pipelines/local_run/targets
+          key: build-${{ matrix.targets.name }}-${{ matrix.targets.version }}
+
+      - name: Proper docker login for ${{ matrix.targets.short-name }}
+        run: |
+          if echo ${{ matrix.targets.docker-image }} | grep shellphish-support-syndicate
+          then
+            docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
+          else
+            docker login -u ${{ secrets.GHCR_USERNAME }} -p ${{ secrets.GHCR_PASSWORD }} ghcr.io
+          fi
+
+
+      - name: add target ${{ matrix.targets.short-name }}
+        timeout-minutes: 15
+        working-directory: ./pipelines/local_run
+        run: |
+          ./add_target.sh ${{ matrix.targets.repo }}
+
+      - name: Set up the github path
+        run: |
+          # Need the right docker-compose
+          echo "$GITHUB_WORKSPACE/pipelines/.github/bin" >> $GITHUB_PATH
+          ls -la "$GITHUB_WORKSPACE/pipelines/.github/bin"
+
+      - name: Set up PRE_RUN_EXEC
+        run: |
+          cat << EOF > $GITHUB_WORKSPACE/pre-run-exec
+          ${{ matrix.targets.pre-run-exec }}
+          EOF
+
+          cat $GITHUB_WORKSPACE/pre-run-exec
+
+      - name: Create memfs
+        id: create-memfs
+        run: |
+          sudo mkdir -p /mnt/tmpfs
+          sudo mount -o size=64G -t tmpfs none /mnt/tmpfs
+      
+          
+      - name: get previous run if not fresh
+        if: ${{ github.event.inputs.build-run-id && github.event.inputs.build-run-id != 'fresh' }}
+        run: |
+          set -x
+          wget -q "https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.event.inputs.build-run-id }}/backup-${{ matrix.targets.short-name }}-${{ github.event.inputs.build-run-id }}.tar.gz" -O ./prior-backup.tar.gz
+          wget -q "https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.event.inputs.build-run-id }}/shared.tar.gz" -O ./prior-shared.tar.gz
+
+          tar -xzf ./prior-backup.tar.gz
+          mv ./backup-* ./prior-backup
+
+
+      - name: Full pipeline run for ${{ matrix.targets.name }}
+        id: full-test
+        timeout-minutes: ${{ fromJSON(env.PIPELINE_RUN_TIMEOUT_MINUTES) }}
+        working-directory: ./pipelines/local_run
+        continue-on-error: true
+        run: |
+          set -x          
+          function run-check() {
+            if ps -p $RUN_PID > /dev/null
+            then
+              :
+            else
+              echo "🤡 run.sh stopped for ${{ matrix.targets.name }}"
+              exit 1
+            fi
+          }
+          function wait-for-success() {
+            local SUCCESS_CHECK_STRING="${1}"
+            local COMPONENT_NAME="${2}"
+            local SUCCESS_EMOJI="${3}"
+
+            while true
+            do
+              if eval "$SUCCESS_CHECK_STRING"
+              then
+                echo "$SUCCESS_EMOJI $COMPONENT_NAME worked"
+                break
+              else
+                run-check
+                echo "😴 waiting for $COMPONENT_NAME"
+                sleep 30s
+              fi
+            done
+            return 0
+          }
+
+          if [ ! -f $GITHUB_WORKSPACE/ci_ssh ]
+          then
+          cat << EOF > $GITHUB_WORKSPACE/ci_ssh
+          ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          EOF
+          fi
+          chmod 600 $GITHUB_WORKSPACE/ci_ssh
+
+          echo "CRASH_INJECTION_SUCCESS=no" >> "$GITHUB_ENV"
+
+          # clear up anything old so we know if the pipeline actually started correctly
+          pdl --unlock || rm -rf pipeline.lock
+
+          # pull the damn registry just in case
+          docker pull ${{ matrix.targets.docker-image }}
+
+          # Max job will use 32 CPU and 64 GB of memory so we can do more tasks in less time
+
+          if [ "${{ github.event.inputs.build-run-id }}" != "" ] && [ "${{ github.event.inputs.build-run-id }}" != "fresh" ]
+          then
+            sudo rm -rf /shared/*
+
+            # set up shared
+            sudo tar -xzf $GITHUB_WORKSPACE/prior-shared.tar.gz -C /
+
+            pushd ../
+            pdl --global-script-env ON_CI=yes
+
+            # restore
+            pd restore $GITHUB_WORKSPACE/prior-backup/ --all
+
+            pd status
+            export DO_PDL_UNLOCK=false
+
+            popd
+          fi
+          if [ "${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }}" = "10" ]
+          then
+            export DISABLE_VDS_TIMEOUT=1
+            export DISABLE_GP_TIMEOUT=1
+          else
+            export DISABLE_VDS_TIMEOUT=0
+            export DISABLE_GP_TIMEOUT=0
+          fi
+          if [ "${{ github.event.inputs.skip-components }}" = "true" ]
+          then
+            export SKIP_COMPONENTS=${{ matrix.targets.pd-run-args }}
+          else
+            export SKIP_COMPONENTS=""
+          fi
+
+          export ROUND_TIME_SECONDS=$(( ${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }} * 60 )) 
+          TEMP=/mnt/tmpfs EXTRA_ENV="$SKIP_COMPONENTS --global-script-env DISABLE_VDS_TIMEOUT=$DISABLE_VDS_TIMEOUT --global-script-env DISABLE_GP_TIMEOUT=$DISABLE_GP_TIMEOUT --global-script-env ROUND_TIME_SECONDS=$ROUND_TIME_SECONDS --global-script-env ON_CI=yes --global-script-env PYTHONUNBUFFERED=yes" PDL_ARGS="${{ matrix.targets.pdl-args }}" PRE_RUN_EXEC=$(cat $GITHUB_WORKSPACE/pre-run-exec) GIT_SSH_COMMAND="ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh" TARGET_MAKE=${{ matrix.targets.capi-name }} TARGET_REPOS=${{ matrix.targets.docker-image }} TARGET_DIR_NAME=${{ matrix.targets.short_name }} SHOULD_INJECT="${{ github.event.inputs.inject-crash }}" TARGET_SOURCE_REPO=${{ matrix.targets.repo }} ./run.sh &
+
+          export RUN_PID=$!
+          echo "RUN_PID=$RUN_PID" >> "$GITHUB_ENV"
+
+          if [ "${{ github.event.inputs.monitor-docker }}" = "true" ]
+          then
+            echo "Monitoring docker"
+            ./docker_mon.py --plot --dump /tmp/dump &
+            export DOCKER_MON_PID=$!
+            echo "DOCKER_MON_PID=$DOCKER_MON_PID" >> "$GITHUB_ENV"
+          fi
+
+          cd ../
+
+          # Wait for pdt to start the pipeline
+          while [ ! -f ./pipeline.lock ]
+          do
+            run-check
+            echo "😴 waiting for pipeline to start"
+            sleep 60s
+          done
+
+          echo "PIPELINE_RUN_SUCCESS=yes" >> "$GITHUB_ENV"
+          echo "Pipeline can run (it's not much but it's a start)"
+
+          # now just run until the timeout
+          wait $RUN_PID
+          # kill the docker_mon.py nicely
+          echo "ASDASD" > /tmp/STOP_THE_PYTHON_LOGGER
+
+      - name: Stop run.sh
+        if: ${{ always() && env.RUN_PID }}
+        run: |
+          set -x
+          if [ -f /tmp/pdt-run-id ]
+          then
+            kill -9 $(cat /tmp/pdt-run-id) || true
+          fi
+          pkill -P -$RUN_PID || true
+          # clean up any fucking agents that are running
+          sudo kill -9 $(ps aux | grep python | grep pydatatask  | grep agent-http | awk '{print $2}') || true
+          # clean up any fucking ipython that are running
+          sudo kill -9 $(ps aux | grep ipython | awk '{print $2}') || true
+          # clean up any INGESTS that are running
+          sudo kill -9 $(ps aux | grep ingest.sh | grep bash | awk '{print $2}') || true
+          # clean up any docker murderers that are running
+          sudo kill -9 $(ps aux | grep ci_fix_docker_created | grep bash | awk '{print $2}') || true
+
+      - name: pause all docker containers
+        if: ${{ always() }}
+        run: |
+          docker pause $(docker ps -aq) || true
+
+      - name: create pd backup
+        id: create-pd-backup
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        working-directory: ./pipelines
+        run: |
+          pd backup --all ../backup
+          ./local_run/plot_run.py ../backup
+
+      - name: store backups of long-running processes
+        id: store-backups-long-running
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        run: |
+          set -x
+          for NAME in $(docker ps --format '{{.Names}}' | grep CRS | sort)
+          do
+            TASK=$(echo $NAME | awk -F'___' '{print $2}')
+            JOB=$(echo $NAME | awk -F'___' '{print $3}')
+            REPLICANT=$(echo $NAME | awk -F'___' '{print $4}')
+            mkdir -p ./backup/$TASK.logs
+            docker logs $NAME &> ./backup/$TASK.logs/$REPLICANT-$JOB
+            mkdir -p /tmp/ci/long-running
+            echo "$REPLICANT-$JOB" >> /tmp/ci/long-running/$TASK
+          done
+
+      - name: upload backup plot
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        run: |
+          ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh storage@aixcc-diskman.adamdoupe.com "mkdir -p web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}"
+          scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh /tmp/task_durations.html storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/task_durations.html
+
+      - name: store backup
+        id: store-backup
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        run: |
+          ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh storage@aixcc-diskman.adamdoupe.com "mkdir -p web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}"
+          # want to untar to something different each time
+          mv ./backup ./backup-${{ matrix.targets.short-name }}-${{ github.run_id }}
+          tar -czf backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz ./backup-${{ matrix.targets.short-name }}-${{ github.run_id }}
+          mv ./backup-${{ matrix.targets.short-name }}-${{ github.run_id }} ./backup
+
+          mv ./backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz ./backup
+          rsync -e "ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh"  -azP ./backup/ storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}
+
+      - name: generate summary
+        id: generate-summary
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        working-directory: ./pipelines
+        run: |
+          echo "# Full pipeline CI of ${{ matrix.targets.short-name }} for ${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }} minutes" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "[📈 Task Execution Timeline](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/task_durations.html)" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "${{ github.event.inputs.monitor-docker }}" = "true" ]
+          then
+            echo "[📈 Docker Stats Timeline](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/container_plots/index.html)" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "${{ github.event.inputs.inject-crash }}" = "true" ]
+          then
+            echo "**Crash Injection Attempted**" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "### Run Artifacts" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full backup.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full shared.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/shared.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "" | tee -a "$GITHUB_STEP_SUMMARY"
+          
+          BACKUP_DIR=../backup STORAGE_URL=https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }} ./local_run/generate_summary.py | tee -a "$GITHUB_STEP_SUMMARY"
+          
+          # Store the summary as well
+          scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh $GITHUB_STEP_SUMMARY storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/summary.md
+
+          if [ "${{ github.event.inputs.monitor-docker }}" = "true" ]
+          then
+            # Do the docker mon here to give it some time to finish
+            while [ -e /proc/$DOCKER_MON_PID ]
+            do
+                echo "Process: $DOCKER_MON_PID is still running (DockerMon)"
+                echo "AAA" > /tmp/STOP_THE_PYTHON_LOGGER
+                sleep 5
+            done
+            if [ -f /tmp/docker_mon.log ]
+            then
+              echo "Uploading docker_mon.log"
+              scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh /tmp/docker_mon.log storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/docker_mon.log
+              rm /tmp/docker_mon.log
+            fi
+            if [ -f /tmp/dump_stats.csv ]
+            then
+              scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh /tmp/dump_stats.csv storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/dump_stats.csv
+              rm /tmp/dump_stats.csv
+            fi
+            if [ -f /tmp/dump_labels.csv ]
+            then
+              scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh /tmp/dump_labels.csv storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/dump_labels.csv
+              rm /tmp/dump_labels.csv
+            fi
+            if [ -d /tmp/container_plots ]
+            then
+                echo "Uploading container plots"
+                scp -v -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh -r /tmp/container_plots/ storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/container_plots
+            fi
+          fi
+
+      - name: Store results in a csv file on the server
+        if: ${{ always() && steps.generate-summary.conclusion == 'success' && github.ref == 'refs/heads/main' }}
+        working-directory: ./pipelines
+        run: |
+          set -x
+          ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh storage@aixcc-diskman.adamdoupe.com "echo \"${{ github.run_id }},${{ github.sha }},${{ matrix.targets.short-name }},${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }},${{ env.VDS_SUBMISSION_NUM }},${{ env.VDS_SUCCESS_NUM }},${{ env.VDS_PENDING_NUM }},${{ env.GP_SUBMISSION_NUM }},${{ env.GP_SUCCESS_NUM }},${{ env.GP_PENDING_NUM }},$(pd ls povguy.pov_report_path | wc -l),$(pd ls find_first_crash_commit.crashing_commit | wc -l)\" >> web/ci-status/status.csv"
+
+
+      - name: kill all docker containers
+        if: ${{ always() }}
+        id: kill-all-docker-containers
+        run: |
+          sudo systemctl restart docker
+          docker rm -f $(docker ps -aq) || true
+
+      - name: Clean up backup
+        if: ${{ always() && steps.create-memfs.conclusion == 'success' }}
+        run: |
+          set -x
+          lsof | grep /mnt/tmpfs || true
+          sudo umount /mnt/tmpfs
+
+      - name: Cleanup pipeline data
+        if: always()
+        working-directory: ./pipelines
+        run: |
+          pdl --unlock || rm -rf pipeline.lock
+
+      # - name: Stop any docker containers
+      #   if: ${{ always() }}
+      #   run: |
+      #     sudo systemctl restart docker
+      #     docker rm -f $(docker ps -aq) || true
+
+      - name: upload capi_lops
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: capi_logs-${{ matrix.targets.name }}-${{ github.run_id }}
+          path: ./pipelines/meta-components/aixcc-sc-capi/capi_logs
+
+      - name: prep shared
+        id: prep-shared
+        if: ${{ false && always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        run: |
+          sudo tar --owner=1000 --group=1000 -czf ./shared.tar.gz /shared
+          sudo chmod 666 ./shared.tar.gz
+
+      - name: upload shared
+        id: upload-shared
+        if: ${{ false && always() && steps.prep-shared.conclusion == 'success' }}
+        run: |
+          ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh storage@aixcc-diskman.adamdoupe.com "mkdir -p web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}"
+          scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh ./shared.tar.gz storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}
+
+      - name: setup component testing only for successful, main, short runs
+        if: ${{ always() && steps.generate-summary.conclusion == 'success' && steps.store-backup.conclusion == 'success' && steps.upload-shared.conclusion == 'success' && github.ref == 'refs/heads/main' && env.PIPELINE_RUN_TYPE == 'short' }}
+        run: |
+          set -x
+          echo $tasks
+          this_run_id=${{ github.run_id }}
+          SSH_ARGS="-o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh"
+          for task in $tasks
+          do
+            echo $task
+            task_ran_name=${task}_RAN
+            echo $task_ran_name
+            did_task_run=${!task_ran_name}
+            if [ "$did_task_run" = "yes" ]
+            then
+              echo "$task ran"
+              ssh $SSH_ARGS storage@aixcc-diskman.adamdoupe.com "mkdir -p web/$task/${{ matrix.targets.short-name }}/$this_run_id && cd web/$task/${{ matrix.targets.short-name }}/$this_run_id && echo \"$this_run_id\" > ./run_id && ln -s ../../../pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz ./backup.tar.gz && ln -s ../../../pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/shared.tar.gz ./shared.tar.gz"
+
+              # check if we're the latest
+              latest_id=$(ssh $SSH_ARGS storage@aixcc-diskman.adamdoupe.com "cat web/$task/${{ matrix.targets.short-name }}/latest/run_id" || echo "0")
+              echo "$latest_id latest_id"
+              if [ "$this_run_id" -gt "$latest_id" ]
+              then
+                echo "setting new link"
+                ssh $SSH_ARGS storage@aixcc-diskman.adamdoupe.com "cd web/$task/${{ matrix.targets.short-name }} && (unlink latest || true) && ln -s ./$this_run_id latest"
+              fi
+            fi
+          done
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -d pipelines/meta-components/aixcc-sc-capi/cp_root ]
+          then
+            sudo rm -rf ./pipelines/meta-components/aixcc-sc-capi/cp_root/*
+          fi
+          if [ -d pipelines/meta-components/aixcc-sc-capi/capi_logs ]
+          then
+            sudo rm -rf pipelines/meta-components/aixcc-sc-capi/capi_logs
+          fi
+
+          rm -rf ./backup
+          rm -rf ./prior-backup
+          rm -rf ./shared.tar.gz
+          rm -rf ./prior-backup.tar.gz
+          rm -rf ./prior-shared.tar.gz
+          rm -rf /tmp/step_summary.md
+
+          sudo rm -rf /crs_scratch/*
+          sudo rm -rf /shared/*
+
+  show-summary:
+    runs-on: self-hosted
+    name: Show summary of the pipeline run
+    if: ${{ always() }}
+    needs: [ test-full-pipeline, extract-data ]
+    steps:
+      - name: checkout this repo temporarily
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: pipelines-lite
+          persist-credentials: true
+          lfs: false
+          submodules: false
+          fetch-depth: 1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install shit
+        shell: bash
+        run: |
+          pip install 'discord.py>=2.0'
+          pip install tabulate
+      - name: generate the summary
+        working-directory: ./pipelines-lite
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+          RUN_ID: ${{ github.run_id }}
+          TASKS: ${{ needs.extract-data.outputs.targets-full-ready }}
+        run: |
+          echo "Summary of the pipeline run"
+          echo "$TASKS" > /tmp/targets.json
+
+          ./local_run/ci_run_summary.py --run-id ${{ github.run_id }} --targets /tmp/targets.json
+
+  # test-components:
+  #   runs-on: self-hosted
+  #   name: Test ${{ matrix.components.short-name }} on ${{ matrix.targets.name }}
+  #   needs: [build-local-pipeline, extract-data]
+  #   if: false
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       targets: ${{ fromJson(needs.extract-data.outputs.targets) }}
+
+  #       components:
+  #         - name: libfuzzer
+  #           test-pipeline-dir: ./components/generic_c/libfuzzer/test_features/challenge-004-nginx-cp
+  #           prod-pipeline-dir: ./components/generic_c/libfuzzer
+  #           timeout: 20m
+  #           maintainer: <@320594955779309569>
+  #           pipeline-init: |
+  #             pd inject analyze_target.target_with_sources 1 < "$TARGET_FILENAME"
+  #             echo works: true | pd inject libfuzzer_build.target_image_id 1
+  #           success-check: |
+  #             [ $(pd ls libfuzzer_fuzz.benigns_dir | wc -l) -gt 0 ]
+  #           extra-cleanup: |
+  #             docker kill $(docker ps | grep challenge-004-nginx-cp | cut -f 1 -d ' ') || true
+
+  #   steps:
+  #     - uses: shellphish-support-syndicate/action-setup-pipeline@main
+  #       with:
+  #         ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+  #         ghcr-username: ${{ secrets.GHCR_USERNAME }}
+  #         ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+
+  #     - name: Test ${{ matrix.components.name }} test pipeline
+  #       id: test-pipeline
+  #       working-directory: ./pipelines/${{ matrix.components.test-pipeline-dir }}
+  #       run: |
+  #         pdl --no-lockstep --no-launch-agent
+  #       if: matrix.components.test-pipeline-dir
+
+  #     - name: Ping cause something broke
+  #       env:
+  #         DISCORD_WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+  #       uses: Ilshidur/action-discord@master
+  #       with:
+  #         args: |
+  #           🤡 ${{ matrix.components.maintainer || '' }} joins 🎪 because ${{ matrix.components.name }}'s testing `pipeline.yaml` in ${{ matrix.components.test-pipeline-dir }} is broken.
+
+  #           ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  #       if: failure() && steps.test-pipeline.conclusion == 'failure' && github.ref == 'refs/heads/main'
+
+  #     - name: Download ${{ matrix.targets.name }}
+  #       run: |
+  #         [ -f "$GITHUB_WORKSPACE/.targets/${{ matrix.targets.file }}" ] && exit 0
+
+  #         mkdir -p $GITHUB_WORKSPACE/.targets/
+  #         cd $GITHUB_WORKSPACE/.targets/
+  #         git clone ${{ matrix.targets.repo }} ${{ matrix.targets.name }}
+  #         (
+  #           pushd ${{ matrix.targets.name }}
+  #           make cpsrc-prepare
+  #           make docker-pull
+  #           popd
+  #         )
+  #         tar czf ${{ matrix.targets.file }} -C ${{ matrix.targets.name }} .
+
+
+  #     - name: Test ${{ matrix.components.name }} component on ${{ matrix.targets.name }}
+  #       working-directory: ./pipelines/${{ matrix.components.test-pipeline-dir }}
+  #       run: |
+  #         export TARGET_FILENAME="$GITHUB_WORKSPACE/.targets/${{ matrix.targets.file }}"
+  #         pdl --unlock || rm -rf pipeline.lock
+  #         pdl --name ${{ matrix.components.name }}_test
+  #         ${{ matrix.components.pipeline-init }}
+  #         pd --debug-trace --fail-fast run &
+  #         export RUN_PID=$!
+  #         (sleep ${{ matrix.components.timeout }} && echo "testing ${{ matrix.components.name }} component on ${{ matrix.targets.name }} timed out" >> $GITHUB_STEP_SUMMARY && kill -s SIGALRM $$)&
+  #         export SLEEP_PID=$!
+  #         while true
+  #         do
+  #          if ${{ matrix.components.success-check }}
+  #          then
+  #            echo "success ${{ matrix.components.name }} component on ${{ matrix.targets.name }}" >> $GITHUB_STEP_SUMMARY
+  #            kill $RUN_PID || true
+  #            kill -9 $SLEEP_PID || true
+  #            exit 0
+  #          fi
+  #         done
+  #       if: matrix.components.test-pipeline-dir && matrix.components.pipeline-init && matrix.components.success-check
+
+  #     - name: Cleanup
+  #       if: always()
+  #       working-directory: ./pipelines/${{ matrix.components.test-pipeline-dir }}
+  #       run: |
+  #         pdl --unlock || true
+  #         ${{ matrix.components.extra-cleanup || '' }}
+

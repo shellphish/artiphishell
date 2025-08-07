@@ -1,0 +1,4 @@
+filename: 3
+sha256: c366d55f904da031ee3591c0b2b67db15068e35543ad03f4abe215411c1deeef
+source: https://github.com/dvyukov/go-fuzz-corpus/
+source_relative_path: http2/corpus/3

@@ -1,0 +1,30 @@
+# Base image
+FROM neo4j:5.15
+LABEL org.opencontainers.image.source=https://github.com/aixcc-sc/asc-crs-shellphish
+
+ARG KB_NAME
+RUN echo $KB_NAME
+
+# RUN apt-get update && apt-get install -y wget curl git python3 python3-pip python3-venv python3-virtualenvwrapper
+# RUN apt-get update && apt-get install -y python-is-python3
+# RUN apt-get update && apt-get install -y unar zip tmux vim htop
+# RUN pip install --progress-bar off --upgrade pip neo4j gitpython neomodel ipdb python-dateutil numpy pandas tqdm requests unidiff pyyaml flask clang libclang jinja2 litellm beautifulsoup4
+
+ENV NEO4J_HOME=/knowledge-base-data/
+
+# Expose Neo4j ports
+EXPOSE 7474 7473 7687
+
+# create a user `Lukas-Dresel` with uid 1003 to match beatty
+RUN useradd -ms /bin/bash -u 1003 Lukas-Dresel
+ENV PATH=$PATH:/home/Lukas-Dresel/.local/bin
+
+# COPY ./ /workspaces/knowledge-base/
+# RUN chown -R Lukas-Dresel:Lukas-Dresel /workspaces/knowledge-base/
+# RUN pip install -e /workspaces/knowledge-base/
+# WORKDIR /workspaces/knowledge-base/
+
+USER Lukas-Dresel
+
+ADD entrypoint.sh /entrypoint.sh
+ENTRYPOINT [ "/entrypoint.sh" ]

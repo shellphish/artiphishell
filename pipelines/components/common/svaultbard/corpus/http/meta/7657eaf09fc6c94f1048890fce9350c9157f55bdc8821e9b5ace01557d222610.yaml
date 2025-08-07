@@ -1,0 +1,4 @@
+filename: 6c4d25881419fc697ba32a42a97a460bbd8f92e3
+sha256: 7657eaf09fc6c94f1048890fce9350c9157f55bdc8821e9b5ace01557d222610
+source: https://storage.googleapis.com/nginx-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/nginx_http_request_fuzzer/public.zip
+source_relative_path: 6c4d25881419fc697ba32a42a97a460bbd8f92e3

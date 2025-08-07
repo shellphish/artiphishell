@@ -1,0 +1,117 @@
+
+TITLE: "Send Hardest Problems My Way: Probabilistic Path Prioritization for Hybrid Fuzzing"
+PUBLISHED_AT: "Network and Distributed Systems Symposium (NDSS)"
+PUBLICATION_TYPE: Conference
+YEAR: 2019
+AUTHORS:
+- FIRSTNAME: Lei
+  LASTNAME: Zhao
+  EMAIL: "leizhao@whu.edu.cn"
+  AFFILIATION:
+    COUNTRY: China
+    INSTITUTION: Wuhan University
+    CITY: Wuhan
+    SCHOOL: School of Cyber Science and Engineering
+- FIRSTNAME: Yue
+  LASTNAME: Duan
+  EMAIL: "yduan005@cs.ucr.edu"
+  AFFILIATION:
+    INSTITUTION: University of California, Riverside
+    CITY: Riverside
+    COUNTRY: United States
+    SCHOOL: Department of Computer Science and Engineering
+- FIRSTNAME: Heng
+  LASTNAME: Yin
+  EMAIL: "heng@cs.ucr.edu"
+  AFFILIATION:
+    INSTITUTION: University of California, Riverside
+    CITY: Riverside
+    COUNTRY: United States
+    SCHOOL: Department of Computer Science and Engineering
+- FIRSTNAME: Jifeng
+  LASTNAME: Xuan
+  EMAIL: "jxuan@whu.edu.cn"
+  AFFILIATION:
+    COUNTRY: China
+    INSTITUTION: Wuhan University
+    CITY: Wuhan
+    SCHOOL: School of Computer Science
+
+TOOL_NAME: DigFuzz
+TOOL_ARTIFACTS:
+  - TYPE: github
+    URL: https://github.com/shouc/digfuzz
+    STATE: PRESENT
+    MIRRORED_URL: https://github.com/Lukas-Dresel/digfuzz
+
+BENCHMARKS:
+  - Name: CGC
+  - Name: LAVA-M
+
+COMPARES_AGAINST:
+  - tool: AFL
+  - tool: Driller
+  - tool: MDPC
+    Paper: Towards optimal concolic testing
+
+PDF: files/digfuzz_ndss19.pdf
+
+LINKS:
+  - URL: "https://www.cs.ucr.edu/~heng/pubs/digfuzz_ndss19.pdf"
+    TYPE: PDF
+
+  - URL: "https://ieeexplore.ieee.org/document/9280412"
+    TYPE: IEEE-XPLORE
+
+BIBTEX:
+  - |
+    @article{Zhao2019SendHP,
+      title={Send Hardest Problems My Way: Probabilistic Path Prioritization for Hybrid Fuzzing},
+      author={Lei Zhao and Yue Duan and Heng Yin and J. Xuan},
+      journal={Proceedings 2019 Network and Distributed System Security Symposium},
+      year={2019},
+      url={https://api.semanticscholar.org/CorpusID:85549130}
+    }
+  - |
+    @ARTICLE{9280412,
+      author={Zhao, Lei and Cao, Pengcheng and Duan, Yue and Yin, Heng and Xuan, Jifeng},
+      journal={IEEE Transactions on Dependable and Secure Computing},
+      title={Probabilistic Path Prioritization for Hybrid Fuzzing},
+      year={2022},
+      volume={19},
+      number={3},
+      pages={1955-1973},
+      keywords={Fuzzing;Testing;Throughput;Probabilistic logic;Prototypes;Estimation;Monte Carlo methods;Software security;fuzz testing;concolic execution;hybrid fuzzing},
+      doi={10.1109/TDSC.2020.3042259}
+    }
+
+ABSTRACT: |
+  Hybrid fuzzing which combines fuzzing and con-
+  colic execution has become an advanced technique for software
+  vulnerability detection. Based on the observation that fuzzing
+  and concolic execution are complementary in nature, the state-
+  of-the-art hybrid fuzzing systems deploy “demand launch” and
+  “optimal switch” strategies. Although these ideas sound in-
+  triguing, we point out several fundamental limitations in them,
+  due to oversimplified assumptions. We then propose a novel
+  “discriminative dispatch” strategy to better utilize the capability
+  of concolic execution. We design a novel Monte Carlo based
+  probabilistic path prioritization model to quantify each path’s
+  difficulty and prioritize them for concolic execution. This model
+  treats fuzzing as a random sampling process. It calculates each
+  path’s probability based on the sampling information. Finally, our
+  model prioritizes and assigns the most difficult paths to concolic
+  execution. We implement a prototype system DigFuzz and eval-
+  uate our system with two representative datasets. Results show
+  that the concolic execution in DigFuzz outperforms than those
+  in state-of-the-art hybrid fuzzing systems in every major aspect.
+  In particular, the concolic execution in DigFuzz contributes to
+  discovering more vulnerabilities (12 vs. 5) and producing more
+  code coverage (18.9% vs. 3.8%) on the CQE dataset than the
+  concolic execution in Driller.
+
+NOTES:
+  SYMCTS:
+    - "Built on angr, quite slow, only evaluates on old concolic tools"
+    - "Old datasets"
+    - "Doesn't evaluate against fuzzing at all"

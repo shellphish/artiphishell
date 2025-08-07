@@ -1,0 +1,17 @@
+crash_id: '4639774828505598817'
+crash_reason: SEGV-on-unknown-address
+detection_strategy: fuzzing
+harness_id: id_1
+target_id: '1'
+pois:
+- reason: 'AddressSanitizer: SEGV on unknown address 0x100080013592 (pc 0x555555638f54 bp 0x7fffffffcd80 sp 0x7fffffffcbd0 T0)
+==75664==The signal is caused by a READ memory access.
+    #0 0x555555638f54 in perform_select /home/degrigis/aixcc-blueberry/targets-semis-nilo-the-force-awakens/src/nilo-the-force-awakens/nilo-the-force-awakens.c:19'
+  source_location:
+    function_signature: 'void perform_select(int *, int)'
+    key_index: src/nilo-the-force-awakens/nilo-the-force-awakens.c:12:1::void perform_select(int *, int)
+    line_number: 19
+    line_text: 'fake'
+    relative_file_path: nilo-the-force-awakens.c
+    symbol_offset: 0
+    symbol_size: 0

@@ -1,0 +1,27 @@
+version: "3.3"
+services:
+
+  fuzzing:
+    image: fuzzing
+    user: "ubuntu:ubuntu"
+    build:
+      context: ./repos/werkzeug/fuzzing/image
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - "~/lukas/research/mctsse:/mctsse:rw"
+    privileged: true
+    stdin_open: true
+    tty: true
+    entrypoint: "/bin/bash -c 'while true; do echo Sleeping; sleep 10000000000; done'"
+#    ports:
+#      - "6379"
+#    networks:
+#      - frontend
+#    deploy:
+#      replicas: 2
+#      update_config:
+#        parallelism: 2
+#        delay: 10s
+#      restart_policy:
+#        condition: on-failure

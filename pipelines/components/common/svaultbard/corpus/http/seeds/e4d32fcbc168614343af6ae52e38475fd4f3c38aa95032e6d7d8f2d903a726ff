@@ -1,0 +1,2 @@
+request: "F / HTTP/1.94\nhost:f\n\n"
+reply: "HTTP/1.0 871\n\n"

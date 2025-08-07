@@ -1,0 +1,185 @@
+cp_harness_binary_path: out/filein_harness
+cp_harness_id: id_1
+cp_harness_name: filein_harness
+cp_harness_source_path: src/test/filein_harness.c
+crash_report_id: bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5
+fuzzer: aflplusplus
+harness_info_id: 6266084036248297570
+original_crash_id: 9563fd749702688369af1a1c5ed728c4df037488f5ccb82f5a2fb0be72cbbbf1
+run_pov_result:
+  cid: 3b38aa4a5cd1844e5ed358ee27c15ad79dc82fe5f2eb5084b59d4bde5247be40
+  exitcode: 0
+  pov:
+    reports:
+    - error_line: 'ERROR: AddressSanitizer: global-buffer-overflow on address 0x<REDACTED>
+        at pc 0x<REDACTED> bp 0x<REDACTED> sp 0x<REDACTED>'
+      report: "\n WRITE of size <REDACTED> at 0x<REDACTED> thread T0\n     #0 0x<REDACTED>\
+        \ in fgets /src/llvm-project/compiler-rt/lib/asan/../sanitizer_common/sanitizer_common_interceptors.inc:1204:5\n\
+        \     #1 0x<REDACTED> in func_a (/out/filein_harness+0x1a6a4e)\n     #2 0x<REDACTED>\
+        \ in LLVMFuzzerTestOneInput (/out/filein_harness+0x1a7771)\n     #3 0x<REDACTED>\
+        \ in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)\
+        \ /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13\n     #4\
+        \ 0x<REDACTED> in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned\
+        \ long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6\n\
+        \     #5 0x<REDACTED> in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned\
+        \ char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9\n\
+        \     #6 0x<REDACTED> in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10\n\
+        \     #7 0x<REDACTED> in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082)\
+        \ (BuildId: 0702430aef5fa3dda43986563e9ffcc47efbd75e)\n     #8 0x<REDACTED>\
+        \ in _start (/out/filein_harness+0x3c6fd)\n \n 0x<REDACTED> is located <REDACTED>\
+        \ bytes before global variable 'pipefd' defined in 'filein_harness.c' (0x<REDACTED>)\
+        \ of size <REDACTED>\n 0x<REDACTED> is located <REDACTED> bytes after global\
+        \ variable 'items' defined in 'filein_harness.c' (0x<REDACTED>) of size <REDACTED>\n\
+        \ SUMMARY: AddressSanitizer: global-buffer-overflow /src/llvm-project/compiler-rt/lib/asan/../sanitizer_common/sanitizer_common_interceptors.inc:1204:5\
+        \ in fgets\n Shadow bytes around the buggy address:\n   0x<REDACTED>: 00 00\
+        \ 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00\
+        \ 00 00 00 00 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00\
+        \ 00 00 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00\
+        \ 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00\
+        \ 00 00 00 00 00 00\n =>0x<REDACTED>: 00 00 00 00 00 00 00[06]f9 f9 f9 f9\
+        \ 00 f9 f9 f9\n   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00 00 00 00 00\
+        \ 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n\
+        \   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n   0x<REDACTED>:\
+        \ 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00\
+        \ 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n Shadow byte legend (one shadow\
+        \ byte represents 8 application bytes):\n   Addressable:           00\n  \
+        \ Partially addressable: 01 02 03 04 05 06 07 \n   Heap left redzone:    \
+        \   fa\n   Freed heap region:       fd\n   Stack left redzone:      f1\n \
+        \  Stack mid redzone:       f2\n   Stack right redzone:     f3\n   Stack after\
+        \ return:      f5\n   Stack use after scope:   f8\n   Global redzone:    \
+        \      f9\n   Global init order:       f6\n   Poisoned by user:        f7\n\
+        \   Container overflow:      fc\n   Array cookie:            ac\n   Intra\
+        \ object redzone:    bb\n   ASan internal:           fe\n   Left alloca redzone:\
+        \     ca\n   Right alloca redzone:    cb\n <MARKER>ABORTING"
+      stacktraces:
+      - depth: 0
+        func_name: fgets
+        line: 1204
+        signature: fgets
+        src_file: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+        src_loc: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:1204
+        type: source
+      - binary: ../(/out/filein_harness+0x1a6a4e)
+        depth: 1
+        func_name: func_a
+        signature: func_a
+        type: maybe_asan_interceptor
+      - binary: ../(/out/filein_harness+0x1a7771)
+        depth: 2
+        func_name: LLVMFuzzerTestOneInput
+        signature: LLVMFuzzerTestOneInput
+        type: maybe_asan_interceptor
+      - depth: 3
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 4
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 5
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 6
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 7
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      - binary: ../(/out/filein_harness+0x3c6fd)
+        depth: 8
+        func_name: _start
+        signature: _start
+        type: maybe_asan_interceptor
+      triggered_sanitizers:
+      - id_1
+    triggered_sanitizers: !!set
+      id_1: null
+  stderr: !!binary |
+    IElORk86IFJ1bm5pbmcgd2l0aCBlbnRyb3BpYyBwb3dlciBzY2hlZHVsZSAoMHhGRiwgMTAwKS4K
+    IElORk86IFNlZWQ6IDI5NjI4ODYzMzEKIElORk86IExvYWRlZCAxIG1vZHVsZXMgICAoNjkgaW5s
+    aW5lIDgtYml0IGNvdW50ZXJzKTogNjkgWzB4NTU1NTU1NzVlMmMwLCAweDU1NTU1NTc1ZTMwNSks
+    IAogSU5GTzogTG9hZGVkIDEgUEMgdGFibGVzICg2OSBQQ3MpOiA2OSBbMHg1NTU1NTU3NWUzMDgs
+    MHg1NTU1NTU3NWU3NTgpLCAKIC9vdXQvZmlsZWluX2hhcm5lc3M6IFJ1bm5pbmcgMSBpbnB1dHMg
+    MSB0aW1lKHMpIGVhY2guCiBSdW5uaW5nOiAvd29yay90bXBfYmxvYgogPT09PT09PT09PT09PT09
+    PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KID09MTQ9
+    PUVSUk9SOiBBZGRyZXNzU2FuaXRpemVyOiBnbG9iYWwtYnVmZmVyLW92ZXJmbG93IG9uIGFkZHJl
+    c3MgMHg1NTU1NTYwZTc5YmUgYXQgcGMgMHg1NTU1NTU2NDBhYmMgYnAgMHg3ZmZmZmZmZmUyNjAg
+    c3AgMHg3ZmZmZmZmZmRhMjgKIFdSSVRFIG9mIHNpemUgNDAgYXQgMHg1NTU1NTYwZTc5YmUgdGhy
+    ZWFkIFQwCiAgICAgIzAgMHg1NTU1NTU2NDBhYmIgaW4gZmdldHMgL3NyYy9sbHZtLXByb2plY3Qv
+    Y29tcGlsZXItcnQvbGliL2FzYW4vLi4vc2FuaXRpemVyX2NvbW1vbi9zYW5pdGl6ZXJfY29tbW9u
+    X2ludGVyY2VwdG9ycy5pbmM6MTIwNDo1CiAgICAgIzEgMHg1NTU1NTU2ZmFhNGUgaW4gZnVuY19h
+    ICgvb3V0L2ZpbGVpbl9oYXJuZXNzKzB4MWE2YTRlKQogICAgICMyIDB4NTU1NTU1NmZiNzcxIGlu
+    IExMVk1GdXp6ZXJUZXN0T25lSW5wdXQgKC9vdXQvZmlsZWluX2hhcm5lc3MrMHgxYTc3NzEpCiAg
+    ICAgIzMgMHg1NTU1NTU1YWY0OTAgaW4gZnV6emVyOjpGdXp6ZXI6OkV4ZWN1dGVDYWxsYmFjayh1
+    bnNpZ25lZCBjaGFyIGNvbnN0KiwgdW5zaWduZWQgbG9uZykgL3NyYy9sbHZtLXByb2plY3QvY29t
+    cGlsZXItcnQvbGliL2Z1enplci9GdXp6ZXJMb29wLmNwcDo2MTQ6MTMKICAgICAjNCAweDU1NTU1
+    NTU5OWMyNCBpbiBmdXp6ZXI6OlJ1bk9uZVRlc3QoZnV6emVyOjpGdXp6ZXIqLCBjaGFyIGNvbnN0
+    KiwgdW5zaWduZWQgbG9uZykgL3NyYy9sbHZtLXByb2plY3QvY29tcGlsZXItcnQvbGliL2Z1enpl
+    ci9GdXp6ZXJEcml2ZXIuY3BwOjMyNzo2CiAgICAgIzUgMHg1NTU1NTU1OWY2YmEgaW4gZnV6emVy
+    OjpGdXp6ZXJEcml2ZXIoaW50KiwgY2hhcioqKiwgaW50ICgqKSh1bnNpZ25lZCBjaGFyIGNvbnN0
+    KiwgdW5zaWduZWQgbG9uZykpIC9zcmMvbGx2bS1wcm9qZWN0L2NvbXBpbGVyLXJ0L2xpYi9mdXp6
+    ZXIvRnV6emVyRHJpdmVyLmNwcDo4NjI6OQogICAgICM2IDB4NTU1NTU1NWNiYWIyIGluIG1haW4g
+    L3NyYy9sbHZtLXByb2plY3QvY29tcGlsZXItcnQvbGliL2Z1enplci9GdXp6ZXJNYWluLmNwcDoy
+    MDoxMAogICAgICM3IDB4N2ZmZmY3YTU5MDgyIGluIF9fbGliY19zdGFydF9tYWluICgvbGliL3g4
+    Nl82NC1saW51eC1nbnUvbGliYy5zby42KzB4MjQwODIpIChCdWlsZElkOiAwNzAyNDMwYWVmNWZh
+    M2RkYTQzOTg2NTYzZTlmZmNjNDdlZmJkNzVlKQogICAgICM4IDB4NTU1NTU1NTkwNmZkIGluIF9z
+    dGFydCAoL291dC9maWxlaW5faGFybmVzcysweDNjNmZkKQogCiAweDU1NTU1NjBlNzliZSBpcyBs
+    b2NhdGVkIDM0IGJ5dGVzIGJlZm9yZSBnbG9iYWwgdmFyaWFibGUgJ3BpcGVmZCcgZGVmaW5lZCBp
+    biAnZmlsZWluX2hhcm5lc3MuYycgKDB4NTU1NTU2MGU3OWUwKSBvZiBzaXplIDgKIDB4NTU1NTU2
+    MGU3OWJlIGlzIGxvY2F0ZWQgMCBieXRlcyBhZnRlciBnbG9iYWwgdmFyaWFibGUgJ2l0ZW1zJyBk
+    ZWZpbmVkIGluICdmaWxlaW5faGFybmVzcy5jJyAoMHg1NTU1NTYwZTc5YTApIG9mIHNpemUgMzAK
+    IFNVTU1BUlk6IEFkZHJlc3NTYW5pdGl6ZXI6IGdsb2JhbC1idWZmZXItb3ZlcmZsb3cgL3NyYy9s
+    bHZtLXByb2plY3QvY29tcGlsZXItcnQvbGliL2FzYW4vLi4vc2FuaXRpemVyX2NvbW1vbi9zYW5p
+    dGl6ZXJfY29tbW9uX2ludGVyY2VwdG9ycy5pbmM6MTIwNDo1IGluIGZnZXRzCiBTaGFkb3cgYnl0
+    ZXMgYXJvdW5kIHRoZSBidWdneSBhZGRyZXNzOgogICAweDU1NTU1NjBlNzcwMDogMDAgMDAgMDAg
+    MDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAKICAgMHg1NTU1NTYwZTc3ODA6
+    IDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwCiAgIDB4NTU1
+    NTU2MGU3ODAwOiAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAw
+    MAogICAweDU1NTU1NjBlNzg4MDogMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAg
+    MDAgMDAgMDAgMDAKICAgMHg1NTU1NTYwZTc5MDA6IDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAw
+    IDAwIDAwIDAwIDAwIDAwIDAwIDAwCiA9PjB4NTU1NTU2MGU3OTgwOiAwMCAwMCAwMCAwMCAwMCAw
+    MCAwMFswNl1mOSBmOSBmOSBmOSAwMCBmOSBmOSBmOQogICAweDU1NTU1NjBlN2EwMDogMDAgMDAg
+    MDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAKICAgMHg1NTU1NTYwZTdh
+    ODA6IDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwCiAgIDB4
+    NTU1NTU2MGU3YjAwOiAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAwMCAw
+    MCAwMAogICAweDU1NTU1NjBlN2I4MDogMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAgMDAg
+    MDAgMDAgMDAgMDAgMDAKICAgMHg1NTU1NTYwZTdjMDA6IDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAw
+    IDAwIDAwIDAwIDAwIDAwIDAwIDAwIDAwCiBTaGFkb3cgYnl0ZSBsZWdlbmQgKG9uZSBzaGFkb3cg
+    Ynl0ZSByZXByZXNlbnRzIDggYXBwbGljYXRpb24gYnl0ZXMpOgogICBBZGRyZXNzYWJsZTogICAg
+    ICAgICAgIDAwCiAgIFBhcnRpYWxseSBhZGRyZXNzYWJsZTogMDEgMDIgMDMgMDQgMDUgMDYgMDcg
+    CiAgIEhlYXAgbGVmdCByZWR6b25lOiAgICAgICBmYQogICBGcmVlZCBoZWFwIHJlZ2lvbjogICAg
+    ICAgZmQKICAgU3RhY2sgbGVmdCByZWR6b25lOiAgICAgIGYxCiAgIFN0YWNrIG1pZCByZWR6b25l
+    OiAgICAgICBmMgogICBTdGFjayByaWdodCByZWR6b25lOiAgICAgZjMKICAgU3RhY2sgYWZ0ZXIg
+    cmV0dXJuOiAgICAgIGY1CiAgIFN0YWNrIHVzZSBhZnRlciBzY29wZTogICBmOAogICBHbG9iYWwg
+    cmVkem9uZTogICAgICAgICAgZjkKICAgR2xvYmFsIGluaXQgb3JkZXI6ICAgICAgIGY2CiAgIFBv
+    aXNvbmVkIGJ5IHVzZXI6ICAgICAgICBmNwogICBDb250YWluZXIgb3ZlcmZsb3c6ICAgICAgZmMK
+    ICAgQXJyYXkgY29va2llOiAgICAgICAgICAgIGFjCiAgIEludHJhIG9iamVjdCByZWR6b25lOiAg
+    ICBiYgogICBBU2FuIGludGVybmFsOiAgICAgICAgICAgZmUKICAgTGVmdCBhbGxvY2EgcmVkem9u
+    ZTogICAgIGNhCiAgIFJpZ2h0IGFsbG9jYSByZWR6b25lOiAgICBjYgogPT0xND09QUJPUlRJTkcK
+  stdout: !!binary |
+    IGxpYmZ1enplciBleGl0PTEK
+  time_end: 1720060056.9613798
+  time_start: 1720060048.3414145
+  time_taken: 8.619965314865112
+target_id: 1

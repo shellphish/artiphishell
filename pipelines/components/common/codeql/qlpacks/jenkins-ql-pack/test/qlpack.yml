@@ -1,0 +1,8 @@
+name: jenkins-infra/java-tests
+groups: [java, test]
+dependencies:
+  codeql/java-all: 0.8.1 # https://github.com/github/codeql/blob/main/java/ql/src/CHANGELOG.md
+  jenkins-infra/jenkins-codeql-lib: "*"
+  jenkins-infra/jenkins-codeql: "*"
+extractor: java
+tests: .

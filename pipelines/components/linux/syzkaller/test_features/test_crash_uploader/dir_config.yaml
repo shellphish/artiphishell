@@ -1,0 +1,16 @@
+crash_descriptions:
+  main_dir:     "./test_data/crashes/data/"
+  lock_dir:     "./test_data/crashes/lock/"
+  uploaded_dir: "./test_data/crashes/uploaded"
+  cokeyed_dirs:
+    meta:     "./test_data/crashes/meta/"
+crash_logs:
+  main_dir:     "./test_data/crash_logs/data/"
+  lock_dir:     "./test_data/crash_logs/lock/"
+  cokeyed_dirs:
+    meta: "./test_data/crash_logs/meta/"
+crash_reports:
+  main_dir:     "./test_data/crash_reports/data/"
+  lock_dir:     "./test_data/crash_reports/lock/"
+  cokeyed_dirs:
+    meta:     "./test_data/crash_reports/meta/"

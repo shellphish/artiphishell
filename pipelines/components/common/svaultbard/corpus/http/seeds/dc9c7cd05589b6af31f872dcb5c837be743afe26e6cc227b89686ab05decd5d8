@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/6.7 600\nH7.*/"

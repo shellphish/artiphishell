@@ -1,0 +1,37 @@
+G / HTTP/1.5
+;:
+Q:a  
+q:a 
+Q:a 
+;:Q 
+~:Q:a 
+;:Q 
+q:a 
+;:Q 
+~:Q 1Q:a 
+~:
+;:Q 
+~:Q 
+~:Q  
+q:a 
+Q:a 
+~:Q  
+q:a 
+;:Q 
+~:Q 
+Q:a 
+~:
+;:Q 
+~:Q 
+~:Q  
+q:a 
+Q:a 
+;:Q 
+~:Q5 
+;:Q a 
+~:Q 
+q:a 
+Q:a 
+;:Q 
+~:Q  per~:Q 
+ BIND

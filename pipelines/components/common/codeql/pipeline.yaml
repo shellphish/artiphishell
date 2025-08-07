@@ -1,0 +1,311 @@
+repo_classes:
+
+  ################### INPUTS ###################
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+  target_metadatas: MetadataRepository
+  info_extraction_requests: MetadataRepository
+  cp_image_ready: MetadataRepository
+
+  ################### OUTPUTS ###################
+
+  codeql_reports: BlobRepository
+  codeql_qlpack_reports: BlobRepository
+
+  info_extraction_results: MetadataRepository
+  kernel_reachability_results: MetadataRepository
+
+  libfuzzer_reaching_functions_dicts: BlobRepository
+  libfuzzer_reaching_files_dicts: BlobRepository
+
+  ################### INTERMEDIATES ###################
+  codeql_image_ready:
+    cls: MetadataRepository
+    required: false
+  database_dirs:
+    cls: FilesystemRepository
+    required: false
+  info_extraction_bqrs_results_dirs:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+    required: false
+
+tasks:
+  codeql_image_build:
+    # job_quota:
+    #   cpu: 32
+    #   mem: "128Gi"
+    job_quota:
+      max: 0.08
+    links:
+      target_id:
+        repo: targets_with_sources
+        kind: InputId
+      cp_image_ready:
+        repo: cp_image_ready
+        kind: InputId
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      codeql_image_ready:
+        repo: codeql_image_ready
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-codeql
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          # This component should never fail
+          trap "exit 0" EXIT
+
+          # This is a placeholder for the image name, will be replaced by the actual image name if the build is successful
+          echo "image_name: !!INVALID!! > {{ codeql_image_ready | shquote }}"
+
+          CP_NAME=$(yq '.cp_name' {{target_with_sources|shquote}}/project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')
+
+          TEMP_DIR=/shared/codeql_create_db/{{target_id}}-"${CP_NAME}"/
+          mkdir -p "$TEMP_DIR"
+          rsync -ra {{ target_with_sources | shquote }}/ $TEMP_DIR/
+          (
+            cd "$TEMP_DIR"
+            cp -r /shellphish/ ./shellphish/
+
+            cat project.yaml | yq -j > project.json
+
+            BASE_DOCKER_IMAGE=$(yq -r '.docker_image' ./project.yaml)
+            export DOCKER_IMAGE_NAME="aixcc-codeql-build-{{target_id}}-${CP_NAME}"
+
+            rm .dockerignore || true
+
+            sudo chown -R $(id -u):$(id -g) ./
+
+            docker build --build-arg=BASE_IMAGE=${BASE_DOCKER_IMAGE} -t "${DOCKER_IMAGE_NAME}" -f /shellphish/Dockerfile.target .
+
+            echo "image_name: ${DOCKER_IMAGE_NAME}" > {{ codeql_image_ready | shquote }}
+          )
+          rm -rf "$TEMP_DIR"
+  codeql_create_db:
+    # job_quota:
+    #   cpu: 32
+    #   mem: "128Gi"
+    job_quota:
+      max: 0.45
+    links:
+      target_id:
+        repo: targets_with_sources
+        kind: InputId
+      codeql_image_ready:
+        repo: codeql_image_ready
+        kind: InputMetadata
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      database_dir:
+        repo: database_dirs
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-codeql
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          # This component should never fail
+          trap "exit 0" EXIT
+
+          # exit if codeql_image_ready.image_name is !!INVALID!!
+          if [ {{ codeql_image_ready.image_name | shquote }} == "!!INVALID!!" ]; then
+            exit 1
+          fi
+
+          # This is a placeholder for the codeql db directory, will be replaced by the actual db directory if the build is successful
+          echo "!!INVALID!!" > {{ database_dir | shquote }}/.invalid
+
+          CP_NAME=$(yq '.cp_name' {{target_with_sources|shquote}}/project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')
+          export DOCKER_IMAGE_NAME={{ codeql_image_ready.image_name | shquote }}
+
+          TEMP_DIR=/shared/codeql_create_db/{{target_id}}-"${CP_NAME}"/
+          mkdir -p "$TEMP_DIR"
+
+          rsync -ra {{ target_with_sources | shquote }}/ $TEMP_DIR/
+          (
+            cd "$TEMP_DIR"
+
+            sudo chown -R $(id -u):$(id -g) ./
+
+            CP_LANGUAGE=$(yq -r '.language' ./project.yaml)
+            CODEQL_LANGUAGE=$(/shellphish/to_codeql_lang.sh "$CP_LANGUAGE")
+            echo "CP_HARNESS_BUILD_PREFIX=/shellphish/codeql_build.py" >> .env.docker
+
+            /bin/bash -x ./run.sh build
+            rsync -ra --delete ./work/.sss-codeql-database/ {{ database_dir | shquote }}/
+          )
+          rm -rf "$TEMP_DIR"
+
+  codeql_run_info_extraction:
+    annotations:
+      maturity: inProgress
+      authors:
+        - honululu
+
+    # replicable: true
+    # job_quota:
+    #   cpu: 32
+    #   mem: "128Gi"
+    job_quota:
+      max: 0.2
+
+    links:
+      info_extraction_request:
+        repo: info_extraction_requests
+        kind: InputMetadata
+      info_extraction_request_path:
+        repo: info_extraction_requests
+        kind: InputFilepath
+
+      database_dir:
+        # this introduces an input dependency on the codeqlBuildOutDir output of the buildquy codeqlBuild task
+        repo: database_dirs
+        kind: InputFilepath
+        key: info_extraction_request.target_id
+      target_metadata:
+        repo: target_metadatas
+        kind: InputMetadata
+        key: info_extraction_request.target_id
+
+      info_extraction_bqrs_results_dir:
+        repo: info_extraction_bqrs_results_dirs
+        kind: OutputFilepath
+      info_extraction_results_path:
+        repo: info_extraction_results
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-codeql'
+
+        template: |
+          set -x
+
+          # This component should never fail
+          trap "exit 0" EXIT
+
+          # This is a placeholder for the results, will be replaced by the actual results if the build is successful
+          cp /shellphish/dummy_info_extraction.json {{ info_extraction_results_path | shquote }}
+
+          RESULTS_DIR={{ info_extraction_bqrs_results_dir | shquote }}
+
+          /shellphish/run_info_extraction.sh \
+                  --extraction-request {{ info_extraction_request_path | shquote }} \
+                  --database-dir {{ database_dir | shquote }} \
+                  --results-dir "$RESULTS_DIR" \
+                  --language $(/shellphish/to_codeql_lang.sh {{ target_metadata.language }})
+
+          for result in "$RESULTS_DIR"/*.bqrs; do
+            json_path="${result%.bqrs}.json"
+            codeql bqrs decode --format=json -o "$json_path" "$result"
+          done
+          python /shellphish/merge_jsons.py {{ info_extraction_results_path | shquote }} "$RESULTS_DIR"/*.json
+
+
+  extract_kernel_reachability_results:
+    annotations:
+      maturity: inProgress
+      authors:
+        - honululu
+    links:
+      request:
+        repo: info_extraction_requests
+        kind: InputMetadata
+      info_extraction_result:
+        repo: info_extraction_results
+        kind: InputFilepath
+
+      kernel_reachability_result:
+        repo: kernel_reachability_results
+        kind: OutputFilepath
+
+    job_quota:
+      cpu: 1
+      mem: "2Gi"
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-codeql'
+
+        template: |
+          set -x
+
+          # This component should never fail
+          trap "exit 0" EXIT
+
+          # This is a placeholder for the results, will be replaced by the actual results if following steps are successful
+          cp /shellphish/dummy_kernel_reachability.json {{ kernel_reachability_result | shquote }}
+
+          python /shellphish/extract-kernel-reachability-results.py {{info_extraction_result|shquote}} {{kernel_reachability_result|shquote}} {{request.target_id}}
+    
+  extract_generic_c_fuzzer_dicts:
+    annotations:
+      maturity: inProgress
+      authors:
+        - honululu
+
+    links:
+      request:
+        repo: info_extraction_requests
+        kind: InputMetadata
+      info_extraction_result:
+        repo: info_extraction_results
+        kind: InputFilepath
+
+      libfuzzer_reaching_functions_dict_path:
+        repo: libfuzzer_reaching_functions_dicts
+        kind: OutputFilepath
+      libfuzzer_reaching_files_dict_path:
+        repo: libfuzzer_reaching_files_dicts
+        kind: OutputFilepath
+
+    job_quota:
+      cpu: 1
+      mem: "2Gi"
+      
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-codeql'
+
+        template: |
+          set -x
+
+          # This component should never fail
+          trap "exit 0" EXIT
+
+          # This is a placeholder for the results, will be replaced by the actual results if following steps are successful
+          cp /shellphish/dummy_libfuzzer_reaching_functions.txt {{ libfuzzer_reaching_functions_dict_path | shquote }}
+          cp /shellphish/dummy_libfuzzer_reaching_files.txt {{ libfuzzer_reaching_files_dict_path | shquote }}
+
+          python /shellphish/make_strings_dict.py \
+            {{info_extraction_result|shquote}} \
+            generic_c_reaching_functions_strings \
+            > {{libfuzzer_reaching_functions_dict_path|shquote}}
+          python /shellphish/make_strings_dict.py \
+            {{info_extraction_result|shquote}} \
+            generic_c_reaching_files_strings \
+            > {{libfuzzer_reaching_files_dict_path|shquote}}

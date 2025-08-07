@@ -1,0 +1,23 @@
+#0 0x5555557e9b6b in QuickCheckForUnpoisonedRegion /src/llvm-project/compiler-rt/lib/asan/asan_interceptors_memintrinsics.h:37:7
+#1 0x5555557e9b6b in __asan_memcpy /src/llvm-project/compiler-rt/lib/asan/asan_interceptors_memintrinsics.cpp:63:3
+#2 0x5555559cfdbe in ngx_http_userid_set_uid /tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c:446:13
+#3 0x5555559cfdbe in ngx_http_userid_filter /tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c:248:9
+#4 0x5555559d1158 in ngx_http_headers_filter /tmp/src/nginx/src/http/modules/ngx_http_headers_filter_module.c
+#5 0x55555591a58a in ngx_http_send_special_response /tmp/src/nginx/src/http/ngx_http_special_response.c:727:10
+#6 0x555555919066 in ngx_http_special_response_handler /tmp/src/nginx/src/http/ngx_http_special_response.c:523:12
+#7 0x5555559248ed in ngx_http_finalize_request /tmp/src/nginx/src/http/ngx_http_request.c:2567:38
+#8 0x555555904580 in ngx_http_core_content_phase /tmp/src/nginx/src/http/ngx_http_core_module.c
+#9 0x5555559014a9 in ngx_http_core_run_phases /tmp/src/nginx/src/http/ngx_http_core_module.c:875:14
+#10 0x5555559014a9 in ngx_http_handler /tmp/src/nginx/src/http/ngx_http_core_module.c:858:5
+#11 0x555555927220 in ngx_http_process_request /tmp/src/nginx/src/http/ngx_http_request.c:2140:5
+#12 0x55555592c294 in ngx_http_process_request_headers /tmp/src/nginx/src/http/ngx_http_request.c:1529:13
+#13 0x5555558aa999 in ngx_event_process_posted /tmp/src/nginx/src/event/ngx_event_posted.c:34:9
+#14 0x55555582ba77 in LLVMFuzzerTestOneInput /tmp/src/nginx/harnesses/pov_harness.cc:285:5
+#15 0x5555556dd7b0 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+#16 0x5555556dcfd5 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:516:7
+#17 0x5555556de7a5 in fuzzer::Fuzzer::MutateAndTestOne() /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:760:19
+#18 0x5555556df595 in fuzzer::Fuzzer::Loop(std::__Fuzzer::vector<fuzzer::SizedFile, std::__Fuzzer::allocator<fuzzer::SizedFile>>&) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:905:5
+#19 0x5555556cd8a6 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:914:6
+#20 0x5555556f9dd2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+#21 0x7ffff7806082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0702430aef5fa3dda43986563e9ffcc47efbd75e)
+#22 0x5555556bea1d in _start (/out/pov_harness+0x16aa1d)

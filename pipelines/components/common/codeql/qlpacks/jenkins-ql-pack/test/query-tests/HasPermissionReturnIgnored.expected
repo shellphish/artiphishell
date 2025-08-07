@@ -1,0 +1,1 @@
+| HasPermissionReturnIgnored.java:6:9:6:41 | hasPermission(...) | The result of the call is ignored |

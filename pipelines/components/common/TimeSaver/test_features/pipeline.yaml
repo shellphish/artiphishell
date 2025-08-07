@@ -1,0 +1,10 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  target_start_times: MetadataRepository
+
+imports:
+  start_time:
+    path: ../pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_start_times: target_start_times

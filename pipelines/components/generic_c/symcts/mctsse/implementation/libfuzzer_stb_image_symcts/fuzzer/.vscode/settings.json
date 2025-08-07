@@ -1,0 +1,14 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "files.associations": {
+        "stdlib.h": "c",
+        "stdarg.h": "c",
+        "stb_image.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "assert.h": "c"
+    },
+    "python.analysis.typeCheckingMode": "basic"
+}

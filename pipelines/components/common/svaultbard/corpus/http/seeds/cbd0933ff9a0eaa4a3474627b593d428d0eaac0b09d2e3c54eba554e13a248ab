@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.00000000000000000000000 208\nTranSfer-Encoding:chunked\n~ATR\n\n1;LABUL\n0\n1;0UNB/\n0\n1;;0 TRACE;\nT\n1;IN;\nT\n1;Pr\nT\n01;\nT\n1;E\nT\n01;/\001;;pr;;0 \nT\n01;\nT\n1;IND;\nT\n1;Pr\nT\n01;\nT\n1;P;;0 \nT\n01;\nT\n1;ID;\nT\n1;Pr\nT\n01;\nT\n1;Pr\nT\n01;\nT\n1;E\nT\n01;/y;;UNB/\n0\n1;;0 \nT\n01;\nT\n1;IND;\nT\n1;Pr\nT\n01;\nT\n1;P;;0 \nT\n01;\nT\n1;IN;\nT\n1;Pr\nT\n01;\nT\n1;eam;;0SEARCH"

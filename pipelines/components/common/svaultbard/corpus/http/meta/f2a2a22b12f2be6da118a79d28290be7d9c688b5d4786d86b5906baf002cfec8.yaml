@@ -1,0 +1,4 @@
+filename: d7e1e0295796136c395810b21f6c6422d512ef2f
+sha256: f2a2a22b12f2be6da118a79d28290be7d9c688b5d4786d86b5906baf002cfec8
+source: https://storage.googleapis.com/nginx-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/nginx_http_request_fuzzer/public.zip
+source_relative_path: regressions/d7e1e0295796136c395810b21f6c6422d512ef2f

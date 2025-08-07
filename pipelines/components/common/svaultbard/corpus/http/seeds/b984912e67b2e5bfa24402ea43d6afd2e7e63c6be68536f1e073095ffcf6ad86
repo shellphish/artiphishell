@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.39 188\nTranSfer-Encoding:chunked\r\n\n1\r\n=\n1\r\n0\r\n1\r\n0\n1\r\n=\n1;\n0\n1\r\n=\n1\r\n0\r\n1\r\n0\n1\r\n=\n1;Y\n0\n1\t\n=\n2\r\n%2\n1\r\n0\r\n1\r\n\r\n01\n=\n1;\n0\n1\r\n=\n1\r\n0\r\n1\r\n0\n1\r\n=\n1;\r\n0\n1\t\n=\n2\r\n%2\n1\r\n=\n1\r\n0\r\n1\r\n=\n1\r\n=\n1\r\n=\n1;Ac\r\n0\r\n1\r\n0\n1\r\n=\n1;\n0\n1\r\n=\n1\r\n0\r\n1\r\n0\n1\r\n=\n1;Y\n0\n1\t\n=\n2\r\n%2\n1\r\n0\r\n1\r\n\r\n01\n=\n1;\n0\n1\r\n=\n1\r\n0\r\n54753708\\rep\377\r\n0Host\n=\n2\r\n%X-Http-Method-Override%2\n1\r\n=\n"

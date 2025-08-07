@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: llmuser
+      POSTGRES_PASSWORD: artiphishell
+      POSTGRES_DB: llmdb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -h localhost"]
+      interval: 10s
+      retries: 5
+
+  litellm:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://llmuser:artiphishell@db:5432/llmdb
+      - LITELLM_VERIFICATION_TOKEN=artiphishell!!
+      - LITELLM_MASTER_KEY=sk-artiphishell
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    command: ["litellm", "--config", "litellm_proxy.config"]
+
+volumes:
+  db_data:

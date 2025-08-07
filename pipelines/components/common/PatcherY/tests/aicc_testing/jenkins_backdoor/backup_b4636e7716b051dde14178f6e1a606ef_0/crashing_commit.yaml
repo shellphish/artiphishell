@@ -1,0 +1,7 @@
+cp_source: plugins/pipeline-util-plugin
+crash_id: 62d6d32d3b6913fbecb7a6202ac63e78
+crash_report_id: 62d6d32d3b6913fbecb7a6202ac63e78
+crashing_commit: d4860a8ac8b8c1d4642357840adb4347f7ade43a
+harness_id: id_1
+sanitizer_ids:
+- id_1

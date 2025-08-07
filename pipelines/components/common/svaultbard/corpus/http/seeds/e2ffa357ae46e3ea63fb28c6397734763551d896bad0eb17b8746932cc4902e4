@@ -1,0 +1,2 @@
+request: "GET h://E://\n"
+reply: "HTTP/1.20 046\nTranSfer-Encoding:chunked\n\r\n0\n6\000\000d\n\r\000\0001\r\n0;"

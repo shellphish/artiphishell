@@ -1,0 +1,7 @@
+cp_harness_binary_path: out/fuzzer
+cp_harness_id: id_1
+cp_harness_name: fuzzer
+cp_harness_source_path: src/wasm3/platforms/app_fuzz/fuzzer.c
+fuzzer: aflplusplus
+harness_info_id: cdfb1b2868dc76011bdede6a51e2782b
+target_id: 1

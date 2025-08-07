@@ -1,0 +1,40 @@
+[
+    {
+        "Vulnerability Class": "File System Traversal",
+	    "Sink Method or Class": ["FileWriter", "FileWriter", "Files", "write", "read", "newBufferedWriter", "newBufferedReader", "readString", "readAllBytes", "readSymbolicLink", "newInputStream", "newOutputStream", "open", "copy", "move"],
+        "Magic String": "jazzer-traversal"
+    },
+    {
+        "Vulnerability Class": "Command Injection",
+	    "Sink Method or Class": ["Runtime", "ProcessBuiler"],
+        "Magic String": "jazze"
+    },
+    {
+        "Vulnerability Class": "File Read Write",
+	    "Sink Method or Class":  ["FileWriter", "Files", "write", "read", "newBufferedWriter", "newBufferedReader", "readString", "readAllBytes", "readSymbolicLink", "newInputStream", "newOutputStream", "open", "copy", "move"],
+        "Magic String": "jazzer"
+    },
+    {
+        "Vulnerability Class": "Server Side Request Forgery",
+	    "Sink Method or Class": ["Socket", "SocksSocketImp", "socketChannel", "SocketImpl", "SocketAdaptor", "connect", "PlainHttpConnection"],
+        "Magic String": "jazzer.example.com"
+    },
+    {
+	"Vulnerability Class": "Deserialization",
+	"Sink Method or Class": ["ObjectInputStream"],
+	"Magic String": "aced0005737200076a617a2e5a6572000000000000002a02000142000973616e6974697a6572787000"
+    },
+    {
+        "Vulnerability Class": "Expression Language Injection",
+        "Sink Method or Class": ["ExpressionFactory", "createValueExpression", "createMethodExpression", "ConstraintValidatorContext", "buildConstraintViolationWithTemplate"]
+    },
+    {
+        "Vulnerability Class": "Ldap Injection",
+        "Sink Method or Class": ["DirContext", "search", "InitialDirContext"]
+    },
+    {
+        "Vulnerability Class": "Naming Context Lookup",
+        "Sink Method or Class": ["Context", "loopup", "lookupLink"]
+    }
+]
+

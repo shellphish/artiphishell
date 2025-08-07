@@ -1,0 +1,7 @@
+cp_harness_id: id_1
+cp_harness_name: linux_test_harness
+cp_harness_source_path: src/test_harnesses/linux_test_harness.c
+cp_harness_binary_path: out/linux_test_harness
+fuzzer: snapchange
+harness_info_id: 
+target_id: 1

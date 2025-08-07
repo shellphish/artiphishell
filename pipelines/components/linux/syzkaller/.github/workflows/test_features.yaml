@@ -1,0 +1,12 @@
+name: "Syzkaller Feature Tests"
+
+on:
+  - push
+  - workflow_dispatch
+
+permissions:
+  pull-requests: write
+
+jobs:
+  compliance:
+    uses: shellphish-support-syndicate/test-repo/.github/workflows/run_feature_tests.yml@main

@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rhelmot/pydatatask/main/schema/pipeline.json
+
+repo_classes:
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+  target_metadatas: MetadataRepository
+
+
+
+
+  built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+
+tasks:
+  symcts_build_symcc:
+    links:
+      target_id:
+        repo: targets_with_sources
+        kind: InputId
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      
+      built_target:
+        repo: built_targets
+        kind: OutputFilepath
+    
+
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-symcts
+
+        host_mounts:
+          "/shared": "/shared"
+          "/var/run/docker.sock": "/var/run/docker.sock"
+        template: |
+          set -ex
+          
+          mkdir -p /shared/symcts_build_symcc
+          TEMP_DIR=$(mktemp -d /shared/symcts_build_symcc/{{target_id}}_XXXXXX)
+          rsync -raz {{ target_with_sources | shquote }}/ $TEMP_DIR/
+          cd $TEMP_DIR
+
+          cp /shellphish/guest_content/.env.docker.symcts_symcc .env.docker
+          cat /shellphish/guest_content/Dockerfile.extensions >> Dockerfile
+          make docker-build
+          ./run.sh build
+
+          rsync -raz $TEMP_DIR/ {{ built_target | shquote }}/

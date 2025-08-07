@@ -1,0 +1,327 @@
+repo_classes:
+  ############################# INPUTS ⬇ ##############################
+  # IMPORTANT: WE DEPEND ON CODEQL TO GIVE IT PRIORITY
+  full_functions_indices: BlobRepository
+  ##################
+
+  targets_with_sources: FilesystemRepository
+  cp_image_ready: MetadataRepository
+  target_metadata: MetadataRepository
+
+  benign_harness_inputs: BlobRepository # streaming
+  benign_harness_inputs_metadatas: MetadataRepository # streaming
+
+  crashing_harness_inputs: BlobRepository # streaming
+  crashing_harness_inputs_metadatas: MetadataRepository # streaming
+
+  harness_infos: MetadataRepository
+  
+  vds_records: MetadataRepository
+  crashing_commits: MetadataRepository
+  poi_reports: MetadataRepository
+
+
+  ############################# OUTPUTS ⬆ #############################
+  similar_harness_inputs_dirs: FilesystemRepository
+
+  benign_coverages: BlobRepository # streaming
+  crashing_coverages: BlobRepository # streaming
+
+  benign_coverages_full_report:
+    cls: BlobRepository # streaming
+    required: false
+  crashing_coverages_full_report:
+    cls: BlobRepository # streaming
+    required: false
+
+  targets_built_with_coverage:
+    cls: FilesystemRepository
+    required: false
+
+tasks:
+  coverage_build:
+    job_quota:
+      max: 0.45
+    links:
+      # IMPORTANT: we depend on codeql to give it priority
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputId
+      ####################################################
+      target_id:
+        repo: cp_image_ready
+        kind: InputId
+      target:
+        repo: targets_with_sources
+        kind: InputFilepath
+      target_metadatum:
+        repo: target_metadata
+        kind: InputMetadata
+      target_metadatum_path:
+        repo: target_metadata
+        kind: InputFilepath
+      target_built_with_coverage:
+        repo: targets_built_with_coverage
+        kind: OutputFilepath
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ruaronicola
+        - degrigis
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-coverageguy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+
+          if yq -e '.shellphish.known_sources.linux_kernel' {{ target_metadatum_path | shquote }} > /dev/null 2>&1; then
+            echo "Skipping kernel target"
+            exit 1
+          fi
+
+          export TARGET_ID={{target_id | shquote}}
+          export BUILD_NAME=build
+          export TARGET_DIR={{target | shquote}}
+          export PROJECT_ENV_PATH=""
+          export RESULTS_DIR={{target_built_with_coverage | shquote}}
+          
+          CP_NAME=$(yq '.cp_name' "${TARGET_DIR}/project.yaml" | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')
+
+          # persist DOCKER_IMAGE_NAME to .env.project
+          export DOCKER_IMAGE_NAME="aixcc-coverageguy-build-${CP_NAME}-{{target_id}}"
+          sed -i '/DOCKER_IMAGE_NAME/d' ${TARGET_DIR}/.env.project
+          echo "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME}" >> ${TARGET_DIR}/.env.project
+
+          # build the target
+
+          export DOCKER_ENV_PATH=/shellphish/coverageguy/.env.docker
+
+          # IMPORTANT: THIS SHOULD NEVER RUN ON LINUX KERNEL
+          LANGUAGE={{ target_metadatum.language }}
+          if [ "$LANGUAGE" = "c" ]; then
+            export DOCKERFILE_PATH=/shellphish/coverageguy/Dockerfile.extension
+          elif [ "$LANGUAGE" = "java" ]; then
+            export DOCKERFILE_PATH=/shellphish/coverageguy/Dockerfile.java.extension
+          else
+            echo "Unsupported language: $LANGUAGE"
+            exit 1
+          fi
+
+          /shellphish/coverageguy/build_target.sh
+
+
+  coverage_trace:
+    # one core for tracing, one core for syncing seeds
+    job_quota:
+      cpu: "2"
+      mem: "5Gi"
+    long_running: true
+    links:
+      harness_info:
+        repo: harness_infos
+        kind: InputMetadata
+      target_built_with_coverage:
+        repo: targets_built_with_coverage
+        kind: InputFilepath
+        key: harness_info.target_id
+      target_metadatum:
+        repo: target_metadata
+        kind: InputMetadata
+        key: harness_info.target_id
+      target_metadatum_path:
+        repo: target_metadata
+        kind: InputFilepath
+        key: harness_info.target_id
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: harness_info.target_id
+      
+      benign_harness_inputs_metadata_filtering_scope:
+        repo: benign_harness_inputs_metadatas
+        kind: null
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingInputFilepath
+        key: benign_harness_inputs_metadata_filtering_scope.harness_info_id
+      benign_harness_inputs_metadata:
+        repo: benign_harness_inputs_metadatas
+        kind: StreamingInputFilepath
+        key: benign_harness_inputs_metadata_filtering_scope.harness_info_id
+
+      crashing_harness_inputs_metadata_filtering_scope:
+        repo: crashing_harness_inputs_metadatas
+        kind: null
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingInputFilepath
+        key: crashing_harness_inputs_metadata_filtering_scope.harness_info_id
+      crashing_harness_inputs_metadata:
+        repo: crashing_harness_inputs_metadatas
+        kind: StreamingInputFilepath
+        key: crashing_harness_inputs_metadata_filtering_scope.harness_info_id
+
+      # it is our responsibility to make sure that the filenames match EXACTLY (with seeds not meta)
+      benign_coverages:
+        repo: benign_coverages
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+      benign_coverages_full_report:
+        repo: benign_coverages_full_report
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+      crashing_coverages:
+        repo: crashing_coverages
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+      crashing_coverages_full_report:
+        repo: crashing_coverages_full_report
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ruaronicola
+        - degrigis
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-coverageguy"
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          export BENIGN_HARNESS_INPUTS_MAIN_DIR={{ benign_harness_inputs.main_dir | shquote }}
+          export BENIGN_HARNESS_INPUTS_LOCK_DIR={{ benign_harness_inputs.lock_dir | shquote }}
+          export BENIGN_HARNESS_INPUTS_METADATA_MAIN_DIR={{ benign_harness_inputs_metadata.main_dir | shquote }}
+          export BENIGN_HARNESS_INPUTS_METADATA_LOCK_DIR={{ benign_harness_inputs_metadata.lock_dir | shquote }}
+          export CRASHING_HARNESS_INPUTS_MAIN_DIR={{ crashing_harness_inputs.main_dir | shquote }}
+          export CRASHING_HARNESS_INPUTS_LOCK_DIR={{ crashing_harness_inputs.lock_dir | shquote }}
+          export CRASHING_HARNESS_INPUTS_METADATA_MAIN_DIR={{ crashing_harness_inputs_metadata.main_dir | shquote }}
+          export CRASHING_HARNESS_INPUTS_METADATA_LOCK_DIR={{ crashing_harness_inputs_metadata.lock_dir | shquote }}
+          export BENIGN_COVERAGES={{ benign_coverages | shquote }}
+          export BENIGN_COVERAGES_FULL_REPORT={{ benign_coverages_full_report | shquote }}
+          export CRASHING_COVERAGES={{ crashing_coverages | shquote }}
+          export CRASHING_COVERAGES_FULL_REPORT={{ crashing_coverages_full_report | shquote }}
+          export TARGET_METADATUM_PATH={{ target_metadatum_path | shquote }}
+
+          export CP_HARNESS_NAME={{ harness_info.cp_harness_name | shquote}}
+          export CP_HARNESS_BINARY_PATH={{ harness_info.cp_harness_binary_path | shquote}}
+
+          mkdir -p /shared/coverageguy/
+          TMPDIR=$(mktemp -d -p /shared/coverageguy/)
+          cp -ra {{ target_built_with_coverage | shquote }} $TMPDIR/cp-folder
+          export TARGET_DIR=$TMPDIR/cp-folder/
+
+          # start monitoring
+
+          LANGUAGE={{ target_metadatum.language }}
+          if [ "$LANGUAGE" = "c" ]; then
+            /src/c_monitor.sh
+          else
+            # copy the antlr4 index
+            cp {{ functions_index | shquote }} ${TARGET_DIR}/work/antlr4_index.json
+            /src/java_monitor.sh
+          fi
+
+          rm -rf $TMPDIR
+
+
+  coverage_query:
+    job_quota:
+      cpu: "1"
+      mem: "2Gi"
+    links:
+      vds_record:
+        repo: vds_records
+        kind: InputMetadata
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: vds_record.crashing_commit_id
+      poi_report_metadata:
+        repo: poi_reports
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+      poi_report:
+        repo: poi_reports
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      harness_info:
+        repo: harness_infos
+        kind: InputMetadata
+        key: poi_report_metadata.harness_info_id
+
+      benign_harness_inputs_metadata_filtering_scope:
+        repo: benign_harness_inputs_metadatas
+        kind: null
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingInputFilepath
+        key: benign_harness_inputs_metadata_filtering_scope.harness_info_id
+        equals: poi_report_metadata.harness_info_id
+      benign_coverages:
+        repo: benign_coverages
+        kind: StreamingInputFilepath
+        key: benign_harness_inputs_metadata_filtering_scope.harness_info_id
+        equals: poi_report_metadata.harness_info_id
+
+      similar_harness_inputs_dir:
+        repo: similar_harness_inputs_dirs
+        kind: OutputFilepath
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ruaronicola
+        - degrigis
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-coverageguy"
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          BENIGN_INPUTS={{ benign_harness_inputs | shquote }}
+          BENIGN_INPUTS_DOWNLOAD_FILE={{ benign_harness_inputs.download_file | shquote }}
+          BENIGN_COVERAGES={{ benign_coverages | shquote }}
+          POI_REPORT_AT={{ poi_report | shquote }}
+          OUTPUT_DIR={{ similar_harness_inputs_dir | shquote }}
+
+          # wait until file BENIGN_INPUTS_DOWNLOAD_FILE exists
+          while [ ! -f $BENIGN_INPUTS_DOWNLOAD_FILE ]; do
+            sleep 1
+          done
+          NUM_BENIGN_INPUTS=$(cat $BENIGN_INPUTS_DOWNLOAD_FILE | wc -l)
+          
+          # keep sleeping until there's at least NUM_BENIGN_INPUTS files in the dir BENIGN_INPUTS
+          # NOTE: the assumption here is that after this we have all the inputs for which we have coverage
+          # (thus we can copy the similar inputs safely without worrying on whether they have been fetched)
+          while [ $(find $BENIGN_INPUTS -type f | wc -l) -lt $NUM_BENIGN_INPUTS ]; do
+            sleep 1
+          done
+
+          # sleep for 5 minutes so the fuzzer explores the crash and gives us better seeds/coverage
+          echo WARNING: SLEEPING FOR 3 MINUTES TO WAIT FOR BETTER SEEDS
+          sleep 180
+
+          python3 /src/find_similar_seeds.py --benign_inputs $BENIGN_INPUTS --benign_coverages $BENIGN_COVERAGES --poi_report_at $POI_REPORT_AT --output_dir $OUTPUT_DIR

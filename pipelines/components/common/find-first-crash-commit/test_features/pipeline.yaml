@@ -1,0 +1,14 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+  crashing_commits: MetadataRepository
+
+imports:
+  crash_commit_finder:
+    path: ../pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+      crashing_commits: crashing_commits

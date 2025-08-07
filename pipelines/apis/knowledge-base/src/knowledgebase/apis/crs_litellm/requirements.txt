@@ -1,0 +1,14 @@
+litellm[proxy]
+prisma==0.11.0 # for db
+prisma-client==0.2.1
+mysql-connector-python
+httpx
+pydantic==2.7.1 # proxy + openai req.
+backoff
+
+# litellm[proxy]
+# prisma-client==0.2.1
+# mysql-connector-python
+# httpx
+# backoff
+# litellm==1.40.29

@@ -1,0 +1,193 @@
+repo_classes:
+  cp_image_ready: MetadataRepository
+
+  targets_with_sources: FilesystemRepository
+  java_targets_with_sources: FilesystemRepository
+  non_kernel_c_targets_with_sources: FilesystemRepository
+
+  target_metadatas: MetadataRepository
+  target_harness_infos: MetadataRepository
+  target_start_times: MetadataRepository
+
+  points_of_interest: MetadataRepository
+
+  commit_functions_indices: BlobRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  functions_by_commit_jsons_dirs: FilesystemRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs_coverages: BlobRepository
+  crashing_reports: BlobRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  crashing_harness_inputs_coverages: BlobRepository
+
+  crashing_commits: MetadataRepository
+  patch_diffs: BlobRepository
+  patch_metadatas: MetadataRepository
+  vds_records: 
+    cls: MetadataRepository
+    required: false
+  gp_records: 
+    cls: MetadataRepository
+    required: false
+  pov_reports: MetadataRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  post_patch_run_pov_result_metadata_path: MetadataRepository
+
+  local_variable_reports: 
+    cls: MetadataRepository
+    required: false
+
+  invariant_reports:
+    cls: MetadataRepository
+    required: false
+
+  similar_harness_inputs_dirs:
+    cls: FilesystemRepository
+    required: false
+
+  patch_rankings: 
+    cls: MetadataRepository
+    required: false
+
+  patch_verification_results: 
+    cls: MetadataRepository
+    required: false
+  
+  benign_coverages_full_report: BlobRepository # streaming
+
+imports:
+
+  coverage_guy:
+    path: ../../components/common/coverage-guy/pipeline.yaml
+    repos:
+      full_functions_indices: full_functions_indices
+
+      cp_image_ready: cp_image_ready
+      targets_with_sources: targets_with_sources
+      harness_infos: target_harness_infos
+      target_metadata: target_metadatas
+
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      benign_coverages: benign_harness_inputs_coverages
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      crashing_coverages: crashing_harness_inputs_coverages
+
+      vds_records: vds_records
+      crashing_commits: crashing_commits
+      poi_reports: points_of_interest
+
+      similar_harness_inputs_dirs: similar_harness_inputs_dirs
+      benign_coverages_full_report: benign_coverages_full_report
+
+  invariant_guy:
+    path: ../../components/common/invariant-guy/pipeline.yaml
+    repos:
+      full_functions_indices: full_functions_indices
+      
+      cp_image_ready: cp_image_ready
+      targets_with_sources: targets_with_sources
+      target_metadata: target_metadatas
+
+      representative_crashing_harness_inputs: pov_report_representative_crashing_inputs
+      similar_harness_inputs_dirs: similar_harness_inputs_dirs
+
+      vds_records: vds_records
+      crashing_commits: crashing_commits
+      poi_reports: points_of_interest
+
+      invariant_reports: invariant_reports
+      function_by_file_indices: full_functions_by_file_index_jsons
+
+
+  commit_finder:
+    path: ../../components/common/find-first-crash-commit/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+      crashing_commits: crashing_commits
+
+  PatcherY:
+    path: ../../components/common/PatcherY/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+      target_functions_by_commit_jsons_dirs: functions_by_commit_jsons_dirs
+      target_functions_jsons_dirs: full_functions_jsons_dirs
+      commit_indices: commit_functions_indices
+      function_indices: full_functions_indices
+      poi_reports: points_of_interest
+      patch_diffs: patch_diffs
+      patch_metadatas: patch_metadatas
+      vds_records: vds_records
+      gp_records: gp_records
+      
+      crashing_commits: crashing_commits
+
+      invariant_reports: invariant_reports
+      local_variable_reports: local_variable_reports
+
+  patch_verification:
+    path: ../../components/common/base/crs-utils/components/patch_verification/pipeline.yaml
+    repos:
+      cp_image_ready: cp_image_ready
+      vds_records: vds_records
+      crashing_commits: crashing_commits
+      targets_with_sources: targets_with_sources
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      pov_reports: pov_reports
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+      patch_diffs: patch_diffs
+      patch_metadatas: patch_metadatas
+      patch_verification_results: patch_verification_results
+
+  
+  patch_ranking:
+    path: ../../components/common/PatcherY/pipeline-ranking.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      vds_records: vds_records
+      patch_diffs: patch_diffs
+      patch_metadatas: patch_metadatas
+      patch_rankings: patch_rankings
+      patch_verification_results: patch_verification_results
+
+  submitter:
+    path: ../../components/common/submitter/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_start_times: target_start_times 
+      crashing_commits: crashing_commits
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      patch_diffs: patch_diffs
+      patch_metadatas: patch_metadatas
+      patch_rankings: patch_rankings
+      vds_records: vds_records
+      gp_records: gp_records
+
+  dyva:
+    path: ../../components/common/DyVA/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      full_functions_indices: full_functions_indices
+      full_functions_jsons: full_functions_jsons_dirs
+      harness_infos: target_harness_infos
+      points_of_interest: points_of_interest
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+      crashing_commits: crashing_commits
+      vds_records: vds_records
+      local_variable_reports: local_variable_reports
+ 

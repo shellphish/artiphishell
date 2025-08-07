@@ -1,0 +1,16 @@
+# User's Questions
+
+```
+{{ myquestion }}
+
+## These are the grammars that need to be merged. Conserve as many details as possible from each grammar.
+
+{% for grammar in grammar_stack %}
+    # Grammar {{ loop.index }}
+    
+    ```antlr
+    {{ grammar }}
+    ```
+{% endfor %}
+
+```

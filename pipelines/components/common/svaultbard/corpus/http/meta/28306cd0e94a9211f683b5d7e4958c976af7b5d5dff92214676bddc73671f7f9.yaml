@@ -1,0 +1,4 @@
+filename: corpus-template-1
+sha256: 28306cd0e94a9211f683b5d7e4958c976af7b5d5dff92214676bddc73671f7f9
+source: https://github.com/lpereira/lwan
+source_relative_path: fuzz/corpus/corpus-template-1

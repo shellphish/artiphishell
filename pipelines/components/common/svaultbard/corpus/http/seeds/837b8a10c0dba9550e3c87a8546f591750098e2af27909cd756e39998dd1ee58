@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/5.0 400\nY\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\nVary\n"

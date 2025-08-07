@@ -1,0 +1,7 @@
+cp_harness_binary_path: out/harnesses/nine/aixcc-harness.jar
+cp_harness_id: id_9
+cp_harness_name: JenkinsNine
+cp_harness_source_path: src/jenkins-harnesses/jenkins-harness-nine/src/main/java/com/aixcc/jenkins/harnesses/nine/JenkinsNine.java
+fuzzer: jazzer
+harness_info_id: 18eb7787d8238a31ed55707808a8c069
+target_id: 1

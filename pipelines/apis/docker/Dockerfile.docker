@@ -1,0 +1,9 @@
+FROM docker:24-dind
+LABEL org.opencontainers.image.source=https://github.com/aixcc-sc/asc-crs-shellphish
+RUN apk add supervisor python3 py3-pip rsync py3-psutil htop strace iotop atop
+RUN pip install --break-system-packages aiohttp aiojobs kubernetes
+ADD supervisord.conf /
+ADD pushpull.py /
+ADD rsyncd.conf /
+ADD daemon.json /etc/docker/daemon.json
+ENTRYPOINT ["supervisord", "--configuration=/supervisord.conf"]

@@ -1,0 +1,7 @@
+cp_harness_binary_path: out/fuzz_lua
+cp_harness_id: id_1
+cp_harness_name: fuzz_lua
+cp_harness_source_path: src/lua/FAILED_TO_LOCATE
+fuzzer: aflplusplus
+harness_info_id: 331651d90ca932dc0ff5c3902d2627d8
+target_id: 1

@@ -1,0 +1,292 @@
+repo_classes:
+  ######################## INPUTS ########################
+  cp_image_ready: MetadataRepository
+  linux_targets_with_sources: FilesystemRepository
+  linux_harness_infos: MetadataRepository
+  target_metadatas: MetadataRepository
+  syzlang_grammar: BlobRepository
+
+  ######################## OUTPUTS ########################
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  crashing_harness_inputs_coverages: BlobRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs_coverages: BlobRepository
+
+  ###################### INTERMEDIATES ######################
+  snapchange_built_targets:
+    cls: FilesystemRepository
+    required: false
+
+  snapshot_snapchange_dirs:
+    cls: FilesystemRepository
+    required: false
+
+tasks:
+  snapchange_build:
+    annotations:
+      maturity: inProgress
+      authors:
+        - 4rbit3r
+    require_success: true
+    job_quota:
+      max: 0.45
+    links:
+      target_id:
+        repo: cp_image_ready
+        kind: InputId
+      target_with_sources:
+        repo: linux_targets_with_sources
+        kind: InputFilepath
+      target_metadata:
+        repo: target_metadatas
+        kind: InputMetadata
+      snapchange_built_target:
+        repo: snapchange_built_targets
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-snapchange-fuzz
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          TARGET_ID={{ target_id | shquote }}
+          TARGET_SRC_DIR={{ target_with_sources | shquote }}
+
+          KERNEL_RELPATH={{ target_metadata.shellphish.known_sources.linux_kernel[0].relative_path | shquote }}
+          BASE_IMAGE=$(yq ".docker_image" "${TARGET_SRC_DIR}/project.yaml" | tr -d '"')
+
+          export DOCKER_IMAGE_NAME="aixcc-snapchange-${TARGET_ID}"
+
+          TEMP_DIR=/shared/snapchange/fuzz/snapchange_build/"${TARGET_ID}"
+          mkdir -p /shared/snapchange/fuzz/snapchange_build/
+
+          rsync --delete -ra "${TARGET_SRC_DIR}/" ${TEMP_DIR}/
+          (
+            # Build the kernel with the necessary configs
+            cd "${TEMP_DIR}/${KERNEL_RELPATH}"
+            if [ ! -f .config ]; then
+                # realistically this should never happen in the competition
+                # but one of our testing targets doesn't have one T_T
+                make defconfig
+            fi
+            ./scripts/kconfig/merge_config.sh .config /snapchange_modifications/snapchange.config
+            # make olddefconfig
+            ./scripts/kconfig/merge_config.sh .config /snapchange_modifications/snapchange.config
+            git apply /snapchange_modifications/serialize_tipc.patch || true
+
+            cd "${TEMP_DIR}"
+
+            mkdir -p ./shellphish
+            cp /snapchange_modifications/coverage_harness.c ./shellphish/
+            cp /snapchange_modifications/liblinkagainstharness.a ./shellphish/
+
+            cp /snapchange_modifications/.env.docker ./.env.docker
+
+            docker pull $BASE_IMAGE >/dev/null 2>&1 || true
+            resp=$(docker image inspect $BASE_IMAGE >/dev/null 2>&1 && echo yes || echo no)
+            if test $resp = "no"; then
+              docker build -t $BASE_IMAGE .
+            fi
+            docker build --build-arg=BASE_IMAGE="${BASE_IMAGE}" \
+                         -f /snapchange_modifications/Dockerfile.extensions \
+                         -t "$DOCKER_IMAGE_NAME" .
+            ./run.sh build
+
+            cd "$TEMP_DIR/$KERNEL_RELPATH"
+
+            BZIMAGE="$(find . -type f -name bzImage)"
+
+            mv "$TEMP_DIR/$KERNEL_RELPATH/$BZIMAGE" /bzImage
+            mv "$TEMP_DIR/$KERNEL_RELPATH/vmlinux" /vmlinux
+
+            make clean
+
+            mv /bzImage "$TEMP_DIR/$KERNEL_RELPATH/$BZIMAGE"
+            mv /vmlinux "$TEMP_DIR/$KERNEL_RELPATH/vmlinux"
+          )
+          rsync -ra "${TEMP_DIR}/" {{snapchange_built_target | shquote}}
+  snapchange_take_snapshot:
+    annotations:
+      maturity: inProgress
+      authors:
+        - 4rbit3r
+    require_success: true
+    job_quota:
+      cpu: 2
+      mem: "10Gi"
+    links:
+      harness_info:
+        repo: linux_harness_infos
+        kind: InputMetadata
+      harness_info_id:
+        repo: linux_harness_infos
+        kind: InputId
+
+      snapchange_built_target:
+        repo: snapchange_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      target_metadata:
+        repo: target_metadatas
+        kind: InputMetadata
+        key: harness_info.target_id
+
+      snapshot_snapchange_dir:
+        repo: snapshot_snapchange_dirs
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-snapchange-fuzz
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          TARGET_ID={{ harness_info.target_id | shquote }}
+          TARGET_SRC_DIR={{ snapchange_built_target | shquote }}
+          CP_HARNESS_ID={{ harness_info.cp_harness_id | shquote }}
+
+          KERNEL_RELPATH={{ target_metadata.shellphish.known_sources.linux_kernel[0].relative_path | shquote }}
+          HARNESS_BINARY=$(yq ".harnesses.${CP_HARNESS_ID}.binary" "${TARGET_SRC_DIR}/project.yaml" | tr -d '"')
+
+          export DOCKER_IMAGE_NAME="aixcc-snapchange-${TARGET_ID}"
+
+          TEMP_DIR=/shared/snapchange/take_snapshot/"${TARGET_ID}_${CP_HARNESS_ID}"
+          mkdir -p "${TEMP_DIR}"
+
+          rsync --delete -ra "${TARGET_SRC_DIR}/" ${TEMP_DIR}/
+
+          cd "${TEMP_DIR}"
+          FNAME=$(realpath "${HARNESS_BINARY}")
+          NAME=$(basename "${HARNESS_BINARY}")
+          DIR_NAME=$(dirname "${FNAME}")
+          NEW_NAME=$(echo "$NAME" | tr ' ' '_')
+          if [ "$NEW_NAME" != "$NAME" ]; then
+            cp "${FNAME}" "$DIR_NAME/$NEW_NAME"
+          fi
+
+          echo "[*] Running make_example.sh"
+          cd "/snapchange/fuzzer" || exit
+          ./make_example.sh "$DIR_NAME/$NEW_NAME" "$TARGET_SRC_DIR/$KERNEL_RELPATH"
+
+          # Test the fuzzer
+          echo "[*] Testing fuzzer"
+          ./target/release/fuzzer_template project translate
+
+          rsync -ra /snapchange/ {{snapshot_snapchange_dir | shquote}}
+  snapchange_fuzz:
+    annotations:
+      maturity: inProgress
+      authors:
+        - 4rbit3r
+    replicable: true
+    long_running: true
+    require_success: true
+    job_quota:
+      cpu: 8
+      mem: "12Gi"
+    links:
+      harness_info:
+        repo: linux_harness_infos
+        kind: InputMetadata
+      harness_info_id:
+        repo: linux_harness_infos
+        kind: InputId
+
+      snapshot_snapchange_dir:
+        repo: snapshot_snapchange_dirs
+        kind: InputFilepath
+      syzlang_grammar_input:
+        repo: syzlang_grammar
+        kind: InputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/snapchange/corpus-{job}/crash-corpus/
+        auto_meta: meta
+        auto_values:
+          harness_info_id: '{{ harness_info_id }}'
+          target_id: '{{ harness_info.target_id }}'
+          cp_harness_id: '{{ harness_info.cp_harness_id }}'
+          cp_harness_name: '{{ harness_info.cp_harness_name }}'
+          cp_harness_source_path: "{{ harness_info.cp_harness_source_path }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          fuzzer: snapchange
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: benign_harness_inputs_metadatas
+        force_path: /shared/snapchange/corpus-{job}/benign-corpus
+        auto_meta: meta
+        DANGEROUS_filename_is_key: true
+        auto_values:
+          harness_info_id: '{{ harness_info_id }}'
+          target_id: '{{ harness_info.target_id }}'
+          cp_harness_id: '{{ harness_info.cp_harness_id }}'
+          cp_harness_name: '{{ harness_info.cp_harness_name }}'
+          cp_harness_source_path: "{{ harness_info.cp_harness_source_path }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          fuzzer: snapchange
+      benign_coverage_dir:
+        repo: benign_harness_inputs_coverages
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/snapchange/corpus-{job}/benign-coverage
+      crash_coverage_dir:
+        repo: crashing_harness_inputs_coverages
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/snapchange/corpus-{job}/crash-coverage/
+
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-snapchange-fuzz
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          BENIGN_INPUTS_DIR={{ benign_harness_inputs | shquote }}
+          CRASHING_INPUTS_DIR="/shared/snapchange/corpus-${JOB_ID}"
+          BENIGN_COVERAGE_DIR={{ benign_coverage_dir | shquote }}
+          CRASH_COVERAGE_DIR={{ crash_coverage_dir | shquote }}
+
+          rsync -ra {{snapshot_snapchange_dir | shquote}}/ /snapchange/
+
+          cp {{ syzlang_grammar_input | shquote }} /syzlangrs/syzlang-bridge/syzkaller/sys/linux/harness.txt
+
+          (
+            # Kcov filtering
+            # cp /snapchange_modifications/kcov_filter "${TEMP_DIR}/work/"
+
+            /workdir/fuzz.sh \
+              -b "$BENIGN_INPUTS_DIR" \
+              -o "$CRASHING_INPUTS_DIR" \
+              -x "$CRASH_COVERAGE_DIR" \
+              -y "$BENIGN_COVERAGE_DIR" \
+              -j "$JOB_ID"
+            # sleep 1d || true
+          )

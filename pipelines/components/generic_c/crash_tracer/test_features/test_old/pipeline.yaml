@@ -1,0 +1,15 @@
+repo_classes:
+  my_workingTargets: FilesystemRepository
+  my_asanInstallResults: FilesystemRepository
+  my_target_runtime_configs: MetadataRepository
+imports:
+  buildguy:
+    path: ../../buildguy/pipeline.yaml
+    repos:
+      targets: my_workingTargets
+      asanInstallResults: my_asanInstallResults
+  symcts:
+    path: ../pipeline.yaml
+    repos:
+      target_runtime_configs: my_target_runtime_configs
+      asanInstallResults: my_asanInstallResults

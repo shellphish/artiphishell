@@ -1,0 +1,2 @@
+request: "F / HTTP/1.5\nHost:CJ\nTransfer-Encoding:chunked\nRR\n\n1\nP\n7\nHTTP/1.\n7\n1CHECKN"
+reply: ""

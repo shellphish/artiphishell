@@ -1,0 +1,6 @@
+targets-semis-aixcc-sc-challenge-002-jenkins-cp/
+pipeline.lock
+*.tar.gz
+pd.logs
+
+!backup/**

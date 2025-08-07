@@ -1,0 +1,8 @@
+repo_classes:
+  my_workingTargets: FilesystemRepository
+  my_AflPPinstallResults: FilesystemRepository
+  my_AflPPCmplogInstallResults: FilesystemRepository
+
+imports:
+  jazzer:
+    path: ../pipeline.yaml

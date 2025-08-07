@@ -1,0 +1,82 @@
+name: 'Short Term Scheduler'
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+
+jobs:
+  trigger-pipeline-tests:
+    runs-on: ubuntu-22.04
+    permissions: write-all
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_GITHUB }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'shellphish-support-syndicate',
+              repo: 'pipelines',
+              workflow_id: 'on_push_build_pipeline.yml',
+              ref: 'main',
+              inputs: {
+                'target-name': 'nginx',
+                'run-duration': '10',
+                'inject-crash': true,
+                'dont-test-build': false,
+                'monitor-docker': true,
+                'debug-workflow': false
+              }
+            })
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_GITHUB }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'shellphish-support-syndicate',
+              repo: 'pipelines',
+              workflow_id: 'on_push_build_pipeline.yml',
+              ref: 'main',
+              inputs: {
+                'target-name': 'mock-cp',
+                'run-duration': '10',
+                'inject-crash': true,
+                'dont-test-build': false,
+                'monitor-docker': true,
+                'debug-workflow': false
+              }
+            })
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_GITHUB }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'shellphish-support-syndicate',
+              repo: 'pipelines',
+              workflow_id: 'on_push_build_pipeline.yml',
+              ref: 'main',
+              inputs: {
+                'target-name': 'jenkins',
+                'run-duration': '10',
+                'inject-crash': true,
+                'dont-test-build': false,
+                'monitor-docker': true,
+                'debug-workflow': false
+              }
+            })
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_GITHUB }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'shellphish-support-syndicate',
+              repo: 'pipelines',
+              workflow_id: 'on_push_build_pipeline.yml',
+              ref: 'main',
+              inputs: {
+                'target-name': 'linux-harden-demo3',
+                'run-duration': '10',
+                'inject-crash': true,
+                'dont-test-build': false,
+                'monitor-docker': true,
+                'debug-workflow': false
+              }
+            })

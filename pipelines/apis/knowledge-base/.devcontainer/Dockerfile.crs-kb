@@ -1,0 +1,15 @@
+# Base image
+FROM neo4j:5.15
+LABEL org.opencontainers.image.source=https://github.com/aixcc-sc/asc-crs-shellphish
+
+ARG KB_NAME
+RUN echo $KB_NAME
+
+# copy the data directory from the data image
+COPY --from=ghcr.io/aixcc-sc/asc-crs-shellphish/knowledge-base-data /knowledge-base-${KB_NAME}-data /knowledge-base-data
+RUN rm -f /knowledge-base-data/run/*
+
+ENV NEO4J_HOME=/knowledge-base-data/
+
+ADD entrypoint.sh /entrypoint.sh
+ENTRYPOINT [ "/entrypoint.sh" ]

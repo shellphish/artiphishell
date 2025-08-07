@@ -1,0 +1,105 @@
+
+TITLE: "Strong Optimistic Solving for Dynamic Symbolic Execution"
+PUBLISHED_AT: "Ivannikov Memorial Workshop (IVMEM)"
+PUBLICATION_TYPE: Workshop
+YEAR: 2022
+AUTHORS:
+- FIRSTNAME: "Darya"
+  LASTNAME: "Parygina"
+  EMAIL: "pa_darochek@ispras.ru"
+  AFFILIATION:
+    - COUNTRY: Russia
+      CITY: Moscow
+      INSTITUTION: Russian Academy of Sciences
+      SCHOOL: Ivannikov Institute for System Programming
+    - COUNTRY: Russia
+      CITY: Moscow
+      INSTITUTION: Lomonosov Moscow State University
+- FIRSTNAME: "Alexey"
+  LASTNAME: "Vishnyakov"
+  EMAIL: "vishnya@ispras.ru"
+  AFFILIATION:
+    COUNTRY: Russia
+    CITY: Moscow
+    INSTITUTION: Russian Academy of Sciences
+    SCHOOL: Ivannikov Institute for System Programming
+- FIRSTNAME: "Andrey"
+  LASTNAME: "Fedotov"
+  EMAIL: "fedotoff@ispras.ru"
+  AFFILIATION:
+    COUNTRY: Russia
+    CITY: Moscow
+    INSTITUTION: Russian Academy of Sciences
+    SCHOOL: Ivannikov Institute for System Programming
+
+TOOL_NAME: Sydr
+# TOOL_ARTIFACTS:
+  # N/A
+  # - TYPE: github
+  #   URL: https://github.com/shouc/digfuzz
+  #   STATE: PRESENT
+  #   MIRRORED_URL: https://github.com/Lukas-Dresel/digfuzz
+
+BENCHMARKS:
+  - Name: Fuzzer Test Suite (FTS)
+
+COMPARES_AGAINST:
+  - tool: AFL
+  - tool: Triton
+  - tool: QSYM
+    Paper: Towards optimal concolic testing
+
+PDF: files/2209.03710.pdf
+
+LINKS:
+  - URL: "https://arxiv.org/pdf/2209.03710.pdf"
+    TYPE: ARXIV_PDF
+  - URL: https://arxiv.org/abs/2209.03710
+    TYPE: ARXIV
+
+BIBTEX:
+  - |
+    @inproceedings{Parygina_2022,
+      title={Strong Optimistic Solving for Dynamic Symbolic Execution},
+      url={http://dx.doi.org/10.1109/IVMEM57067.2022.9983965},
+      DOI={10.1109/ivmem57067.2022.9983965},
+      booktitle={2022 Ivannikov Memorial Workshop (IVMEM)},
+      publisher={IEEE},
+      author={Parygina, Darya and Vishnyakov, Alexey and Fedotov, Andrey},
+      year={2022},
+      month=sep
+    }
+
+
+
+ABSTRACT: |
+  Dynamic symbolic execution (DSE) is an effective
+  method for automated program testing and bug detection. It is
+  increasing the code coverage by the complex branches exploration
+  during hybrid fuzzing. DSE tools invert the branches along some
+  execution path and help fuzzer examine previously unavailable
+  program parts. DSE often faces over- and underconstraint
+  problems. The first one leads to significant analysis complication
+  while the second one causes inaccurate symbolic execution.
+  We propose strong optimistic solving method that eliminates
+  irrelevant path predicate constraints for target branch inversion.
+  We eliminate such symbolic constraints that the target branch
+  is not control dependent on. Moreover, we separately handle
+  symbolic branches that have nested control transfer instructions
+  that pass control beyond the parent branch scope, e.g. return,
+  goto, break, etc. We implement the proposed method in our
+  dynamic symbolic execution tool Sydr.
+  We evaluate the strong optimistic strategy, the optimistic
+  strategy that contains only the last constraint negation, and their
+  combination. The results show that the strategies combination
+  helps increase either the code coverage or the average number of
+  correctly inverted branches per one minute. It is optimal to apply
+  both strategies together in contrast with other configurations.
+  Index Terms—DSE, symbolic execution, dynamic analysis,
+  binary analysis, path predicate, overconstraint, underconstraint,
+  SMT, hybrid fuzzing, computer security, security development
+  lifecycle, SDL
+
+NOTES:
+  SYMCTS:
+    - "Not sure yet"

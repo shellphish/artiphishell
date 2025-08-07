@@ -1,0 +1,26 @@
+diff --git a/mock_vp.c b/mock_vp.c
+index 559df26..05d8be8 100644
+--- a/mock_vp.c
++++ b/mock_vp.c
+@@ -11,12 +11,20 @@ void func_a(){
+         printf("input item:");
+         buff = &items[i][0];
+         i++;
+-        fgets(buff, 40, stdin);
++        if (i >= 3) {
++            break; // Prevent out-of-bounds access
++        }
++        fgets(buff, 10, stdin); // Change 40 to 10 to match buffer size
+         buff[strcspn(buff, "\n")] = 0;
++        if (strlen(buff) == 9 && buff[8] != '\n') {
++            int c;
++            while ((c = getchar()) != '\n' && c != EOF); // Clear input buffer
++        }
+     }while(strlen(buff)!=0);
+     i--;
+ }
+
++
+ void func_b(){
+     char *buff;
+     printf("done adding items\n");

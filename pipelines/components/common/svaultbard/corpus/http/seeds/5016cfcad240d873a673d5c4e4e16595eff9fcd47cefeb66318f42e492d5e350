@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/4.0 404\nLast-Modified:,03 A=4 \tForwardedt 30\n"

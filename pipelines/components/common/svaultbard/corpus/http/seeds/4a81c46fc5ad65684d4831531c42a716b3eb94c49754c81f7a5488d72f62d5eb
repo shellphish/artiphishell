@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/9.5 100\nETag\n\n"

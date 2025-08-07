@@ -1,0 +1,2 @@
+request: "V / HTTP/1.0\n\n"
+reply: "HTTP/1.22 000\nTranSfer-Encoding:chunked\n\n0\r\010engt:\n"

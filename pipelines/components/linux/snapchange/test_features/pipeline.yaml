@@ -1,0 +1,3 @@
+imports:
+  snapchange:
+    path: ../pipeline.yaml

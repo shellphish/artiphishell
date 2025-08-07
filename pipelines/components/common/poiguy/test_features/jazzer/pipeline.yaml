@@ -1,0 +1,19 @@
+repo_classes: 
+  jazzer_index_csvs: BlobRepository
+  jazzer_crash_reports_metadatas: MetadataRepository
+  jazzer_crash_reports: BlobRepository
+  targets_with_sources: 
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+  points_of_interest: MetadataRepository
+
+imports:
+  poiguy_jazzer:
+    path: ../../pipeline_poiguy_jazzer.yaml
+    repos: 
+      functions_index_csvs: jazzer_index_csvs
+      jazzer_crash_reports_metadatas: jazzer_crash_reports_metadatas
+      jazzer_crash_reports: jazzer_crash_reports
+      points_of_interest: points_of_interest
+  

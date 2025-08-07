@@ -1,0 +1,64 @@
+gef➤  run < input.txt
+Starting program: /home/saastha/aicc/UniversalDBG/tests/c/crashing_progs/mock-cp/mock_vp < input.txt
+input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:input item:done adding items
+
+Program received signal SIGSEGV, Segmentation fault.
+__strlen_sse2 () at ../sysdeps/x86_64/multiarch/../strlen.S:120
+120	../sysdeps/x86_64/multiarch/../strlen.S: No such file or directory.
+
+[ Legend: Modified register | Code | Heap | Stack | String ]
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x55555558d572    
+$rbx   : 0x00007ffff7e40b13  →  <__vfprintf_internal+691> endbr64 
+$rcx   : 0x572             
+$rdx   : 0x00007fffffffe0f0  →  0x000055555558d572
+$rsp   : 0x00007fffffffdb38  →  0x00007ffff7e42d15  →  <__vfprintf_internal+9397> jmp 0x7ffff7e4108a <__vfprintf_internal+2090>
+$rbp   : 0x00007fffffffe0b0  →  0x00007fffffffe1c0  →  0x00007fffffffe1d0  →  0x0000000000000000
+$rsi   : 0x00007fffffffe078  →  0x3c8855ea12ddb000
+$rdi   : 0x55555558d572    
+$rip   : 0x00007ffff7e7bbea  →  <__strlen_sse2+42> movdqu xmm4, XMMWORD PTR [rax]
+$r8    : 0xffffffff        
+$r9    : 0xc               
+$r10   : 0x0000555555556041  →  0x503b031b01000a73 ("s\n"?)
+$r11   : 0x55555558d572    
+$r12   : 0x00007ffff7fb76a0  →  0x00000000fbad2a84
+$r13   : 0x0000555555556037  →  "item %d: %s\n"
+$r14   : 0x00007fffffffe0c0  →  0x0000003000000018
+$r15   : 0x73              
+$eflags: [zero CARRY PARITY ADJUST SIGN trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x33 $ss: 0x2b $ds: 0x00 $es: 0x00 $fs: 0x00 $gs: 0x00 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffdb38│+0x0000: 0x00007ffff7e42d15  →  <__vfprintf_internal+9397> jmp 0x7ffff7e4108a <__vfprintf_internal+2090>	 ← $rsp
+0x00007fffffffdb40│+0x0008: 0x000000000000000b ("
+                                                 "?)
+0x00007fffffffdb48│+0x0010: 0x00007ffff7e40972  →  <__vfprintf_internal+274> cmp r15, rax
+0x00007fffffffdb50│+0x0018: 0x00000000ffffdb60
+0x00007fffffffdb58│+0x0020: 0x0000000000000000
+0x00007fffffffdb60│+0x0028: 0x0000000000000000
+0x00007fffffffdb68│+0x0030: 0x0000000000000000
+0x00007fffffffdb70│+0x0038: 0x0000555500000000
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7e7bbda <__strlen_sse2+26> and    rcx, 0xfff
+   0x7ffff7e7bbe1 <__strlen_sse2+33> cmp    rcx, 0xfcf
+   0x7ffff7e7bbe8 <__strlen_sse2+40> ja     0x7ffff7e7bc50 <__strlen_sse2+144>
+ → 0x7ffff7e7bbea <__strlen_sse2+42> movdqu xmm4, XMMWORD PTR [rax]
+   0x7ffff7e7bbee <__strlen_sse2+46> pcmpeqb xmm4, xmm0
+   0x7ffff7e7bbf2 <__strlen_sse2+50> pmovmskb edx, xmm4
+   0x7ffff7e7bbf6 <__strlen_sse2+54> test   edx, edx
+   0x7ffff7e7bbf8 <__strlen_sse2+56> je     0x7ffff7e7bbfe <__strlen_sse2+62>
+   0x7ffff7e7bbfa <__strlen_sse2+58> bsf    eax, edx
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ────
+[#0] Id 1, Name: "mock_vp", stopped 0x7ffff7e7bbea in __strlen_sse2 (), reason: SIGSEGV
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────
+[#0] 0x7ffff7e7bbea → __strlen_sse2()
+[#1] 0x7ffff7e42d15 → __vfprintf_internal(s=0x7ffff7fb76a0 <_IO_2_1_stdout_>, format=0x555555556037 "item %d: %s\n", ap=0x7fffffffe0c0, mode_flags=0x0)
+[#2] 0x7ffff7e2bd3f → __printf(format=<optimized out>)
+[#3] 0x555555555304 → func_b()
+[#4] 0x555555555337 → main()
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+gef➤  backtrace
+#0  __strlen_sse2 () at ../sysdeps/x86_64/multiarch/../strlen.S:120
+#1  0x00007ffff7e42d15 in __vfprintf_internal (s=0x7ffff7fb76a0 <_IO_2_1_stdout_>, format=0x555555556037 "item %d: %s\n", ap=ap@entry=0x7fffffffe0c0, mode_flags=mode_flags@entry=0x0) at vfprintf-internal.c:1688
+#2  0x00007ffff7e2bd3f in __printf (format=<optimized out>) at printf.c:33
+#3  0x0000555555555304 in func_b ()
+#4  0x0000555555555337 in main ()

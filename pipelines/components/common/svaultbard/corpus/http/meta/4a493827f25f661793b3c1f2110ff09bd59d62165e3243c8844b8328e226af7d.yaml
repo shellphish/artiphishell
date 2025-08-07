@@ -1,0 +1,4 @@
+filename: corpus-request-321123
+sha256: 4a493827f25f661793b3c1f2110ff09bd59d62165e3243c8844b8328e226af7d
+source: https://github.com/lpereira/lwan
+source_relative_path: fuzz/corpus/corpus-request-321123

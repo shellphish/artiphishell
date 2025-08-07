@@ -1,0 +1,26 @@
+repo_classes:
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  commit_changes_metadatas_path: MetadataRepository
+
+tasks:
+
+  commit_analyzer:
+    links:
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      commit_changes_metadatas_path:
+        repo: commit_changes_metadatas
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        template: |
+          set -ex
+
+          python /shellphish/components/commit-diff-analyzer/changed-functions.py {{target_with_sources | shquote}} {{commit_changes_metadatas_path | shquote}}

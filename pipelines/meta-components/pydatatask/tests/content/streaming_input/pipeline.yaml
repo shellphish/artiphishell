@@ -1,0 +1,54 @@
+repo_classes:
+  scope: MetadataRepository
+  input: BlobRepository
+  inputScope: MetadataRepository
+  output: BlobRepository
+  outputMeta: MetadataRepository
+
+tasks:
+  task:
+    links:
+      # scope and the task itself are keyed alike
+      scope:
+        repo: scope
+        kind: InputMetadata
+      # input and inputScope are keyed alike but not on the task key
+      inputScope:
+        repo: inputScope
+        kind: null
+      input:
+        repo: input
+        kind: StreamingInputFilepath
+        # this indicates that only inputs such that the same key in inputScope has .target == task key should be downloaded
+        key: inputScope.target
+      output:
+        repo: output
+        kind: StreamingOutputFilepath
+        auto_meta: meta
+        auto_values:
+          job: '{{ job }}'
+          complex: |
+            thing_{{job}}: true
+        cokeyed:
+          meta: outputMeta
+    executable:
+      cls: Process
+      args:
+        template: |
+          echo hoo >/tmp/hoo {{ bwahhhhhh | default("") }}
+          BROKEN=
+          while [ -z "$BROKEN" ]; do
+            for f in $(ls {{ input | shquote }}); do
+              full={{input | shquote}}/$f
+              touch {{ output.lock_dir | shquote}}/$f
+              echo "parent: $f" > {{ output.cokeyed.meta | shquote }}/$f
+              cat /tmp/hoo $full >{{ output | shquote }}/$f
+              rm {{ output.lock_dir | shquote}}/$f
+              if [ "$(cat $full)" = "done" ]; then
+                BROKEN=1
+              fi
+              rm $full
+            done
+            sleep 0.1
+          done
+          echo "bye!"

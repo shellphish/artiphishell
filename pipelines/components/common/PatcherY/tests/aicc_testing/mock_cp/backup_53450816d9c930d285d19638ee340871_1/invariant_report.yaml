@@ -1,0 +1,33 @@
+filein_harness_real:mock_vp_c_11:
+  file: samples/mock_vp.c
+  func: func_a()
+  key_index: samples/mock_vp.c:7:1::void func_a()
+  line: '11'
+  unique_to_crash: false
+  violations:
+  - is: max(i)==3
+    was: max(i)==1
+  - is: max(buff)==93825004370356
+    was: max(buff)==93825004370336
+filein_harness_real:mock_vp_c_14:
+  file: samples/mock_vp.c
+  func: func_a()
+  key_index: samples/mock_vp.c:7:1::void func_a()
+  line: '14'
+  unique_to_crash: false
+  violations:
+  - is: max(i)==4
+    was: max(i)==2
+  - is: max(buff)==93825004370366
+    was: max(buff)==93825004370346
+filein_harness_real:mock_vp_c_15:
+  file: samples/mock_vp.c
+  func: func_a()
+  key_index: samples/mock_vp.c:7:1::void func_a()
+  line: '15'
+  unique_to_crash: false
+  violations:
+  - is: max(i)==3
+    was: max(i)==2
+  - is: max(buff)==93825004370356
+    was: max(buff)==93825004370346

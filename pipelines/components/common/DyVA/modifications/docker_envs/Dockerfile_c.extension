@@ -1,0 +1,19 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} 
+
+ARG ISOLATED=
+RUN test -z "${ISOLATED}" || echo "deb [trusted=yes arch=amd64] http://apt-mirror-$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\./-/g'):$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\.//g') $(grep DISTRIB_CODENAME /etc/lsb-release | cut -d= -f2) main universe" > /etc/apt/sources.list
+RUN apt-get update && apt-get install -y gdbserver socat
+
+COPY ./shellphish /shellphish/
+COPY ./run_gdbserver.sh /run_gdbserver.sh
+RUN chmod +x /run_gdbserver.sh
+RUN cd /shellphish/wrap-lib && make
+RUN mv /usr/bin/ld /usr/bin/ld.real
+RUN cp /shellphish/wrap-lib/fucked_up_ld /usr/bin/ld
+
+# remove -fsanitize=fuzzer to avoid multiple definition of main
+RUN find / -type f -name 'cp_build*' -exec sed -i 's/-fsanitize=fuzzer-no-link//g' {} \;
+RUN find / -type f -name 'cp_build*' -exec sed -i 's/-fsanitize=fuzzer//g' {} \;
+
+RUN cd /shellphish/misc/ && clang -g -DFORCE_POV=1 -c -o generic_harness.o generic_harness.c

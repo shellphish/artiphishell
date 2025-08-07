@@ -1,0 +1,7 @@
+cp_source: lua
+crash_id: 555f1f8b8724fbc2869df3ad6e939235
+crash_report_id: 555f1f8b8724fbc2869df3ad6e939235
+crashing_commit: f744c26894079c655e51a1b6d2d1e13351ca9d9c
+harness_id: id_1
+sanitizer_ids:
+- id_1

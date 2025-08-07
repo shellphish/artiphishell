@@ -1,0 +1,36 @@
+[package]
+name = "smt_sampler"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+debug = 1
+
+[features]
+default = ["z3jit_support", "known_unsat_caching"]
+z3jit_support = ["z3jit"]
+primitive_mutation_caching = []
+trivial_primitive_mutation_caching = ["primitive_mutation_caching"]
+known_unsat_caching = []
+
+[dependencies]
+# z3 = { path = "/home/honululu/lukas/research/mctsse/implementation/dependencies/z3.rs/z3" }
+z3 = { git = "https://github.com/Lukas-Dresel/z3.rs", branch = "feat/z3_information_extraction" }
+
+log = "*"
+rand = "*"
+sorted-vec = "*"
+itertools = "*"
+clap = "3.2.22"
+env_logger = "*"
+roaring = "*"
+bitvec = "*"
+sha2 = "*"
+data-encoding = "*"
+rand_chacha = "*"
+
+# z3jit = { path = "/home/honululu/lukas/streaming/projects/z3jit", optional=true }
+z3jit = { path = "../../repos/z3jit/", optional=true }
+# z3jit = { git = "https://github.com/Lukas-Dresel/z3jit.git", branch = "main", optional=true }

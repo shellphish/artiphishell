@@ -1,0 +1,488 @@
+repo_classes:
+  full_function_indices: BlobRepository
+  jenkins_targets_with_sources: FilesystemRepository
+  cp_image_ready: MetadataRepository
+  jenkins_harness_infos: MetadataRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  target_directed_fuzz_requests: MetadataRepository
+  info_extraction_results: MetadataRepository
+
+  jazzer_built_targets:
+    cls: FilesystemRepository
+    required: false
+
+tasks:
+  jenkins_build_for_jazzer:
+    priority: 2
+    job_quota:
+      max: 0.4
+    annotations:
+      maturity: inProgress
+      authors:
+        - itszn
+    links:
+      target_with_sources:
+        repo: jenkins_targets_with_sources
+        kind: InputFilepath
+
+      cp_image_ready:
+        repo: cp_image_ready
+        kind: InputId
+
+      jazzer_built_target:
+        repo: jazzer_built_targets
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-test_harness_jenkins
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+          # timeout 20 docker login ghcr.io -u player-c3f09220 -p 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 || true
+
+          export TARGET_SRC_DIR="{{ target_with_sources | shquote }}"
+          export RESULTS_DIR="{{ jazzer_built_target | shquote }}"
+
+          export CP_NAME="$(yq '.cp_name' "$TARGET_SRC_DIR"/project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')"
+
+          mkdir -p /shared/jazzer/build/
+
+          export INSTANCE_DIR="/shared/jazzer/build/build-${CP_NAME}-${JOB_ID}"
+          mkdir -p "$INSTANCE_DIR"
+
+          rsync -ra "${TARGET_SRC_DIR}/" "${INSTANCE_DIR}/"
+          cd "${INSTANCE_DIR}"
+
+          . /jazzer_modifications/build_target.sh
+
+          rsync -ra ./ "$RESULTS_DIR/"
+    
+  jenkins_jazzer_fuzz:
+    long_running: true
+    replicable: true
+    job_quota:
+      cpu: 4
+      mem: "24Gi"
+    timeout:
+      minutes: 240
+    annotations:
+      maturity: inProgress
+      authors:
+        - ati
+        - clasm
+        - siyu
+        - 4rbit3r
+        - itszn
+    links:
+      fuzzing_request:
+        repo: target_directed_fuzz_requests
+        kind: InputMetadata
+      harness_info:
+        repo: jenkins_harness_infos
+        kind: InputMetadata
+        key: fuzzing_request.harness_id
+      harness_info_id:
+        repo: jenkins_harness_infos
+        kind: InputId
+        key: fuzzing_request.harness_id
+      target_with_sources:
+        repo: jazzer_built_targets
+        kind: InputFilepath
+        key: fuzzing_request.target_id
+      full_function_index:
+        repo: full_function_indices
+        kind: InputFilepath
+        key: fuzzing_request.target_id
+      codeql_extraction_results:
+        repo: info_extraction_results
+        kind: InputFilepath
+        key: fuzzing_request.reachability_request_id
+      
+    executable:
+      cls: Container
+      args:
+        image: aixcc-test_harness_jenkins
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+
+          # timeout 20 docker login ghcr.io -u player-c3f09220 -p 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 || true
+
+          export TARGET_ID="{{ harness_info_id | shquote }}"
+          export CODEQL_FILE="{{ codeql_extraction_results | shquote }}"
+          export TARGET_SRC_DIR="{{ target_with_sources | shquote }}"
+          export CP_HARNESS_ID="{{ harness_info.cp_harness_id | shquote }}"
+          export FUNC_INDEXER_REPORT="{{ full_function_index | shquote }}"
+
+          export CP_NAME="$(yq '.cp_name' "$TARGET_SRC_DIR"/project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')"
+
+          mkdir -p "/shared/jazzer/fuzz/"
+
+          export INSTANCE_DIR="/shared/jazzer/fuzz/multi-${TARGET_ID}-${CP_NAME}-${JOB_ID}-${REPLICA_ID}"
+          mkdir -p "$INSTANCE_DIR"
+
+          export SEEDS_DIR="${INSTANCE_DIR}/seeds"
+          mkdir -p "${SEEDS_DIR}"
+          echo "jazze" > "${SEEDS_DIR}/1"
+          
+
+          export FUZZ_DUMP_DIR="/shared/jazzer_sync/${CP_NAME}-dump"
+          mkdir -p "$FUZZ_DUMP_DIR"
+          mkdir -p "$FUZZ_DUMP_DIR/benign_harness_inputs"
+          mkdir -p "$FUZZ_DUMP_DIR/crashing_harness_inputs"
+
+          export FUZZ_OUTPUT_DIR_REL="jazzer_sync/${TARGET_ID}-${CP_NAME}"
+          export FUZZ_OUTPUT_DIR="/shared/${FUZZ_OUTPUT_DIR_REL}"
+          mkdir -p "$FUZZ_OUTPUT_DIR"
+          mkdir -p "$FUZZ_OUTPUT_DIR/benign_harness_inputs"
+          mkdir -p "$FUZZ_OUTPUT_DIR/crashing_harness_inputs"
+
+          rsync -ra "${TARGET_SRC_DIR}/" "${INSTANCE_DIR}/"
+          cd "${INSTANCE_DIR}"
+
+          FOO="$(yq ".harnesses.${CP_HARNESS_ID}" project.yaml || true)"
+          if test "$FOO" = "null"; then
+            echo "${CP_HARNESS_ID} is not a valid harness ID"
+            exit 1
+          fi
+
+          . /jazzer_modifications/setup_fuzzer.sh
+
+          for i in 1 2 3 4 5 6 7 8; do
+            if [ ! -f "${CONTAINER_WORKDIR}/fuzz_${i}.sh" ];then
+              echo "fuzz_${i}.sh not created"
+              exit 1
+            fi
+            if [ ! -f "${CONTAINER_WORKDIR}/triage_${i}.sh" ];then
+              echo "triage_${i}.sh not created"
+              exit 1
+            fi
+
+            chmod +x "${CONTAINER_WORKDIR}/fuzz_${i}.sh"
+            chmod +x "${CONTAINER_WORKDIR}/triage_${i}.sh"
+          done
+          
+          ## Jazzer will store newly discovered seeds into the same input directory
+          ## So we copy all the seeds into the benign inputs directory
+          rsync -ra "${SEEDS_DIR}/" "${CONTAINER_INPUTS}"
+          #rsync -ra "${SEEDS_DIR}/" "${INPUTS_DIR}"
+
+          ## $CONTAINER_INPUTS -> /inputs
+          ## $CONTAINER_OUTPUTS -> /crashes
+          for index in 1 2 3 4 5 6 7 8; do
+            . /jazzer_modifications/run_fuzzer_in_background.sh
+          done
+
+          chmod +x /jazzer_modifications/other_node_rsync.sh || true
+          /jazzer_modifications/other_node_rsync.sh
+
+
+  jenkins_jazzer_fuzz_merge:
+    long_running: true
+    require_success: true
+    job_quota:
+      cpu: 1
+      mem: "3Gi"
+    timeout:
+      minutes: 240
+    annotations:
+      maturity: inProgress
+      authors:
+        - itszn
+    links:
+      fuzzing_request:
+        repo: target_directed_fuzz_requests
+        kind: InputMetadata
+      harness_info:
+        repo: jenkins_harness_infos
+        kind: InputMetadata
+        key: fuzzing_request.harness_id
+      harness_info_id:
+        repo: jenkins_harness_infos
+        kind: InputId
+        key: fuzzing_request.harness_id
+      target_with_sources:
+        repo: jazzer_built_targets
+        kind: InputFilepath
+        key: fuzzing_request.target_id
+      full_function_index:
+        repo: full_function_indices
+        kind: InputFilepath
+        key: fuzzing_request.target_id
+      codeql_extraction_results:
+        repo: info_extraction_results
+        kind: InputFilepath
+        key: fuzzing_request.reachability_request_id
+    
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: '{{ harness_info_id }}'
+          target_id: '{{ harness_info.target_id }}'
+          cp_harness_id: '{{ harness_info.cp_harness_id }}'
+          cp_harness_name: '{{ harness_info.cp_harness_name }}'
+          cp_harness_source_path: "{{ harness_info.cp_harness_source_path }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          fuzzer: jazzer
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: benign_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: '{{ harness_info_id }}'
+          target_id: '{{ harness_info.target_id }}'
+          cp_harness_id: '{{ harness_info.cp_harness_id }}'
+          cp_harness_name: '{{ harness_info.cp_harness_name }}'
+          cp_harness_source_path: "{{ harness_info.cp_harness_source_path }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          fuzzer: jazzer
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-test_harness_jenkins
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+
+          # timeout 20 docker login ghcr.io -u player-c3f09220 -p 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 || true
+
+          export TARGET_ID="{{ harness_info_id | shquote }}"
+          #export CODEQL_FILE="/work/empty_codeql.yaml"
+          export CODEQL_FILE="{{ codeql_extraction_results | shquote }}"
+          export TARGET_SRC_DIR="{{ target_with_sources | shquote }}"
+          export CP_HARNESS_ID="{{ harness_info.cp_harness_id | shquote }}"
+          export FUNC_INDEXER_REPORT="{{ full_function_index | shquote }}"
+
+          # TODO: 
+          # find cp for instrumentation
+          # remove timeout crashes
+          # make parallel fuzzing work (set -jobs and -workers)
+          export CP_NAME="$(yq '.cp_name' "$TARGET_SRC_DIR"/project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')"
+
+          mkdir -p "/shared/jazzer/fuzz/"
+
+          export INSTANCE_DIR="/shared/jazzer/fuzz/merge-${TARGET_ID}-${CP_NAME}-${JOB_ID}-${REPLICA_ID}"
+          mkdir -p "$INSTANCE_DIR"
+
+          export SEEDS_DIR="${INSTANCE_DIR}/seeds"
+          mkdir -p "${SEEDS_DIR}"
+          echo "jazze" > "${SEEDS_DIR}/1"
+          ls -la /jazzer_modifications/
+          cp /jazzer_modifications/sample_solve.bin "${SEEDS_DIR}/2" || true
+
+          export FUZZ_DUMP_DIR="/shared/jazzer_sync/${CP_NAME}-dump"
+          mkdir -p "$FUZZ_DUMP_DIR"
+          mkdir -p "$FUZZ_DUMP_DIR/benign_harness_inputs"
+          mkdir -p "$FUZZ_DUMP_DIR/crashing_harness_inputs"
+
+          export FUZZ_OUTPUT_DIR_REL="jazzer_sync/${TARGET_ID}-${CP_NAME}"
+          export FUZZ_OUTPUT_DIR="/shared/${FUZZ_OUTPUT_DIR_REL}"
+          mkdir -p "$FUZZ_OUTPUT_DIR"
+          mkdir -p "$FUZZ_OUTPUT_DIR/benign_harness_inputs"
+          mkdir -p "$FUZZ_OUTPUT_DIR/crashing_harness_inputs"
+
+          rsync -ra "${TARGET_SRC_DIR}/" "${INSTANCE_DIR}/"
+          cd "${INSTANCE_DIR}"
+
+          FOO="$(yq ".harnesses.${CP_HARNESS_ID}" project.yaml || true)"
+          if test "$FOO" = "null"; then
+            echo "${CP_HARNESS_ID} is not a valid harness ID"
+            exit 1
+          fi
+
+          . /jazzer_modifications/setup_fuzzer.sh
+
+          # Only run a single instance
+
+          index=1
+          if [ ! -f "${CONTAINER_WORKDIR}/fuzz_${index}.sh" ];then
+            echo "fuzz_${index}.sh not created"
+            exit 1
+          fi
+          if [ ! -f "${CONTAINER_WORKDIR}/triage_${index}.sh" ];then
+            echo "triage_${index}.sh not created"
+            exit 1
+          fi
+
+          chmod +x "${CONTAINER_WORKDIR}/fuzz_${index}.sh"
+          chmod +x "${CONTAINER_WORKDIR}/triage_${index}.sh"
+
+          ## Jazzer will store newly discovered seeds into the same input directory
+          ## So we copy all the seeds into the benign inputs directory
+          rsync -ra "${SEEDS_DIR}/" "${CONTAINER_INPUTS}"
+
+          # TODO should we copy the seeds directly to the output??
+          rsync -ra "${SEEDS_DIR}/" "{{benign_harness_inputs | shquote}}"
+
+          index=1
+          . /jazzer_modifications/run_fuzzer_in_background.sh
+
+          sleep 5
+
+          chmod +x /jazzer_modifications/merge_jazzer_sync_dir.sh || true
+          /bin/bash -x /jazzer_modifications/merge_jazzer_sync_dir.sh \
+            "${CP_NAME}" \
+            "${FUZZ_OUTPUT_DIR}" \
+            "{{benign_harness_inputs | shquote}}" \
+            "{{crashing_harness_inputs | shquote}}"
+
+
+
+##################### NO CODEQL JAZZER FUZZING #####################
+
+
+  jenkins_jazzer_no_codeql_fuzz:
+    long_running: true
+    replicable: true
+    max_replicas: 8
+    job_quota:
+      cpu: 4
+      mem: "24Gi"
+    timeout:
+      minutes: 240
+    annotations:
+      maturity: inProgress
+      authors:
+        - ati
+        - clasm
+        - siyu
+        - 4rbit3r
+        - itszn
+    links:
+      fuzzing_request:
+        repo: target_directed_fuzz_requests
+        kind: InputMetadata
+      harness_info:
+        repo: jenkins_harness_infos
+        kind: InputMetadata
+        key: fuzzing_request.harness_id
+      harness_info_id:
+        repo: jenkins_harness_infos
+        kind: InputId
+        key: fuzzing_request.harness_id
+      target_with_sources:
+        repo: jazzer_built_targets
+        kind: InputFilepath
+        key: fuzzing_request.target_id
+      full_function_index:
+        repo: full_function_indices
+        kind: InputFilepath
+        key: fuzzing_request.target_id
+      
+    executable:
+      cls: Container
+      args:
+        image: aixcc-test_harness_jenkins
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+
+          # timeout 20 docker login ghcr.io -u player-c3f09220 -p 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 || true
+
+          export TARGET_ID="{{ harness_info_id | shquote }}"
+          export CODEQL_FILE="/work/empty_codeql.yaml"
+          export TARGET_SRC_DIR="{{ target_with_sources | shquote }}"
+          export CP_HARNESS_ID="{{ harness_info.cp_harness_id | shquote }}"
+          export FUNC_INDEXER_REPORT="{{ full_function_index | shquote }}"
+
+          export CP_NAME="$(yq '.cp_name' "$TARGET_SRC_DIR"/project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')"
+
+          mkdir -p "/shared/jazzer/fuzz/"
+
+          export INSTANCE_DIR="/shared/jazzer/fuzz/multi-${TARGET_ID}-${CP_NAME}-${JOB_ID}-${REPLICA_ID}"
+          mkdir -p "$INSTANCE_DIR"
+
+          export SEEDS_DIR="${INSTANCE_DIR}/seeds"
+          mkdir -p "${SEEDS_DIR}"
+          echo "jazze" > "${SEEDS_DIR}/1"
+
+          export FUZZ_DUMP_DIR="/shared/jazzer_sync/${CP_NAME}-dump"
+          mkdir -p "$FUZZ_DUMP_DIR"
+          mkdir -p "$FUZZ_DUMP_DIR/benign_harness_inputs"
+          mkdir -p "$FUZZ_DUMP_DIR/crashing_harness_inputs"
+
+          export FUZZ_OUTPUT_DIR_REL="jazzer_sync/${TARGET_ID}-${CP_NAME}"
+          export FUZZ_OUTPUT_DIR="/shared/${FUZZ_OUTPUT_DIR_REL}"
+          mkdir -p "$FUZZ_OUTPUT_DIR"
+          mkdir -p "$FUZZ_OUTPUT_DIR/benign_harness_inputs"
+          mkdir -p "$FUZZ_OUTPUT_DIR/crashing_harness_inputs"
+
+          rsync -ra "${TARGET_SRC_DIR}/" "${INSTANCE_DIR}/"
+          cd "${INSTANCE_DIR}"
+
+          FOO="$(yq ".harnesses.${CP_HARNESS_ID}" project.yaml || true)"
+          if test "$FOO" = "null"; then
+            echo "${CP_HARNESS_ID} is not a valid harness ID"
+            exit 1
+          fi
+
+          . /jazzer_modifications/setup_fuzzer.sh
+
+          for i in 1 2 3 4 5 6 7 8; do
+            if [ ! -f "${CONTAINER_WORKDIR}/fuzz_${i}.sh" ];then
+              echo "fuzz_${i}.sh not created"
+              exit 1
+            fi
+            if [ ! -f "${CONTAINER_WORKDIR}/triage_${i}.sh" ];then
+              echo "triage_${i}.sh not created"
+              exit 1
+            fi
+
+            chmod +x "${CONTAINER_WORKDIR}/fuzz_${i}.sh"
+            chmod +x "${CONTAINER_WORKDIR}/triage_${i}.sh"
+          done
+          
+          ## Jazzer will store newly discovered seeds into the same input directory
+          ## So we copy all the seeds into the benign inputs directory
+          rsync -ra "${SEEDS_DIR}/" "${CONTAINER_INPUTS}"
+          #rsync -ra "${SEEDS_DIR}/" "${INPUTS_DIR}"
+
+          ## $CONTAINER_INPUTS -> /inputs
+          ## $CONTAINER_OUTPUTS -> /crashes
+          for index in 1 2 3 4 5 6 7 8; do
+            . /jazzer_modifications/run_fuzzer_in_background.sh
+          done
+
+          chmod +x /jazzer_modifications/other_node_rsync.sh || true
+          /jazzer_modifications/other_node_rsync.sh
+

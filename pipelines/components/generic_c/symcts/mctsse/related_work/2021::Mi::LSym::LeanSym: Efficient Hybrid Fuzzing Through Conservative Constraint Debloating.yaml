@@ -1,0 +1,119 @@
+
+TITLE: "LeanSym: Efficient Hybrid Fuzzing Through Conservative Constraint Debloating"
+PUBLISHED_AT: "Research in Attacks, Intrusions and Defenses (RAID)"
+PUBLICATION_TYPE: Conference
+YEAR: 2021
+AUTHORS:
+- FIRSTNAME: "Xianya"
+  LASTNAME: "Mi"
+  EMAIL: "mixianya@126.com"
+  AFFILIATION:
+    INSTITUTION: Artificial Intelligence Research Center
+    CITY: Beijing
+    COUNTRY: China
+- FIRSTNAME: "Sanjay"
+  LASTNAME: "Rawat"
+  EMAIL: "sanjay.rawat@bristol.ac.uk"
+  AFFILIATION:
+    INSTITUTION: University of Bristol
+    CITY: Bristol
+    COUNTRY: United Kingdom
+- FIRSTNAME: "Cristiano"
+  LASTNAME: "Giuffrida"
+  EMAIL: "giuffrida@cs.vu.nl"
+  AFFILIATION:
+    COUNTRY: The Netherlands
+    CITY: Amsterdam
+    INSTITUTION: Vrije Universiteit Amsterdam
+- FIRSTNAME: "Herbert"
+  LASTNAME: "Bos"
+  EMAIL: "herbertb@cs.vu.nl"
+  AFFILIATION:
+    COUNTRY: The Netherlands
+    CITY: Amsterdam
+    INSTITUTION: Vrije Universiteit Amsterdam
+
+TOOL_NAME: LSYM
+TOOL_ARTIFACTS: []
+  # N/A
+  # - TYPE: github
+  #   URL: https://github.com/shouc/digfuzz
+  #   STATE: PRESENT
+  #   MIRRORED_URL: https://github.com/Lukas-Dresel/digfuzz
+
+BENCHMARKS:
+  - Name: Fuzzer Test Suite (FTS)
+
+COMPARES_AGAINST:
+  - tool: AFL
+  - tool: Triton
+  - tool: QSYM
+    Paper: Towards optimal concolic testing
+
+PDF: files/leansym_raid21.pdf
+
+LINKS:
+  - URL: "https://download.vusec.net/papers/leansym_raid21.pdf"
+    TYPE: PDF
+
+  - URL: "https://dl.acm.org/doi/10.1145/3471621.3471852"
+    TYPE: ACM-DOI
+
+
+BIBTEX:
+  - |
+    @inproceedings{10.1145/3471621.3471852,
+      author = {Mi, Xianya and Rawat, Sanjay and Giuffrida, Cristiano and Bos, Herbert},
+      title = {LeanSym: Efficient Hybrid Fuzzing Through Conservative Constraint Debloating},
+      year = {2021},
+      isbn = {9781450390583},
+      publisher = {Association for Computing Machinery},
+      address = {New York, NY, USA},
+      url = {https://doi.org/10.1145/3471621.3471852},
+      doi = {10.1145/3471621.3471852},
+      abstract = {To improve code coverage and flip complex program branches, hybrid fuzzers couple fuzzing with concolic execution. Despite its benefits, this strategy inherits the inherent slowness and memory bloat of concolic execution, due to path explosion and constraint solving. While path explosion has received much attention, constraint bloat (having to solve complex and unnecessary constraints) is much less studied. In this paper, we present LeanSym (LSym), an efficient hybrid fuzzer. LSym focuses on optimizing the core concolic component of hybrid fuzzing by conservatively eliminating constraint bloat without sacrificing concolic execution soundness. The key idea is to partially symbolize the input and the program in order to remove unnecessary constraints accumulated during execution and significantly speed up the fuzzing process. In particular, we use taint analysis to identify the bytes that may influence the branches that we want to flip and symbolize only those bytes to minimize the constraints to collect. Furthermore, we eliminate non-trivial constraints introduced by environment modelling for system I/O. This is done by targeting the concolic analysis solely to library function-level tracing. We show this simple approach is effective and can be implemented in a modular fashion on top of off-the-shelf binary analysis tools. In particular, with only 1k LOC to implement simple branch/seed selection policies for hybrid fuzzing on top of unmodified Triton, libdft, and AFL, LSym outperforms state-of-the-art hybrid fuzzers with much less memory bloat, including those with advanced branch/seed selection policies or heavily optimized concolic execution engines such as QSYM and derivatives. On average, LSym outperforms QSYM by 7.61\% in coverage, while finding bugs 4.79x faster in 18 applications of Google Fuzzer Test Suite. In real-world application testing, LSym reported 17 new bugs in 5 applications.},
+      booktitle = {Proceedings of the 24th International Symposium on Research in Attacks, Intrusions and Defenses},
+      pages = {62–77},
+      numpages = {16},
+      keywords = {concolic execution, hybrid fuzzing, taint analysis},
+      location = {San Sebastian, Spain},
+      series = {RAID '21}
+    }
+ABSTRACT: |
+  To improve code coverage and flip complex program branches, hy-
+  brid fuzzers couple fuzzing with concolic execution. Despite its
+  benefits, this strategy inherits the inherent slowness and memory
+  bloat of concolic execution, due to path explosion and constraint
+  solving. While path explosion has received much attention, con-
+  straint bloat (having to solve complex and unnecessary constraints)
+  is much less studied.
+  In this paper, we present LeanSym (LSym), an efficient hybrid
+  fuzzer. LSym focuses on optimizing the core concolic component
+  of hybrid fuzzing by conservatively eliminating constraint bloat
+  without sacrificing concolic execution soundness. The key idea
+  is to partially symbolize the input and the program in order to
+  remove unnecessary constraints accumulated during execution and
+  significantly speed up the fuzzing process. In particular, we use
+  taint analysis to identify the bytes that may influence the branches
+  that we want to flip and symbolize only those bytes to minimize
+  the constraints to collect. Furthermore, we eliminate non-trivial
+  constraints introduced by environment modelling for system I/O.
+  This is done by targeting the concolic analysis solely to library
+  function-level tracing.
+  We show this simple approach is effective and can be imple-
+  mented in a modular fashion on top of off-the-shelf binary anal-
+  ysis tools. In particular, with only 1k LOC to implement simple
+  branch/seed selection policies for hybrid fuzzing on top of unmod-
+  ified Triton, libdft, and AFL, LSym outperforms state-of-the-art
+  hybrid fuzzers with much less memory bloat, including those with
+  advanced branch/seed selection policies or heavily optimized con-
+  colic execution engines such as QSYM and derivatives. On aver-
+  age, LSym outperforms QSYM by 7.61% in coverage, while finding
+  bugs 4.79x faster in 18 applications of Google Fuzzer Test Suite.
+  In real-world application testing, LSym reported 17 new bugs in 5
+  applications.
+
+NOTES:
+  SYMCTS:
+    - "Consider using as a citation for optimistic solving too"
+    - "Failed to open-source the tool despite claims otherwise"

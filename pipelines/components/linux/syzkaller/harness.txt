@@ -1,0 +1,1 @@
+syz_harness(blob buffer[in], blob_size len[blob])

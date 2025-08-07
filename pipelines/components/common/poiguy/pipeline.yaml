@@ -1,0 +1,297 @@
+repo_classes:
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  target_metadatas: MetadataRepository
+
+  points_of_interest: MetadataRepository
+
+  joern_parsed_functions:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  codeql_report_dir: BlobRepository
+  codeql_qlpack_report_dir: BlobRepository
+
+
+
+
+  semgrep_report_dir: BlobRepository
+
+
+  snyk_report_dir: BlobRepository
+
+
+  joern_report_dir: FilesystemRepository
+
+
+  mango_report_dir: BlobRepository
+
+
+  opwnai_audit_reports: FilesystemRepository
+
+
+  illmutable_reports: FilesystemRepository
+
+
+  clang_index_csvs: BlobRepository
+
+lockstep: |
+  docker build . -t aixcc-poi-guy
+tasks:
+  poiguy_codeql:
+
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the CodeQL scanner results.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-poi-guy'
+
+        template: |
+          set -x
+          mkdir -p /tmp/pois
+
+          python /app/poiguyrun.py --target {{ target | shquote }} --scanner "codeql" --scan_report_dir {{ codeql_report_dir | shquote }} --joern_db {{ joern_parsed_functions_dir | shquote }} --poi_normalized_dir /tmp/pois
+
+          export IN_DIR=/tmp/pois
+          export OUT_DIR={{ poi_reports.main_dir | shquote}}
+          export OUT_LOCK_DIR={{ poi_reports.lock_dir | shquote}}
+          /monitor_results.sh &
+          sleep 10
+    links:
+      target:
+        repo: targets_with_sources
+        kind: InputId
+      codeql_report_dir:
+        repo: codeql_report_dir
+        kind: InputFilepath
+      joern_parsed_functions_dir:
+        repo: joern_parsed_functions
+        kind: InputFilepath
+      poi_reports:
+        repo: points_of_interest
+        kind: StreamingOutputFilepath
+  poiguy_codeql_qlpack:
+
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the CodeQL scanner results.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-poi-guy'
+
+        template: |
+          set -x
+          mkdir -p /tmp/pois
+
+          python /app/poiguyrun.py --target {{ target | shquote }} --scanner "codeql" --scan_report_dir {{ codeql_report_dir | shquote }} --joern_db {{ joern_parsed_functions_dir | shquote }} --poi_normalized_dir /tmp/pois
+
+          export IN_DIR=/tmp/pois
+          export OUT_DIR={{ poi_reports.main_dir | shquote}}
+          export OUT_LOCK_DIR={{ poi_reports.lock_dir | shquote}}
+          /monitor_results.sh &
+          sleep 10
+    links:
+      target:
+        repo: targets_with_sources
+        kind: InputId
+      codeql_report_dir:
+        repo: codeql_qlpack_report_dir
+        kind: InputFilepath
+      joern_parsed_functions_dir:
+        repo: joern_parsed_functions
+        kind: InputFilepath
+      poi_reports:
+        repo: points_of_interest
+        kind: StreamingOutputFilepath
+  poiguy_semgrep:
+
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the Semgrep scanner results.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-poi-guy'
+
+        template: |
+          set -x
+          mkdir -p /tmp/pois
+
+          python /app/poiguyrun.py --target {{ target | shquote }} --scanner "semgrep" --scan_report_dir {{ semgrep_report_dir | shquote }} --joern_db {{ joern_parsed_functions_dir | shquote }} --poi_normalized_dir /tmp/pois
+
+          export IN_DIR=/tmp/pois
+          export OUT_DIR={{ poi_reports.main_dir | shquote}}
+          export OUT_LOCK_DIR={{ poi_reports.lock_dir | shquote}}
+          /monitor_results.sh &
+          sleep 10
+    links:
+      target:
+        repo: targets_with_sources
+        kind: InputId
+      semgrep_report_dir:
+        repo: semgrep_report_dir
+        kind: InputFilepath
+      joern_parsed_functions_dir:
+        repo: joern_parsed_functions
+        kind: InputFilepath
+      poi_reports:
+        repo: points_of_interest
+        kind: StreamingOutputFilepath
+  poiguy_snyk:
+
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the Snyk scanner results.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-poi-guy'
+
+        template: |
+          set -x
+          mkdir -p /tmp/pois
+
+          python /app/poiguyrun.py --target {{ target | shquote }} --scanner "snyk" --scan_report_dir {{ snyk_report_dir | shquote }} --joern_db {{ joern_parsed_functions_dir | shquote }} --poi_normalized_dir /tmp/pois
+
+          export IN_DIR=/tmp/pois
+          export OUT_DIR={{ poi_reports.main_dir | shquote}}
+          export OUT_LOCK_DIR={{ poi_reports.lock_dir | shquote}}
+          /monitor_results.sh &
+          sleep 10
+    links:
+      target:
+        repo: targets_with_sources
+        kind: InputId
+      snyk_report_dir:
+        repo: snyk_report_dir
+        kind: InputFilepath
+      joern_parsed_functions_dir:
+        repo: joern_parsed_functions
+        kind: InputFilepath
+      poi_reports:
+        repo: points_of_interest
+        kind: StreamingOutputFilepath
+
+  # THIS MUST BE FIXED FIRST BEFORE BEING RE-ENABLED
+  # Mainly, joern_report_dir is a FilesystemRepository not a BlobRepository, so I don't think this ever worked
+
+  # poiguy_joern:
+
+  #   annotations:
+  #     authors:
+  #       - ammonia
+  #     maturity: fullyIntegrated
+  #     doc: |
+  #       This task runs to parse the Joern scanner results.
+  #   executable:
+  #     cls: Container
+  #     args:
+  #       image: aixcc-poi-guy
+
+  #       template: |
+  #         set -x
+  #         mkdir -p /tmp/pois
+
+  #         python /app/poiguyrun.py --target {{ target | shquote }} --scanner "joern" --scan_report_dir {{ joern_report_dir | shquote }} --poi_normalized_dir /tmp/pois
+
+  #         export IN_DIR=/tmp/pois
+  #         export OUT_DIR={{ poi_reports.main_dir | shquote}}
+  #         export OUT_LOCK_DIR={{ poi_reports.lock_dir | shquote}}
+  #         /monitor_results.sh &
+  #         sleep 10
+  #   links:
+  #     target:
+  #       repo: targets_with_sources
+  #       kind: InputId
+  #     joern_report_dir:
+  #       repo: joern_report_dir
+  #       kind: InputFilepath
+  poiguy_mango:
+
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the mango scanner results.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-poi-guy'
+
+        template: |
+          set -x
+          ls -al "{{ mango_report_dir | shquote }}"
+
+          mkdir -p /tmp/pois
+
+          python /app/poiguyrun.py --target {{ target | shquote }} --scanner "mango" --scan_report_dir {{ mango_report_dir | shquote }} --poi_normalized_dir /tmp/pois
+
+          export IN_DIR=/tmp/pois
+          export OUT_DIR={{ poi_reports.main_dir | shquote}}
+          export OUT_LOCK_DIR={{ poi_reports.lock_dir | shquote}}
+          /monitor_results.sh &
+          sleep 10
+    links:
+      target:
+        repo: mango_report_dir
+        kind: InputId
+      mango_report_dir:
+        repo: mango_report_dir
+        kind: InputFilepath
+      poi_reports:
+        repo: points_of_interest
+        kind: StreamingOutputFilepath
+  # poiguy_opwnai_audit:
+
+  #   annotations:
+  #     authors:
+  #       - ammonia
+  #     maturity: fullyIntegrated
+  #     doc: |
+  #       This task runs to parse the opwnai scanner results.
+  #   executable:
+  #     cls: Container
+  #     args:
+  #       image: 'aixcc-poi-guy'
+
+  #       template: |
+  #         set -x
+  #         mkdir -p /tmp/pois
+
+  #         python /app/poiguyrun.py --target {{ target | shquote }} --scanner "opwnaiaudit" --scan_report_dir {{ opwnai_audit_reports_dir | shquote }} --poi_normalized_dir /tmp/pois
+
+  #         export IN_DIR=/tmp/pois
+  #         export OUT_DIR={{ poi_reports.main_dir | shquote}}
+  #         export OUT_LOCK_DIR={{ poi_reports.lock_dir | shquote}}
+  #         /monitor_results.sh &
+  #         sleep 10
+  #   links:
+  #     target:
+  #       repo: targets_with_sources
+  #       kind: InputId
+  #     opwnai_audit_reports_dir:
+  #       repo: opwnai_audit_reports
+  #       kind: InputFilepath
+  #     poi_reports:
+  #       repo: points_of_interest
+  #       kind: StreamingOutputFilepath

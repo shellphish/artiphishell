@@ -1,0 +1,2 @@
+request: "HEAD /$PQ HTTP/1.0\nUpgrade\n\n"
+reply: "\370"

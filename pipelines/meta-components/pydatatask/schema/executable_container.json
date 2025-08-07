@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "cls": { "const": "Container"},
+    "args": {
+      "type": "object",
+      "properties": {
+        "template": {
+          "type": "string"
+        },
+        "environ": { "$ref": "task_environment.json" },
+        "image": {
+          "type": "string"
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "job_quota": {
+          "$ref": "job_quota.json"
+        },
+        "logs": {
+          "type": "string"
+        },
+        "privileged": {
+          "type": "boolean"
+        },
+        "host_mounts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "tty": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["image", "template"]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["cls", "args"]
+}

@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.20 391\nTranS]er\nTranSfer-Encoding:chunked\n\r\n0\r\n1\r\n6\r\n=j1\r\n1\t\r\n1\r\n6\r\n=T\r\n;J0\r\n1$\r\n1\r\n6\r\n=\r\n1\r\n6I\r\n1\r\naE\n1A\r\n1\r\n6\r\n=/ken1\n1\r\n;J0\r\nIM\r\n1\r\n6\r\n=/ken1\n1\r\n1\r\n6\r\n=\r\n1\r\n0\r\n1,-1\r\n1\r\n0\r\n1\t-1"

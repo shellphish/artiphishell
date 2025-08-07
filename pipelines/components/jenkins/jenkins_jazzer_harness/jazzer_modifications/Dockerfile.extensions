@@ -1,0 +1,22 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} as base_build
+
+ARG ISOLATED=
+RUN test -z "${ISOLATED}" || echo "deb [trusted=yes arch=amd64] http://apt-mirror-$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\./-/g'):$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\.//g') $(grep DISTRIB_CODENAME /etc/lsb-release | cut -d= -f2) main universe" > /etc/apt/sources.list
+
+RUN apt -y update && apt -y install python3 python3-yaml
+RUN mv /classpath/jazzer/jazzer /classpath/jazzer/jazzer.bin
+
+FROM base_build
+
+COPY jazzer_wrapper.py /classpath/jazzer/jazzer_wrapper.py
+RUN chmod +x /classpath/jazzer/jazzer_wrapper.py
+RUN ln -s /classpath/jazzer/jazzer_wrapper.py /classpath/jazzer/jazzer
+
+COPY dict.txt /classpath/
+COPY jazzer_strings.txt /classpath/
+
+# TODO this wont work without internet
+#RUN pip install pyyaml
+
+# set env variable for 8 jazzer configs and then read it in wrapper

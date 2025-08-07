@@ -1,0 +1,4 @@
+*.tar.gz
+*/
+restore_latest_state/*  
+crash

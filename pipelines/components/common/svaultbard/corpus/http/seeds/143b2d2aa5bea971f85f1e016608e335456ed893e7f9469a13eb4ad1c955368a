@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.20 020\nTranSfer-Encoding:chunked\nding:ch0\n\n1\n=\r\n1 un:\n~\r\n1\n=\r\n1\n=\r\n1\n=\r\n1 n1\n=\r\n1\n=\r\n1\r\n0\r\n1\n=\r\n2 nread_ahead2\n=-\n1\r\n0\r\n1\n=\r\n1 n1\n=\r\n1\n=\r\n1\r\n0\r\n1\n=\r\n1 n:\n~\r\n1\n=\r\n2\n==\r\n1\n=\r\n1\n=\r\n2 n:\n~\r\n1\n=\r\n2\n==\r\n1\n=\r\n1\n=\r\n1\n=\r\n1\n=\r\n1 n1\n=\r\n1\n=\r\n1\r\n0\r\n1\r\n0\r\n1\n=\r\n1 n1\n=\r\n1\n=\rMatch 2"

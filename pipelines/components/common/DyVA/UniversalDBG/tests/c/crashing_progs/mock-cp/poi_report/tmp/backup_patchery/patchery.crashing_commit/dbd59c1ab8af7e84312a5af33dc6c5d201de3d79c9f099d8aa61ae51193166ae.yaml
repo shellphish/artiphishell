@@ -1,0 +1,7 @@
+cp_source: samples
+crash_id: 1fa5ea5b25c402f02bfe6d0dc23672f2adb001dd68ad2963bc7a70cf218418ef
+crash_report_id: 1fa5ea5b25c402f02bfe6d0dc23672f2adb001dd68ad2963bc7a70cf218418ef
+crashing_commit: 11dafa9a5babc127357d710ee090eb4c0c05154f
+harness_id: id_1
+sanitizer_ids:
+- id_1

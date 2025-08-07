@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.0 001\ny\nK\ny\ny\nK\ny\nh\ny\n[\nh\ny\nh\ny\ny\n~\nK\nK\ny\nK\n}\ny\nK\ny\ny\ny\nx\nh\n{\nK\ny\ny\ny\ny\nK\ny\nh\nK\ny\nK\ny\n~\nK\nK\ny\nK\ny\nh\ny\nx\nR\ny\nh\ny\ny\n~\nK\nK\ny\nK\n}\nh\ny\nx\nh\ny\n0\ny\nx\nh\ny\nK\ny\ny\ny\nx\nh\ny\nK\ny\ny\ny\ny\nK\ny\n$\ny\nx\ny\nh\nK\ny\nI\ny\nh\nK\n\n"

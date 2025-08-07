@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# ===================================================
+#
+# This will intercept the jazzer execution, hijack
+# the arguments, set our coverage_dump and dump the 
+# coverage report.
+# 
+# ===================================================
+
+REAL_JAZZER_PATH="/classpath/jazzer/jazzer_real"
+
+# Add the coverage dump argument
+COVERAGE_DUMP_ARG="--coverage_dump=/work/jazzer.cov"
+
+# Intercept and redirect the command with added argument
+"$REAL_JAZZER_PATH" "$@" "$COVERAGE_DUMP_ARG" || true
+
+exit 0

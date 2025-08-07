@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.7 430\nTransfer-Encoding:chunkEd\n\n1\n-\n1\n*\n0"

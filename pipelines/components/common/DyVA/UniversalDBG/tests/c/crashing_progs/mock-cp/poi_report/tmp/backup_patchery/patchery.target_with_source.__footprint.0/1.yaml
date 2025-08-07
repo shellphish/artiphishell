@@ -1,0 +1,21 @@
+cp_name: Mock CP
+cp_sources:
+  samples:
+    address: https://github.com/shellphish-support-syndicate/aixcc-sc-mock-cp-src.git
+    artifacts:
+    - src/samples/mock_vp
+    ref: v2.0.1
+docker_image: ghcr.io/aixcc-sc/mock-cp:v3.0.2
+harnesses:
+  id_1:
+    binary: out/filein_harness
+    name: filein_harness
+    source: src/test/filein_harness.c
+language: c
+sanitizers:
+  id_1: 'AddressSanitizer: global-buffer-overflow'
+  id_2: 'AddressSanitizer: SEGV'
+shellphish:
+  files_by_language:
+    c: 2
+  known_sources: {}

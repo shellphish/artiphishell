@@ -1,0 +1,83 @@
+repo_classes:
+
+  ################### INPUTS ###################
+  targets_with_sources: 
+    cls: FilesystemRepository
+    compress_backup: True
+    compress_backend: True
+
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+  ################### OUTPUTS ###################
+  crashing_commits: MetadataRepository
+  crashing_commits_deduped: 
+    cls: MetadataRepository
+    required: false
+
+
+tasks:
+  find_first_crash_commit:
+    priority: 10000    #  9999 == poiguy_syzkaller, this is more important
+    require_success: true
+    max_concurrent_jobs: 16
+    job_quota:
+      cpu: 8
+      mem: "8Gi"
+    links:
+      crashing_input_id:
+        repo: pov_report_representative_crashing_inputs
+        kind: InputId
+      crashing_input_path:
+        repo: pov_report_representative_crashing_inputs
+        kind: InputFilepath
+      crashing_input_meta_file:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputFilepath
+      crashing_input_meta:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputMetadata
+      target_with_source:
+        repo: targets_with_sources
+        kind: InputFilepath
+        key: crashing_input_meta.target_id
+
+      crashing_commit:
+        repo: crashing_commits
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+
+      crashing_commit_dedup:
+        repo: crashing_commits_deduped
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+
+
+    executable:
+      cls: Container
+      args:
+        fallback_quota:
+          cpu: 16
+          mem: "32Gi"
+        image: aixcc-find-first-crash-commit
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          mkdir -p /shared/find_commit
+          TEMP_DIR=$(mktemp -d -p /shared/find_commit)
+          
+          rsync -ra "{{ target_with_source | shquote }}/" "$TEMP_DIR"
+          cd $TEMP_DIR
+          export PYTHONUNBUFFERED=1
+          python3 /find_first_crash_commit.py --cp-repo {{ target_with_source | shquote }} \
+                                              --working-dir $TEMP_DIR \
+                                              --crash-input-path {{ crashing_input_path | shquote }} \
+                                              --crash-input-meta {{ crashing_input_meta_file | shquote }} \
+                                              --crash-input-id {{ crashing_input_id | shquote }} \
+                                              --output {{ crashing_commit | shquote }} \
+                                              --output-dedup {{ crashing_commit_dedup | shquote }}
+          sleep 10

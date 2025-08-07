@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "microseconds": {
+      "type": "integer"
+    },
+    "milliseconds": {
+      "type": "integer"
+    },
+    "seconds": {
+      "type": "integer"
+    },
+    "minutes": {
+      "type": "integer"
+    },
+    "hours": {
+      "type": "integer"
+    },
+    "days": {
+      "type": "integer"
+    },
+    "weeks": {
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false
+}

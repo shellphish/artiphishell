@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/3.4 469\nTranSfer-Encoding:cHunkEd\n\n\305"

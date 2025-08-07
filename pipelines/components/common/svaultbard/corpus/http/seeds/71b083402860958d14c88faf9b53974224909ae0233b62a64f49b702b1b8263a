@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.22 000\nTranSfer-Encoding:chunked\n\n0\ru.22 000\nTranSfer-EncodingAccess-Cgin\n1\n=\r\n"

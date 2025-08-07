@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.0 600\nHTTP/ui\035\000HT\256\257\320\365H"

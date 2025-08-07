@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.0 039\nContent-Type:;charSet=\014\n\n"

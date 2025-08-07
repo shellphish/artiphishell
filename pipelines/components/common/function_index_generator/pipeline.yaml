@@ -1,0 +1,110 @@
+repo_classes:
+  commit_functions_indices: BlobRepository
+  commit_functions_index_csvs: BlobRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_index_csvs: BlobRepository
+  full_functions_indices: BlobRepository
+  full_functions_by_file_index_jsons: BlobRepository
+
+  info_extraction_requests: MetadataRepository
+  
+tasks:
+  generate_full_function_index:
+    job_quota:
+      max: 0.45
+    links:
+      target_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      meta_index_csv_path:
+        repo: full_functions_index_csvs
+        kind: OutputFilepath
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: OutputFilepath
+      target_functions_index:
+        repo: full_functions_indices
+        kind: OutputFilepath
+    annotations:
+      authors:
+        - ammonia
+        - clasm
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the full function clang index or java index data for poiguy.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-function-index-generator'
+
+        template: |
+          python /app/compile.py \
+            --mode "full" \
+            --input-target-functions-json-dir {{ target_functions_jsons_dir | shquote}} \
+            --output-meta-index-csv {{meta_index_csv_path | shquote }} \
+            --output-target-functions-index {{target_functions_index | shquote}} \
+            --output-functions-by-file-index-json {{functions_by_file_index_json | shquote}}
+
+  generate_commit_function_index:
+    job_quota:
+      max: 0.45
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the clang index or java index data for poiguy.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-function-index-generator'
+        template: |
+          python /app/compile.py \
+            --mode "commit" \
+            --input-target-functions-json-dir {{ target_functions_jsons_dir | shquote}} \
+            --output-meta-index-csv {{meta_index_csv_path | shquote }} \
+            --output-target-functions-index {{target_functions_index | shquote}}
+            
+    links:
+      target_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+      meta_index_csv_path:
+        repo: commit_functions_index_csvs
+        kind: OutputFilepath
+      target_functions_index:
+        repo: commit_functions_indices
+        kind: OutputFilepath
+
+  generate_function_reachability_request:
+    links:
+      target_id:
+        repo: commit_functions_indices
+        kind: InputId
+      commit_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+      commit_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+      reachability_request:
+        repo: info_extraction_requests
+        kind: OutputFilepath
+    annotations:
+      authors:
+        - clasm
+      maturity: fullyIntegrated
+      doc: |
+        This task takes the meta_index_csv_path and generates reachability requests for the functions.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-function-index-generator'
+        template: |
+          python3 generate_reachability_request.py \
+            --target-id {{target_id}} \
+            --name "test" \
+            {{commit_index|shquote}} {{commit_jsons_dir|shquote}} {{reachability_request|shquote}}
+

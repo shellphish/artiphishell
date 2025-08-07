@@ -1,0 +1,62 @@
+jazzer_fuzzing_configs:
+# instrument only codeql reachability classes + harness + with dict (strings + jazzer strings) + timeout + value profiling
+  config1:
+    NEW_ARGS:
+      - "--keep_going=100"
+      - "-dict=/classpath/dict.txt"
+      - "--instrumentation_includes="
+      - "--custom_hook_includes="
+      - "-use_value_profile=1"
+
+# instrument all sources from antlr reports + harness + with dict (strings + jazzer strings) + value profiling
+  config2:
+    NEW_ARGS:
+      - "--keep_going=100"
+      - "-dict=/classpath/dict.txt"
+      - "--instrumentation_includes="
+      - "--custom_hook_includes="
+      - "-use_value_profile=1"
+
+# instrument everything (source, harness, plugin and libraries) + harness + with dict (strings + jazzer strings)
+  config3:
+    NEW_ARGS:
+      - "--keep_going=100"
+      - "-dict=/classpath/dict.txt"
+
+# instrument any one of the repo from sources (randomly). we at most 2 repos
+  config4:
+    NEW_ARGS: 
+      - "--keep_going=100"
+      - "-dict=/classpath/dict.txt"
+      - "--instrumentation_includes="
+      - "--custom_hook_includes="
+
+# config1 + no value profiling
+  config5:
+    NEW_ARGS:
+      - "--keep_going=100"
+      - "-dict=/classpath/dict.txt"
+      - "--instrumentation_includes="
+      - "--custom_hook_includes="
+
+# config2 + no value profiling
+  config6:
+    NEW_ARGS:
+      - "--keep_going=100"
+      - "-dict=/classpath/dict.txt"
+      - "--instrumentation_includes="
+      - "--custom_hook_includes="
+
+# instrument all sources (core and plugin) + harness
+  config7:
+    NEW_ARGS:
+      - "--keep_going=100"
+      - "-dict=/classpath/dict.txt"
+      - "--instrumentation_includes="
+      - "--custom_hook_includes="
+
+# instrument everything with no timeouts
+  config8:
+    NEW_ARGS: 
+      - "--keep_going=100"
+      - "-dict=/classpath/dict.txt"

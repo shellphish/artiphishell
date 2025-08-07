@@ -1,0 +1,230 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydatatask"
+dynamic = ["version"]
+authors = [
+    { name = "Audrey Dutcher", email = "audrey@rhelmot.io" },
+]
+description = "Library for constructing data-centric processing pipelines with few invariants"
+requires-python = ">=3.8"
+keywords = ["pipeline", "data", "task", "repository", "processing", "async", "kubernetes", "s3", "mongodb", "docker", "ssh"]
+
+dependencies = [
+    "kubernetes",
+    "kubernetes_asyncio",
+    "docker-registry-client-async",
+    "python-dxf",
+    "jinja2",
+    "pyyaml",
+    "networkx",
+    "aiobotocore",
+    "types-aiobotocore[essential]",
+    "motor",
+    "ipython",
+    "aiofiles",
+    "aioshutil",
+    "aiotarfile==0.5.1",
+    "psutil",
+    "asyncssh",
+    "aiodocker",
+    "sonyflake-py",
+    "importlib_metadata",
+    "python-dateutil",
+    "typing-extensions>=4.8.0",
+    "aiohttp>=3.9.0b0,!=3.9.0b1",
+    "pydot",
+    "dash>=2.15.0",
+    "plotly",
+    "numpy",
+    "ply",
+    "check-jsonschema",
+    "uvloop",
+    "jsonschema",
+    "jq",
+    "janus",
+    "aiojobs",
+]
+
+[project.scripts]
+pydatatask-lock = "pydatatask.cli.lock:main"
+pdl = "pydatatask.cli.lock:main"
+pydatatask = "pydatatask.cli.main:_main"
+pd = "pydatatask.cli.main:_main"
+
+[project.optional-dependencies]
+all = [
+    "pydatafs"
+]
+fuse = [
+    "pydatafs"
+]
+dev = [
+    "tox>=4.0.0",
+    "black",
+    "isort",
+    "pre-commit",
+]
+type = [
+    "mypy>=1.6.0",
+    "types-pyyaml",
+    "networkx-stubs",
+    "types-aiofiles",
+    "types-psutil",
+    "pyfuse3-stubs",
+    "types-python-dateutil",
+    "types-jsonschema",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "coverage[toml]"
+]
+lint = [
+    "pylint",
+]
+doc = [
+    "sphinx",
+    "furo",
+]
+
+[project.urls]
+repository = "https://github.com/rhelmot/pydatatask"
+documentation = "https://pydatatask.readthedocs.io/"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.license]
+file = "LICENSE"
+
+[tool.setuptools]
+zip-safe = false
+package-data = { pydatatask = ["py.typed"] }
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools.dynamic]
+version = {attr = "pydatatask.__version__"}
+
+[tool.mypy]
+python_version = "3.8"
+check_untyped_defs = true
+exclude = "parsetab.py$"
+
+# https://github.com/tomplus/kubernetes_asyncio/issues/230
+[[tool.mypy.overrides]]
+module = "kubernetes_asyncio.*"
+ignore_missing_imports = true
+
+# https://github.com/gordonbondon/kubernetes-typed/issues/22
+# https://github.com/kubernetes-client/python/issues/2033
+[[tool.mypy.overrides]]
+module = "kubernetes.*"
+ignore_missing_imports = true
+
+# https://github.com/plotly/plotly.py/pull/4424
+[[tool.mypy.overrides]]
+module = "plotly.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "ply.*"
+ignore_missing_imports = true
+
+# https://github.com/plotly/dash/issues/2233
+[[tool.mypy.overrides]]
+module = "dash.*"
+ignore_missing_imports = true
+
+# lol
+[[tool.mypy.overrides]]
+module = "pydatafs.*"
+ignore_missing_imports = true
+
+# https://github.com/mwilliamson/jq.py/pull/108
+[[tool.mypy.overrides]]
+module = "jq.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=pydatatask --cov-report=xml -ra --log-level INFO"
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+force_to_top = ["typing"]
+from_first = true
+skip = ["__init__.py"]
+
+[tool.pylint]
+py-version = "3.8"
+extension-pkg-allow-list = ["aiotarfile"]
+
+[tool.pylint.FORMAT]
+max-line-length = 120
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+    "invalid-name",
+    "len-as-condition",
+    "locally-disabled",
+    "no-else-return",
+    "protected-access",
+    "too-few-public-methods",
+    "too-many-ancestors",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-instance-attributes",
+    "too-many-lines",
+    "too-many-locals",
+    "too-many-nested-blocks",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-statements",
+    "unidiomatic-typecheck",
+    "consider-using-f-string",
+    "cyclic-import",
+    "c-extension-no-member",
+    "broad-exception-raised",  # TODO fix
+    "invalid-overridden-method",  # complains about the sync/async problem with abstract methods
+    "duplicate-code",  # thinks a bunch of abstractmethod notimplementederrors are duplicate
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstract",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.docformatter]
+style = "sphinx"
+recursive = true
+pre-summary-space = true
+wrap-descriptions = 120
+wrap-summaries = 116

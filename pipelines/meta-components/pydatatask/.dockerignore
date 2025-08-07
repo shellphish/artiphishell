@@ -1,0 +1,16 @@
+.git
+*.egg-info
+build
+build-docs
+dist
+docs
+htmlcov
+coverage.xml
+test.py
+.idea
+.kube
+.minikube
+.mypy_cache
+.pytest_cache
+.ropeproject
+.tox

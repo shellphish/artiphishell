@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/5.0 588\nVary\nVAry\nVary\nVary\nVAry\nVary\nVary\nVary\n\n"

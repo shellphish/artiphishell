@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/5.1 771.r\nAccept-Ranges\nAccept-Ranges\n\n"

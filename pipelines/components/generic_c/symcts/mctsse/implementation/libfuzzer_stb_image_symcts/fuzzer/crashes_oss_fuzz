@@ -1,0 +1,11 @@
+      2 SUMMARY: UndefinedBehaviorSanitizer: SEGV /home/honululu/lukas/research/mctsse/implementation/libfuzzer_stb_image_symcts/fuzzer/./stb_image.h:1180:31 in stbi__convert_16_to_8
+     19 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:1990:10 in 
+      1 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:2065:27 in 
+      4 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:2195:32 in 
+     26 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:2197:26 in 
+     18 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:2249:35 in 
+      3 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:2468:7 in 
+      4 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:5131:40 in 
+     13 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:6226:27 in 
+      4 SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior stb_image.h:7488:20 in 
+

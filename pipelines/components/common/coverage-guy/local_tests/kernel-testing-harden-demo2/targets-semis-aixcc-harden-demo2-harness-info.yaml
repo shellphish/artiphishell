@@ -1,0 +1,5 @@
+target_id: '004'
+cp_harness_id: 'id_1'
+cp_harness_name: 'even_nilo_can_hack_this'
+cp_harness_source_path: 'harnesses/even_nilo_can_hack_this.c'
+cp_harness_binary_path: 'out/even_nilo_can_hack_this'

@@ -1,0 +1,2 @@
+request: "X / HTTP/1.4\n&/\n!\r\n8\r\n&REBIND4\r\n$\r\n9\r\n`\r\r\n8-\r\n8\r\n9\r\n!\r\n8\r\n9\r\n!\r\n!\r\n8\r\n9\r\n!z\r\n8\r\n9\r\n!\r\n8\r\n&4\n&/1.4\r\n8\r\n9\r\n!\r\r\n8\r\r\n8\r\n9\r\n!\r\n8\r\n9\r\n!\r\n\n"
+reply: ""

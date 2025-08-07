@@ -1,0 +1,129 @@
+[package]
+name = "symcts"
+version = "0.7.1"
+authors = ["Lukas Dresel", "Andrea Fioraldi <andreafioraldi@gmail.com>", "Dominik Maier <domenukk@gmail.com>", "Julius Hohnerlein"]
+edition = "2021"
+build = "build.rs"
+
+exclude = [ "local_experiment_*", "cov_drcov_*", "sync" ]
+
+[features]
+
+# for most cases, we want to dump the reproducibility info in benchmarks to be able to rerun it later on to confirm the results
+default = ["default_fuzzbench", "dump_reproducibility_info" ]
+
+# however, in fuzzbench, they for some reason decided that all info you create must be a testcase, so to avoid measuring
+# invalid coverage, we disable reproducibility-dumping
+default_fuzzbench = [ "baseline", "mutations_default", "coverage_default", "scheduling_default", "sync_default" ]
+
+# aggregate features
+baseline = [ "std" ]
+sync_default = [ "sync_from_other_fuzzers", "sync_only_when_stuck" ]
+debug_symcts_all = [ "debug_symcts", "debug_symcts_testcases", "debug_symcts_constraints", "debug_symcts_metadata" ]
+all_mutations = [ "sage_solving", "optimistic_solving" ]
+# all_mutations = [ "mutation_mode_fuzzing"]
+mutations_default = [ "all_mutations", "sage_generational_search", "solver_unknowns_exponential_backoff", "solver_devalue_common_unknown_locations" ]
+coverage_default = [ "coverage_loop_bucketing_symcts", "coverage_hitcounts_inner", "coverage_fastpath_no_change_case", "coverage_vectorized" ]
+scheduling_default = [ "scheduling_weighted_minimum", "scheduling_weight_function_sampling_counts" ]
+
+# Utility features
+dump_reproducibility_info = []
+
+# Coverage
+coverage_loop_bucketing_afl = []
+coverage_loop_bucketing_symcts = []
+coverage_fastpath_no_change_case = []
+coverage_vectorized = []
+coverage_hitcounts_inner = []
+coverage_hitcounts_outer = []
+
+# Scheduling
+scheduling_uniform_random = []
+scheduling_weighted_random = []
+scheduling_weighted_minimum = []
+scheduling_weight_function_sampling_counts = []
+# scheduling_weight_function_percent_unmutated = []
+scheduling_weight_function_least_unmutated = []
+
+# Mutations
+optimistic_solving = []
+sage_solving = []
+weak_solving = []
+quicksampler_solving = []
+quicksampler_path_sensitive_solving = []
+mutation_mode_fuzzing = []
+
+## Mutation pruning
+sage_generational_search = []
+solver_devalue_common_unknown_locations = []
+solver_unknowns_exponential_backoff = []
+solver_probabilistically_skip = []
+solver_pivot_skip = []
+solver_enforce_concretization = []
+
+
+# Distributed mode (sync from other instances)
+sync_from_other_fuzzers = []
+sync_only_when_stuck = [] # sync only if we haven't seen any edge in our mutations for at least 5 ticks
+
+debug_symcts = []
+debug_symcts_testcases = ["debug_symcts"]
+debug_symcts_constraints = ["debug_symcts"]
+debug_symcts_metadata = ["debug_symcts"]
+debug_stats_csv = []
+std = []
+
+# Profiling
+dhat-heap = ["dhat", "signal-hook"]
+
+# todo: move this into the [[bin]] sections for the target binaries instead of the main global features
+fuzz_oneshot = []
+
+[profile.release]
+# lto = true
+codegen-units = 1
+opt-level = 3
+debug = true
+
+[dependencies]
+chrono = "*"
+ahash = "*"
+tempfile = "*"
+wide = "*"
+regex = "*"
+glob = "*"
+bitvec = "*"
+# plotters = { version = "*", optional=false}
+# plotlib = { version = "*", optional=false}
+log = "*"
+itertools = "*"
+env_logger = "*"
+dhat = { version = "*", optional = true }
+libafl = { path = "../../../repos/LibAFL/libafl/", features = ["errors_backtrace"] }
+libafl_targets = { path = "../../../repos/LibAFL/libafl_targets/", features = ["sancov_pcguard_edges", "sancov_cmplog", "libfuzzer"] }
+libafl_bolts = { path = "../../../repos/LibAFL/libafl_bolts/" }
+concolic_trace_interpretation = { path = "../../concolic_trace_interpretation/" }
+clap = { version = "4.4.4", features = ["derive"] }
+mimalloc = { version = "*", default-features = false }
+sorted-vec = "*"
+num-bigint = "*"
+serde = { version = "*", features = ["derive"] }
+serde_json = { version = "*" }
+z3 = { git = "https://github.com/Lukas-Dresel/z3.rs", branch = "feat/z3_information_extraction" }
+hashbrown = "*"
+rand = "0.8.5" # to make sure it's compatible with rand_core==0.5.1
+rand_core = "0.6.4"
+roaring = "*"
+z3jit = { path = "../../../repos/z3jit/" }
+# z3jit = { path = "../../z3jit/" }
+smt_sampler = { path = "../../smt_sampler/", features = ["z3jit_support", "known_unsat_caching"] }
+sha2 = "*"
+flate2 = "*"
+signal-hook = { version = "*", optional = true }
+
+[build-dependencies]
+cc = { version = "1.0", features = ["parallel"] }
+num_cpus = "1.0"
+cmake = "0.1"
+which = "4.1"
+symcc_libafl = { path = "../../../repos/LibAFL/libafl_concolic/symcc_libafl" }

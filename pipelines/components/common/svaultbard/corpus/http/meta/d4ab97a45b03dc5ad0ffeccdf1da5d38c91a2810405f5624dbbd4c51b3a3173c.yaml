@@ -1,0 +1,4 @@
+filename: fbcabe24bc2267989836434ef91dc0c1a73006d2
+sha256: d4ab97a45b03dc5ad0ffeccdf1da5d38c91a2810405f5624dbbd4c51b3a3173c
+source: https://storage.googleapis.com/nginx-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/nginx_http_request_fuzzer/public.zip
+source_relative_path: fbcabe24bc2267989836434ef91dc0c1a73006d2

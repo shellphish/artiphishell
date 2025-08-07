@@ -1,0 +1,34 @@
+{
+  "name": "Neo4j Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "../"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/knowledge-base-data,target=/knowledge-base-data,type=bind,consistency=cached"
+  ],
+  "customizations": {
+    "args": [
+      "neo4j",
+      "start"
+    ],
+    "env": {
+      "NEO4J_AUTH": "neo4j/!!Shellphish!!"
+    },
+    "vscode": {
+      "extensions": [
+	"github.copilot",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.vscode-remote-extensionpack",
+        "ms-python.python"
+      ],
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      }
+    }
+  },
+  "forwardPorts": [
+    7474,
+    7687
+  ]
+}

@@ -1,0 +1,2 @@
+request: "H / HTTP/1.0\n\n"
+reply: "HTTP/1.2 803\nContent-Type:TE-X-ForwaronnectIon:HEADcccccccpe:TE-X-ForwaronnectIon:HEADcccccccccCONNECTcccccccccccccccccclccccccccccccccccclccccccccccccccccccccccccccccccccccccccccded-HoccCONNECTcccccccccccccccccclccccccccccccccccclccccccccccccccccccccccccccccccccccccccccded-Host 1\n\n"

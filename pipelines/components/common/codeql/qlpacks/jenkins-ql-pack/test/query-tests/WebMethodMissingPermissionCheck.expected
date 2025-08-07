@@ -1,0 +1,4 @@
+| FileFromRestOfPath.java:7:17:7:31 | doPathTraversal | Potential missing permission check in FileFromRestOfPath#doPathTraversal |
+| FileFromRestOfPath.java:12:19:12:27 | doNotCare | Potential missing permission check in FileFromRestOfPath#doNotCare |
+| WebMethodMissingPermissionCheck.java:10:17:10:26 | doWhatever | Potential missing permission check in WebMethodMissingPermissionCheck#doWhatever |
+| WebMethodMissingPermissionCheck.java:15:17:15:27 | doWhatever2 | Potential missing permission check in WebMethodMissingPermissionCheck#doWhatever2 |

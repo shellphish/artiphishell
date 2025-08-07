@@ -1,0 +1,17 @@
+crashing_commit_id: 560c99c110a96eba86206de515804b6f631605f132b00b98b784416fca9fde22
+response:
+  cpv_uuid: 08ceca78-60e9-4b74-9859-5560a007d9a1
+  status: accepted
+  vd_uuid: 535be3d8-0b41-451e-b0cb-dc59064b1860
+submission:
+  cp_name: Mock CP
+  pou:
+    commit_sha1: 11DAFA9A5BABC127357D710EE090EB4C0C05154F
+    sanitizer: id_1
+  pov:
+    data: 'CjVuBQ==
+
+      '
+    harness: id_1
+unix_time_created: 1720076731
+unix_time_done: 1720076763

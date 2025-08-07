@@ -1,0 +1,2 @@
+request: "I / HTTP/1.0\n\n"
+reply: "HTTP/7.0 040\nLadPATCHio06d\n\n"

@@ -1,0 +1,7 @@
+# total_cores: 24
+
+# Number of harnesses: 1 => each harness has 24 cores
+cores_per_harness:
+  FuzzCUPS: 24
+  # FuzzIPP: 0 # Uses file input which symcts does not support
+  # FuzzRaster: 0 # Uses file input which symcts does not support

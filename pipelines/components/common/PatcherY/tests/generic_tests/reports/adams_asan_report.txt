@@ -1,0 +1,21 @@
+vuln_function: handle_AUTH
+vuln_type: N/A
+vuln_line: memcpy( client_data.authd_user, user, sizeof(client_data.authd_user));
+vuln_description: |
+  =================================================================
+  ==2049514==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x602000000019 at pc 0x564bff6d6317 bp 0x7ffe8e8b8a70 sp 0x7ffe8e8b8240
+  READ of size 32 at 0x602000000019 thread T0 |
+    #0 0x564bff6d6316 in __asan_memcpy (/home/honululu/lukas/research/mctsse/repos/adams/challenge_src/build/adams.bin_aflpp+0xa6316) (BuildId: b1ad64031fa0eb9a9fe34a1640e2eb9dd423b486)
+      #1 0x564bff7242f7 in handle_AUTH /home/honululu/lukas/research/mctsse/repos/adams/challenge_src/src/main.c:2622:4
+      #2 0x564bff725622 in read_loop /home/honululu/lukas/research/mctsse/repos/adams/challenge_src/src/main.c:2805:4
+      #3 0x564bff72616c in main /home/honululu/lukas/research/mctsse/repos/adams/challenge_src/src/main.c:2969:3
+      #4 0x7fa799a3d082 in __libc_start_main /build/glibc-BHL3KM/glibc-2.31/csu/../csu/libc-start.c:308:16
+      #5 0x564bff65244d in _start (/home/honululu/lukas/research/mctsse/repos/adams/challenge_src/build/adams.bin_aflpp+0x2244d) (BuildId: b1ad64031fa0eb9a9fe34a1640e2eb9dd423b486)
+
+  0x602000000019 is located 0 bytes to the right of 9-byte region [0x602000000010,0x602000000019)
+  allocated by thread T0 here:
+      #0 0x564bff6c1463 in strdup (/home/honululu/lukas/research/mctsse/repos/adams/challenge_src/build/adams.bin_aflpp+0x91463) (BuildId: b1ad64031fa0eb9a9fe34a1640e2eb9dd423b486)
+      #1 0x564bff723dc6 in handle_AUTH /home/honululu/lukas/research/mctsse/repos/adams/challenge_src/src/main.c:2597:11
+      #2 0x564bff725622 in read_loop /home/honululu/lukas/research/mctsse/repos/adams/challenge_src/src/main.c:2805:4
+      #3 0x564bff72616c in main /home/honululu/lukas/research/mctsse/repos/adams/challenge_src/src/main.c:2969:3
+      #4 0x7fa799a3d082 in __libc_start_main /build/glibc-BHL3KM/glibc-2.31/csu/../csu/libc-start.c:308:16

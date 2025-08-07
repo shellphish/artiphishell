@@ -1,0 +1,224 @@
+version: '3'
+services:
+  # ABSOLUTELY DO NOT TOUCH ANYTHING ABOVE THIS LINE. ABSOLUTELY DO NOT CHANGE THE INDENTATION SCHEME IN THIS FILE. ABSOLUTELY DO NOT ADD ANYTHING OTHER THAN SERVICES TO THIS FILE. ABSOLUTELY DO NOT HAVE SERVICE NAMES THAT INCLUDE UNDERSCORES. ABSOLUTELY DO HAVE EVERY CONTEXT START WITH ./ AND EVERY DOCKERFILE **NOT** DO THAT. WE ARE DUMPING THE BELOW TEXT DIRECTLY INTO ANOTHER YAML FILE. IF THIS ANNOYS YOU PLEASE FIX GENERATE_DOCKER_COMPOSE.YAML.
+  mongo:
+    profiles:
+      - development
+      - competition
+    image: aixcc-mongo
+    networks:
+      - crs-internal
+    build:
+      context: ./
+      dockerfile: Dockerfile.mongo
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: hackharder
+    volumes:
+      - mongo-data:/data/db
+  minio:   # if we ever need scale, see https://raw.githubusercontent.com/minio/minio/master/docs/orchestration/docker-compose/docker-compose.yaml
+    profiles:
+      - development
+      - competition
+    image: aixcc-minio
+    networks:
+      - crs-internal
+    build:
+      context: ./
+      dockerfile: Dockerfile.minio
+    command: server --console-address ":9001" /data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: hackharder
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - minio-data:/data
+    deploy:
+      resources:
+        reservations:
+          cpus: '2'
+          memory: '4G'
+        limits:
+          cpus: '2'
+          memory: '8G'
+
+  apt-mirror-20-04:
+    profiles:
+      - development
+      - competition
+    image: aixcc-apt-mirror-20-04
+    networks:
+      - crs-internal
+    build:
+      context: ./apt-mirrors/
+      dockerfile: Dockerfile.20.04 # this is relative to the build context
+
+    ports:
+      - "127.0.0.1:2004:80"
+
+  apt-mirror-22-04:
+    profiles:
+      - development
+      - competition
+    image: aixcc-apt-mirror-22-04
+    networks:
+      - crs-internal
+    build:
+      context: ./apt-mirrors/
+      dockerfile: Dockerfile.22.04 # this is relative to the build context
+
+    ports:
+      - "127.0.0.1:2204:80"
+
+  docker-registry:
+    profiles:
+      - development
+      - competition
+    image: aixcc-registry
+    networks:
+      - crs-internal
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.registry
+    ports:
+      - "127.0.0.1:5000:5000"
+
+  host-setup:
+    profiles:
+      - development
+      - competition
+    image: aixcc-hostconfig
+    networks:
+      - crs-internal
+    build:
+      context: ./
+      dockerfile: Dockerfile.hostconfig
+    labels:
+      kompose.controller.type: replicaset
+    privileged: true
+    entrypoint:
+      - "bash"
+      - "-c"
+    command:
+      - |
+          while true; do
+            echo 0 >/proc/sys/kernel/randomize_va_space
+            echo core >/proc/sys/kernel/core_pattern
+            cd /sys/devices/system/cpu
+            echo performance | tee cpu*/cpufreq/scaling_governor
+
+            # every 5 minutes
+            sleep 300
+          done
+
+  knowledge-base-jenkins:
+    profiles:
+      - development
+      - competition
+      - kb
+    image: aixcc-apis-knowledge-base-jenkins
+    networks:
+      - crs-internal
+    build:
+      context: ./knowledge-base/
+      dockerfile: .devcontainer/Dockerfile.crs-kb.jenkins
+      args:
+        KB_NAME: "jenkins"
+
+    command: "neo4j console"
+    environment:
+      NEO4J_AUTH: "neo4j/!!Shellphish!!"
+      NEO4J_HOME: "/knowledge-base-data/"
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+
+  knowledge-base-kernel:
+    profiles:
+      - development
+      - competition
+      - kb
+    image: aixcc-apis-knowledge-base-kernel
+    networks:
+      - crs-internal
+    build:
+      context: ./knowledge-base/
+      dockerfile: .devcontainer/Dockerfile.crs-kb.kernel
+
+    command: "neo4j console"
+    environment:
+      NEO4J_AUTH: "neo4j/!!Shellphish!!"
+      NEO4J_HOME: "/knowledge-base-data/"
+    ports:
+      - "127.0.0.1:7676:7474"
+      - "127.0.0.1:7689:7687"
+
+  knowledge-base-generic-c:
+    profiles:
+      - development
+      - competition
+      - kb
+    image: aixcc-apis-knowledge-base-generic-c
+    networks:
+      - crs-internal
+    build:
+      context: ./knowledge-base/
+      dockerfile: .devcontainer/Dockerfile.crs-kb.generic_c
+
+    command: "neo4j console"
+    environment:
+      NEO4J_AUTH: "neo4j/!!Shellphish!!"
+      NEO4J_HOME: "/knowledge-base-data/"
+    ports:
+      - "127.0.0.1:7777:7474"
+      - "127.0.0.1:7690:7687"
+
+  embedding-api:
+    profiles:
+      - development
+      - competition
+      - kb
+    image: aixcc-apis-embedding
+    networks:
+      - crs-internal
+    build:
+      context: ./embedding_api/
+      dockerfile: Dockerfile # this is relative to the build context
+    ports:
+      - "127.0.0.1:49152:49152"
+    environment:
+      - LITELLM_KEY=${LITELLM_KEY:-sk-1234}
+      - AIXCC_LITELLM_HOSTNAME=${AIXCC_LITELLM_HOSTNAME:-http://litellm}
+
+  retrieval-api:
+    profiles:
+      - development
+      - competition
+      - kb
+    image: aixcc-apis-retrieval
+    networks:
+      - crs-internal
+    build:
+      context: ./knowledge-base/
+      dockerfile: .devcontainer/Dockerfile.retrieval # this is relative to the build context
+    command: |
+      /bin/bash -c "set -x; while true; do kb_retrieval_api bolt://knowledge-base-jenkins:7687 bolt://knowledge-base-kernel:7687 bolt://knowledge-base-generic-c:7687 http://embedding-api:49152 --retrieval-host 0.0.0.0 --neo4j-username=neo4j --neo4j-password=!!Shellphish!!; sleep 1; done"
+    environment:
+      NEO4J_AUTH: "neo4j/!!Shellphish!!"
+    ports:
+      - "127.0.0.1:48751:48751"
+
+    depends_on:
+      - embedding-api
+      - knowledge-base-jenkins
+      - knowledge-base-kernel
+      - knowledge-base-generic-c

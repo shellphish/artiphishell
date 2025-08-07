@@ -1,0 +1,47 @@
+diff --git a/net/tipc/discover.c b/net/tipc/discover.c
+index e8dcdf267..85fe0af89 100644
+--- a/net/tipc/discover.c
++++ b/net/tipc/discover.c
+@@ -376,7 +376,7 @@ int tipc_disc_create(struct net *net, struct tipc_bearer *b,
+ 	d->timer_intv = TIPC_DISC_INIT;
+ 	spin_lock_init(&d->lock);
+ 	timer_setup(&d->timer, tipc_disc_timeout, 0);
+-	mod_timer(&d->timer, jiffies + d->timer_intv);
++	mod_timer(&d->timer, jiffies + d->timer_intv); if (tn->trial_addr) { tipc_net_finalize(net, tn->trial_addr); }
+ 	b->disc = d;
+ 	*skb = skb_clone(d->skb, GFP_ATOMIC);
+ 	return 0;
+diff --git a/net/tipc/net.c b/net/tipc/net.c
+index 0e95572e5..8a71c4785 100644
+--- a/net/tipc/net.c
++++ b/net/tipc/net.c
+@@ -106,8 +106,6 @@
+  *     - A local spin_lock protecting the queue of subscriber events.
+ */
+ 
+-static void tipc_net_finalize(struct net *net, u32 addr);
+-
+ int tipc_net_init(struct net *net, u8 *node_id, u32 addr)
+ {
+ 	if (tipc_own_id(net)) {
+@@ -123,7 +121,7 @@ int tipc_net_init(struct net *net, u8 *node_id, u32 addr)
+ 	return 0;
+ }
+ 
+-static void tipc_net_finalize(struct net *net, u32 addr)
++void tipc_net_finalize(struct net *net, u32 addr)
+ {
+ 	struct tipc_net *tn = tipc_net(net);
+ 	struct tipc_socket_addr sk = {0, addr};
+diff --git a/net/tipc/net.h b/net/tipc/net.h
+index d0c91d2df..79ba72628 100644
+--- a/net/tipc/net.h
++++ b/net/tipc/net.h
+@@ -43,6 +43,7 @@ extern const struct nla_policy tipc_nl_net_policy[];
+ 
+ int tipc_net_init(struct net *net, u8 *node_id, u32 addr);
+ void tipc_net_finalize_work(struct work_struct *work);
++void tipc_net_finalize(struct net *net, u32 addr);
+ void tipc_sched_net_finalize(struct net *net, u32 addr);
+ void tipc_net_stop(struct net *net);
+ int tipc_nl_net_dump(struct sk_buff *skb, struct netlink_callback *cb);

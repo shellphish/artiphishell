@@ -1,0 +1,7 @@
+cp_harness_binary_path: out/fuzz_die_cu_print
+cp_harness_id: id_1
+cp_harness_name: fuzz_die_cu_print
+cp_harness_source_path: src/libdwarf/fuzz/fuzz_set_frame_all.c
+fuzzer: aflplusplus
+harness_info_id: d029f6bce51dc650f701dbdabf4555c2
+target_id: 1

@@ -1,0 +1,19 @@
+20a21,34
+> case "$RELEASE" in
+>     buster)
+>         RELEASE_VERSION=10
+>         ;;
+>     bullseye)
+>         RELEASE_VERSION=11
+>         ;;
+>     bookworm)
+>         RELEASE_VERSION=12
+>         ;;
+>     *)
+>         echo "Unknown release: $RELEASE"
+>         exit 1
+> esac
+137c151
+< DEBOOTSTRAP_PARAMS="--arch=$DEBARCH --include=$PREINSTALL_PKGS --components=main,contrib,non-free,non-free-firmware $RELEASE $DIR"
+---
+> DEBOOTSTRAP_PARAMS="--arch=$DEBARCH --keyring=../common/debian-keyrings/debian-release-${RELEASE_VERSION}.gpg --include=$PREINSTALL_PKGS --components=main,contrib,non-free,non-free-firmware $RELEASE $DIR"

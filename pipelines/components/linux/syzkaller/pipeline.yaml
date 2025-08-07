@@ -1,0 +1,420 @@
+repo_classes:
+  ######################## INPUTS ########################
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+  target_metadatas: MetadataRepository
+  kernel_reachability_results: MetadataRepository
+  linux_harness_infos: MetadataRepository
+
+  ######################## OUTPUTS ########################
+
+  syzlang_crashes_descriptions: BlobRepository
+  syzlang_crashes_descriptions_metadatas: MetadataRepository
+
+  syzlang_crashes_reports: BlobRepository
+  syzlang_crashes_reports_metadatas: MetadataRepository
+
+  syzlang_crashes_logs: BlobRepository
+  syzlang_crashes_logs_metadatas: MetadataRepository
+
+  # syzlang_reproducers: FilesystemRepository
+
+  syzlang_reproducers: BlobRepository
+  c_reproducers: BlobRepository
+
+  syzlang_benign: BlobRepository
+  syzlang_benign_meta: MetadataRepository
+
+  cprogs_benign: BlobRepository
+  cprogs_benign_meta: MetadataRepository
+
+  #################### INTERMEDIATES ######################
+  syzkaller_built_kernel_targets: { "cls": "FilesystemRepository", "required": false }
+
+
+tasks:
+  syzkaller_build:
+     # first, the component interface
+    links:
+      kernel_target:
+        repo: targets_with_sources
+        kind: InputFilepath
+      target_metadata:
+        repo: target_metadatas
+        kind: InputMetadata
+
+      built_kernel_root_dir:
+        repo: syzkaller_built_kernel_targets
+        kind: OutputFilepath
+
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-syzkaller'
+
+        template: |
+          set -x
+          set -e
+
+          TARGET_DIR={{kernel_target | shquote}}
+          KERNEL_RELPATH={{target_metadata.shellphish.known_sources["linux_kernel"][0].relative_path | shquote}}
+          mv "${TARGET_DIR}/${KERNEL_RELPATH}" /kernel/linux
+
+          cd /kernel/linux
+
+          /kernel/linux/scripts/kconfig/merge_config.sh /kernel/linux/.config /shellphish/syzkaller/kernel.config
+          make olddefconfig && make -j$(nproc)
+          rsync -ravz /kernel/linux/ {{built_kernel_root_dir | shquote}}/
+
+  syzkaller_fuzzing:
+
+    # first, the component interface
+    links:
+      harness_info:
+        repo: linux_harness_infos
+        kind: InputMetadata
+      harness_info_id:
+        repo: linux_harness_infos
+        kind: InputId
+      kernel_target:
+        repo: targets_with_sources
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      target_metadata_path:
+        repo: target_metadatas
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      built_kernel_root_dir:
+        repo: syzkaller_built_kernel_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      crash_descriptions:
+        repo: syzlang_crashes_descriptions
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: syzlang_crashes_descriptions_metadatas
+        auto_meta: meta
+        auto_values:
+          target_id: '{{harness_info.target_id}}'
+          fuzzer: syzkaller
+
+      crash_logs:
+        repo: syzlang_crashes_logs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: syzlang_crashes_logs_metadatas
+        auto_meta: meta
+        auto_values:
+          target_id: '{{harness_info.target_id}}'
+          fuzzer: syzkaller
+
+      crash_reports:
+        repo: syzlang_crashes_reports
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: syzlang_crashes_reports_metadatas
+        auto_meta: meta
+        auto_values:
+          target_id: '{{harness_info.target_id}}'
+          fuzzer: syzkaller
+
+      benign_syzprogs:
+        repo: syzlang_benign
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: syzlang_benign_meta
+        auto_meta: meta
+        auto_values:
+          target_id: '{{harness_info.target_id}}'
+          fuzzer: syzkaller
+
+      benign_cprogs:
+        repo: cprogs_benign
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: cprogs_benign_meta
+        auto_meta: meta
+        auto_values:
+          target_id: '{{harness_info.target_id}}'
+          fuzzer: syzkaller
+
+
+    long_running: true
+
+    timeout:
+      minutes: 240
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-syzkaller
+        privileged: true
+
+        template: |
+          set -x
+          set -e
+
+          TARGET_ID={{ harness_info.target_id | shquote }}
+          CP_HARNESS_ID={{ harness_info.cp_harness_id | shquote }}
+          HARNESS_SOURCE=$(yq ".harnesses.${CP_HARNESS_ID}.source" {{target_metadata_path | shquote}} | tr -d '"')
+
+          rm /shellphish/syzkaller/executor/harness.h
+          cp {{kernel_target | shquote}}/"$HARNESS_SOURCE" /shellphish/syzkaller/executor/harness.h
+          sed -i 's/int main/int harness_main/g' /shellphish/syzkaller/executor/harness.h
+          cd /shellphish/syzkaller
+          make
+
+          mv {{built_kernel_root_dir | shquote}} /kernel/linux
+
+          (
+            cat <<EOF > results_config.yaml
+            crash_descriptions: {{ crash_descriptions | to_json }}
+            crash_logs:         {{ crash_logs | to_json }}
+            crash_reports:      {{ crash_reports | to_json }}
+          EOF
+          # ^ this EOF has to be unindented to be recognized
+            cat results_config.yaml
+            python3 /syzkaller_crashes_upload.py /shellphish/syzkaller/workdir/crashes results_config.yaml &
+          )
+
+          (
+            while true; do python3 /syzprog2c_auto.py --num-workers 5 --output-syzprogs {{ benign_syzprogs | shquote }} --output-cprogs {{ benign_cprogs | shquote }}; done &
+          )
+
+          # TODO move codeql.json here
+
+          cd /shellphish/syzkaller
+
+          # bin/config-gen linux amd64 >> syzconfig.cfg
+          bin/syz-manager -config syzconfig.cfg 2>&1 | tee workdir/output.log
+
+
+  syzkaller_fuzzing_targeted:
+
+    # first, the component interface
+    links:
+      kernel_reachability_meta:
+          repo: kernel_reachability_results
+          kind: InputMetadata
+      kernel_reachability_meta_path:
+        repo: kernel_reachability_results
+        kind: InputFilepath
+
+      built_kernel_root_dir:
+        repo: syzkaller_built_kernel_targets
+        kind: InputFilepath
+        key: kernel_reachability_meta.target_id
+
+      crash_descriptions:
+        repo: syzlang_crashes_descriptions
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: syzlang_crashes_descriptions_metadatas
+        auto_meta: meta
+        auto_values:
+          target_id: '{{kernel_reachability_meta.target_id}}'
+          fuzzer: syzkaller-directed
+
+      crash_logs:
+        repo: syzlang_crashes_logs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: syzlang_crashes_logs_metadatas
+        auto_meta: meta
+        auto_values:
+          target_id: '{{kernel_reachability_meta.target_id}}'
+          fuzzer: syzkaller-directed
+
+      crash_reports:
+        repo: syzlang_crashes_reports
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: syzlang_crashes_reports_metadatas
+        auto_meta: meta
+        auto_values:
+          target_id: '{{kernel_reachability_meta.target_id}}'
+          fuzzer: syzkaller-directed
+
+      benign_syzprogs:
+        repo: syzlang_benign
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: syzlang_benign_meta
+        auto_meta: meta
+        auto_values:
+          target_id: '{{kernel_reachability_meta.target_id}}'
+          fuzzer: syzkaller-directed
+
+      benign_cprogs:
+        repo: cprogs_benign
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: cprogs_benign_meta
+        auto_meta: meta
+        auto_values:
+          target_id: '{{kernel_target_id}}'
+          fuzzer: syzkaller-directed
+
+
+    long_running: true
+
+    timeout:
+      minutes: 240
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-syzkaller
+        privileged: true
+
+        template: |
+          set -x
+          set -e
+
+          mv {{built_kernel_root_dir | shquote}} /kernel/linux
+
+          (
+            cat <<EOF > results_config.yaml
+            crash_descriptions: {{ crash_descriptions | to_json }}
+            crash_logs:         {{ crash_logs | to_json }}
+            crash_reports:      {{ crash_reports | to_json }}
+          EOF
+            python3 /syzkaller_crashes_upload.py /shellphish/syzkaller/workdir/crashes results_config.yaml &
+          )
+
+          (
+            while true; do python3 /syzprog2c_auto.py --num-workers 5 --output-syzprogs {{ benign_syzprogs | shquote }} --output-cprogs {{ benign_cprogs | shquote }}; done &
+          )
+
+          cd /shellphish/syzkaller
+          mv {{ kernel_reachability_meta_path | shquote }} /shellphish/syzkaller/codeql.json
+          bin/config-gen linux amd64 >> syzconfig.cfg
+          bin/syz-manager -config syzconfig.cfg 2>&1 | tee workdir/output.log
+
+  # test_task:
+  #   links:
+  #     target_id:
+  #       repo: targets_with_sources
+  #       kind: InputId
+
+  #     crash_descriptions:
+  #       repo: syzlang_crashes_descriptions
+  #       kind: StreamingInputFilepath
+  #     crash_descriptions_metadatas:
+  #       repo: syzlang_crashes_descriptions_metadatas
+  #       kind: StreamingInputFilepath
+  #     crash_logs:
+  #       repo: syzlang_crashes_logs
+  #       kind: StreamingInputFilepath
+  #     crash_logs_metadatas:
+  #       repo: syzlang_crashes_logs_metadatas
+  #       kind: StreamingInputFilepath
+  #     crash_reports:
+  #       repo: syzlang_crashes_reports
+  #       kind: StreamingInputFilepath
+  #     crash_reports_metadatas:
+  #       repo: syzlang_crashes_reports_metadatas
+  #       kind: StreamingInputFilepath
+
+  #     test_output:
+  #       repo: test_outputs
+  #       kind: OutputFilepath
+
+
+
+  #   long_running: true
+
+  #   executable:
+  #     cls: Container
+  #     args:
+  #       image: 'aixcc-syzkaller'
+
+  #       template: |
+  #         set -x
+  #         set -e
+
+  #         cat <<EOF > results_config.yaml
+  #         crash_descriptions: {{crash_descriptions | to_json}}
+  #         crash_descriptions_metadatas: {{crash_descriptions_metadatas | to_json}}
+  #         crash_logs: {{crash_logs | to_json}}
+  #         crash_logs_metadatas: {{crash_logs_metadatas | to_json}}
+  #         crash_reports: {{crash_reports | to_json}}
+  #         crash_reports_metadatas: {{crash_reports_metadatas | to_json}}
+  #         EOF
+  #         cat results_config.yaml
+
+  #         python3 /syzkaller_crashes_download.py results_config.yaml /shellphish/syzkaller/workdir/crashes
+  #         sleep 1000000
+
+  repro_guy:
+    # first, the component interface
+    links:
+      syzkaller_built_kernel_target_id:
+        repo: syzkaller_built_kernel_targets
+        kind: InputId
+      syzkaller_built_kernel_target:
+        repo: syzkaller_built_kernel_targets
+        kind: InputFilepath
+
+      crash_descriptions:
+        repo: syzlang_crashes_descriptions
+        kind: StreamingInputFilepath
+      crash_descriptions_metadatas:
+        repo: syzlang_crashes_descriptions_metadatas
+        kind: StreamingInputFilepath
+      crash_logs:
+        repo: syzlang_crashes_logs
+        kind: StreamingInputFilepath
+      crash_logs_metadatas:
+        repo: syzlang_crashes_logs_metadatas
+        kind: StreamingInputFilepath
+      crash_reports:
+        repo: syzlang_crashes_reports
+        kind: StreamingInputFilepath
+      crash_reports_metadatas:
+        repo: syzlang_crashes_reports_metadatas
+        kind: StreamingInputFilepath
+
+      c_reproducers_path:
+        repo: c_reproducers
+        kind: StreamingOutputFilepath
+      syzlang_reproducers_path:
+        repo: syzlang_reproducers
+        kind: StreamingOutputFilepath
+
+
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-syzkaller'
+        privileged: true
+
+        template: |
+          set -x
+          set -e
+
+          mv {{syzkaller_built_kernel_target | shquote}} /kernel/linux
+
+          cat <<EOF > results_config.yaml
+          crash_descriptions: {{crash_descriptions | to_json}}
+          crash_descriptions_metadatas: {{crash_descriptions_metadatas | to_json}}
+          crash_logs: {{crash_logs | to_json}}
+          crash_logs_metadatas: {{crash_logs_metadatas | to_json}}
+          crash_reports: {{crash_reports | to_json}}
+          crash_reports_metadatas: {{crash_reports_metadatas | to_json}}
+          EOF
+          cat results_config.yaml
+
+          python3 /syzkaller_crashes_download.py results_config.yaml /shellphish/syzkaller/workdir/crashes &
+          export CRASH_DIR=/shellphish/syzkaller/workdir/crashes
+
+          export C_REPRODUCER_OUT_PATH={{c_reproducers_path | shquote}}
+          export SYZLANG_REPRODUCER_OUT_PATH={{syzlang_reproducers_path | shquote}}
+          python3 repro.py

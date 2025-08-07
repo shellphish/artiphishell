@@ -1,0 +1,7 @@
+cp_source: nginx
+crash_id: 22b8c073930b3ea6e59ae01cead3061c
+crash_report_id: 22b8c073930b3ea6e59ae01cead3061c
+crashing_commit: 8e2a8e613fe5b6f03cb8e0c27180a468671f03a8
+harness_id: id_1
+sanitizer_ids:
+- id_1

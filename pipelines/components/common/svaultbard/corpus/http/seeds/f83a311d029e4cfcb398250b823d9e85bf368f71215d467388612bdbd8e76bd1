@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.3 935\nTranSfer-Encoding:RTPT1/n\n"

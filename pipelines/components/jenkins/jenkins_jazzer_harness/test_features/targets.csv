@@ -1,0 +1,10 @@
+jenkins,aixcc-sc-challenge-002-jenkins-cp
+gson,targets-semis-gson
+cbor,targets-semis-cbor-java
+xml,targets-semis-java-xmlbuilder
+cron,targets-semis-cron-utils
+twitter,targets-semis-twitter4j
+javacpp,targets-semis-javacpp
+janino,targets-semis-janino
+hibernate,targets-semis-hibernate-validator
+handlebars,targets-semis-handlebars

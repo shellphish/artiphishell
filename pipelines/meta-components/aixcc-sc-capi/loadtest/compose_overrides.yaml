@@ -1,0 +1,7 @@
+---
+configs:
+  capi:
+    file: ./loadtest/loadtest_config.yaml
+services:
+  postgres:
+    command: ['postgres', '-c', 'max_connections=500']

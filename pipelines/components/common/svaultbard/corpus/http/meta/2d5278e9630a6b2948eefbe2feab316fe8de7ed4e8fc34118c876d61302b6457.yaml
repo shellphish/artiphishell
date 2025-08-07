@@ -1,0 +1,4 @@
+filename: bab50f3d5dfffae4fb40407490087a384f3f0dff
+sha256: 2d5278e9630a6b2948eefbe2feab316fe8de7ed4e8fc34118c876d61302b6457
+source: https://storage.googleapis.com/nginx-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/nginx_http_request_fuzzer/public.zip
+source_relative_path: bab50f3d5dfffae4fb40407490087a384f3f0dff

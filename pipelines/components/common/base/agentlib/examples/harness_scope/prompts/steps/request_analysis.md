@@ -1,0 +1,18 @@
+Extract information about all possible request endpoints reachable from the harness by following these steps:
+
+Note: Fixed vs User Controlled:
+- User controlled values are those which are directly derived from the harness input data.
+- Fixed values are those which are not influenced by the harness input data, such as constant strings or integers.
+
+1. Produce an exhaustive list of all possible harness real or mock request endpoint which can be made from the harness via controlled user input to the harness.
+
+2. For every endpoint identify the following:
+  - class: The name of the Java class which implements this endpoint. This is the name of the class which contains the stapler endpoint method which is possible to call from the harness. This should be the full class path as seen in the import statement.
+  - method: The name of the Java class which implements this endpoint. This is the name of the class which contains the stapler endpoint method which is possible to call from the harness. This should be the full class path as seen in the import statement.
+  - user-controlled-headers: List of all user controlled header names for which the value can be set by harness input data. If the harness input data also controls the name of the header, put "ARBITRARY" in this list. Important! If the value is set to a fixed value that is not influenced by the harness input data, do not include it in this list.
+  - fixed-headers: Dict of any remaining headers which are set to fixed values. The keys are the header names and the values are the fixed values. Only put headers here if the harness explicitly sets them to a fixed value.
+  - user-controlled-query: Dict of all user controlled query argument names for which the value can be set by harness input data. The keys are the query argument names and the values are the types of the query arguments (string, int, etc). If the harness input data also controls the name of the query argument, put "ARBITRARY" in the dict. Important! If the value is set to a fixed value that is not influenced by the harness input data, do not include it in this dict.
+  - fixed-query: Dict of any remaining query arguments which are set to fixed values. The keys are the query argument names and the values are the fixed values. Only put query arguments here if the harness explicitly sets them to a fixed value.
+  - user-controlled-form: IF and only IF the harness is creating and attaching a form body to the request/mock request: Dict of all user controlled form data names for which the value can be set by harness input data. The keys are the form data names and the values are the types of the form data (string, int, json list/object, etc). If the harness input data also controls the name of the form data, put "ARBITRARY" in the dict. Important! If the value is set to a fixed value that is not influenced by the harness input data, do not include it in this dict. Important! Only set this if there is actual proof that the harness is setting a body form data. If there is no explicit way to set the body or form data through the harness, do not include this anything in this dict.!! If you get this wrong the user will crash their car.
+  - fixed-form: IF and only IF the harness is creating and attaching a form body to the request/mock request: Dict of any remaining form data which are set to fixed values. The keys are the form data names and the values are the fixed values. Only put form data here if the harness explicitly sets them to a fixed value. If there is no explicit setting of form data, do not include anything in this dict.
+  - attached-permissions: Include any jenkins permissions which have been granted to the request. If a permission was taken away, do not include it.

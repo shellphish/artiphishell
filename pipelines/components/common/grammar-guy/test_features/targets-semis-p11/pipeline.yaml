@@ -1,0 +1,86 @@
+repo_classes:
+  cp_image_ready:  MetadataRepository
+  targets_with_sources: FilesystemRepository
+  target_metadatas: MetadataRepository
+
+  clang_indexer_meta_csvs: BlobRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  commit_functions_indices: BlobRepository
+  commit_functions_index_csvs: BlobRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+
+  target_harness_infos: MetadataRepository
+
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  to_triage_harness_inputs: BlobRepository
+  to_triage_harness_inputs_metadatas: MetadataRepository
+
+  info_extraction_requests: MetadataRepository
+  info_extraction_results: MetadataRepository
+
+  cp_image_ready: MetadataRepository
+  debug_built_targets_with_sources: FilesystemRepository
+  crash_run_pov_result_metadatas: MetadataRepository
+  pov_reports: MetadataRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  fuzz_requests: MetadataRepository
+
+imports:
+  crs_utils:
+    path: ../../../../common/base/crs-utils/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      target_harness_infos: target_harness_infos
+      target_directed_fuzz_requests: fuzz_requests
+      info_extraction_requests: info_extraction_requests
+      cp_image_ready: cp_image_ready
+      debug_built_targets_with_sources: debug_built_targets_with_sources
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      crash_run_pov_result_metadatas: crash_run_pov_result_metadatas
+      pov_reports: pov_reports
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+
+  clang_indexer:
+    path: ../../../../common/clang-indexer/pipeline.yaml
+    repos:
+      c_targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      full_json_output_dirs: full_functions_jsons_dirs
+      by_commit_json_output_dirs: commit_functions_jsons_dirs
+
+  function_index_generator:
+    path: ../../../../common/function_index_generator/pipeline.yaml
+    repos:
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      full_functions_index_csvs: clang_indexer_meta_csvs
+      full_functions_indices: full_functions_indices
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      commit_functions_index_csvs: commit_functions_index_csvs
+      commit_functions_indices: commit_functions_indices
+      info_extraction_requests: info_extraction_requests
+
+  grammar_guy:
+    path: ../../pipeline.yaml
+    repos:
+      cp_image_ready: cp_image_ready
+      fuzz_requests: fuzz_requests
+      targets_with_sources: targets_with_sources
+      target_harness_infos: target_harness_infos
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+
+      to_triage_harness_inputs: to_triage_harness_inputs
+      to_triage_harness_inputs_metadatas: to_triage_harness_inputs_metadatas
+
+      info_extraction_requests: info_extraction_requests

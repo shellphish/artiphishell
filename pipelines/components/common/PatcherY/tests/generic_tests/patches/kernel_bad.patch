@@ -1,0 +1,59 @@
+diff --git b/net/tipc/crypto.c a/net/tipc/crypto.c
+index 43fc66bd1..84ccac6f6 100644
+--- b/net/tipc/crypto.c
++++ a/net/tipc/crypto.c
+@@ -2285,24 +2285,38 @@ static bool tipc_crypto_key_rcv(struct tipc_crypto *rx, struct tipc_msg *hdr)
+ 	u32 size = msg_data_sz(hdr);
+ 	u8 *data = msg_data(hdr);
+ 	unsigned int keylen;
+-	
+ 	if(rx->net){
+ 		tx = tipc_net(rx->net)->crypto_tx;
+ 	}
++	/* Verify whether the size can exist in the packet */
++	if (unlikely(size < sizeof(struct tipc_aead_key) + TIPC_AEAD_KEY_MIN)) {
++		pr_debug("%s: message data size is too small\n", rx->name);
++		goto exit;
++	}
++	
+ 	keylen = ntohl(*((__be32 *)(data + TIPC_AEAD_ALG_NAME)));
+ 
++	/* Verify the supplied size values */
++	if (unlikely(size != keylen + sizeof(struct tipc_aead_key) ||
++		     keylen > TIPC_AEAD_KEY_SIZE_MAX)) {
++
++		pr_debug("%s: invalid MSG_CRYPTO key size\n", rx->name);
++		goto exit;
++	}
++
++
+ 	spin_lock(&rx->lock);
+ 	if (unlikely(rx->skey || (key_gen == rx->key_gen && rx->key.keys))) {
+ 		pr_err("%s: key existed <%p>, gen %d vs %d\n", rx->name,
+ 		       rx->skey, key_gen, rx->key_gen);
+-		goto exit;
++		goto exit_unlock;
+ 	}
+ 
+ 	/* Allocate memory for the key */
+ 	skey = kmalloc(size, GFP_ATOMIC);
+ 	if (unlikely(!skey)) {
+ 		pr_err("%s: unable to allocate memory for skey\n", rx->name);
+-		goto exit;
++		goto exit_unlock;
+ 	}
+ 
+ 	/* Copy key from msg data */
+@@ -2317,10 +2331,11 @@ static bool tipc_crypto_key_rcv(struct tipc_crypto *rx, struct tipc_msg *hdr)
+ 	rx->nokey = 0;
+ 	mb(); /* for nokey flag */
+ 
+-exit:
++exit_unlock:
+ 	spin_unlock(&rx->lock);
+ 	/* Schedule the key attaching on this crypto */
+ 	if (rx->net){
++exit:
+ 	if (likely(skey && queue_delayed_work(tx->wq, &rx->work, 0)))
+ 		return true;
+ 	}

@@ -1,0 +1,47 @@
+repo_classes: 
+  cp_image_ready: MetadataRepository
+  vds_records: MetadataRepository
+  targets_with_sources: FilesystemRepository
+  crashing_commits: MetadataRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  pov_reports: MetadataRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  patch_diffs: BlobRepository
+  patch_metadatas: MetadataRepository
+
+  debug_built_targets_for_patches:
+    cls: FilesystemRepository
+    required: false
+
+  patch_verification_requests:
+    cls: MetadataRepository
+    required: false
+
+  patch_debug_built_targets_with_sources:
+    cls: FilesystemRepository
+    required: false
+
+  post_patch_run_pov_result_metadata_path: MetadataRepository
+
+imports:
+  patch_verification:
+    path: ../../../base/crs-utils/components/patch_verification/pipeline.yaml
+    repos: 
+      cp_image_ready: cp_image_ready
+      targets_with_sources: targets_with_sources
+      vds_records: vds_records
+      patch_metadatas: patch_metadatas
+      patch_diff: patch_diff
+      post_patch_run_pov_result_metadata_path: post_patch_run_pov_result_metadata_path
+      crashing_commits: crashing_commits
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+
+  patchery_ranking:
+    path: ../../pipeline-ranking.yaml
+    repos: 
+      patch_metadatas: patch_metadatas
+      patch_diff: patch_diff

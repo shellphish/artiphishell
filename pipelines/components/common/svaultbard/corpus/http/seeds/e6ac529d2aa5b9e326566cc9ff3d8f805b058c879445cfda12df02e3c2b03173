@@ -1,0 +1,2 @@
+request: "P / HTTP/1.5\nX:H \r\nX:H \r\nX2:H \r\nX:H \r\nX:H :H \r\n+:H \r\nXX:H \r\nX:H \r\nX2:H \r\ndC:H \r\nX:J \r\nX:H \r\n+:H \r\nXX:H \r\n+:H \r\n%X:P\nX:H \r\nX:H \r\nX2:H \r\nX:H \r\nX:H :H \r\n+:H \r\nXX:H \r\nX:HH \r\nXX:H \r\nX:H \r\nX2:H \r\ndC:H \r\nX:J \r\nX:H \r\n+:H \r\nXX:H \r\n+%X:PP \r"
+reply: ""

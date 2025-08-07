@@ -1,0 +1,84 @@
+repo_classes:
+  c_targets_with_sources:     FilesystemRepository
+  non_kernel_c_targets_with_sources: FilesystemRepository
+  target_metadatas:           MetadataRepository
+  full_json_output_dirs:      FilesystemRepository
+  by_commit_json_output_dirs: FilesystemRepository
+  # diff_ranker_outputs:        BlobRepository
+
+tasks:
+  clang_index:
+    links:
+      target_with_source:
+        repo: c_targets_with_sources
+        kind: InputFilepath
+      output_dir:
+        repo: full_json_output_dirs
+        kind: OutputFilepath
+
+    # job_quota:
+    #   cpu: 64
+    #   mem: "128Gi"
+    job_quota:
+      max: 0.45
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-clang-indexer'
+        template: |
+          set -e
+          set -x
+          grep -rn 'language:.*c' {{ target_with_source | shquote }}/project.yaml || exit 1
+          clang-indexer -r full -m json -s "**" -d {{ target_with_source | shquote }} -o {{ output_dir | shquote }}
+
+
+  clang_index_by_commit:
+    links:
+      target_with_source:
+        repo: c_targets_with_sources
+        kind: InputFilepath
+
+      output_dir:
+        repo: by_commit_json_output_dirs
+        kind: OutputFilepath
+
+    priority: 10000
+    # job_quota:
+    #   cpu: 60
+    #   mem: "120Gi"
+    job_quota:
+      max: 0.8
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-clang-indexer'
+        template: |
+          set -e
+          set -x
+          grep -rn 'language:.*c' {{ target_with_source | shquote }}/project.yaml || exit 1
+          clang-indexer -r commit -m json -s "**" -d {{ target_with_source | shquote }} -o {{ output_dir | shquote }}
+   
+  # diff_ranker_clang_index:
+    # links:
+      # target_with_source:
+        # repo: non_kernel_c_targets_with_sources
+        # kind: InputFilepath
+      # by_commit_json_dirs:
+        # repo: by_commit_json_output_dirs
+        # kind: InputFilepath
+      # diff_ranker_output_dir:
+        # repo: diff_ranker_outputs
+        # kind: OutputFilepath
+  # 
+    # executable:
+      # cls: Container
+      # args:
+        # image: 'aixcc-clang-indexer'
+        # template: |
+          # set -e
+          # set -x
+          # grep -rn 'language:.*c' {{ target_with_source | shquote }}/project.yaml || exit 1
+          # diff-ranker -i {{ by_commit_json_dirs | shquote }} -d {{ target_with_source | shquote }} -o {{ diff_ranker_output_dir | shquote }}
+# 

@@ -1,0 +1,22 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} 
+
+ARG ISOLATED=
+RUN test -z "${ISOLATED}" || echo "deb [trusted=yes arch=amd64] http://apt-mirror-$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\./-/g'):$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\.//g') $(grep DISTRIB_CODENAME /etc/lsb-release | cut -d= -f2) main universe" > /etc/apt/sources.list
+RUN apt-get update && apt-get install -y python3 python3-pip python3-yaml python3-lxml unzip rsync
+
+# Copy the local ./shellphish within the CP docker in /shellphish
+COPY ./shellphish /shellphish/
+
+# Copy all (fake) harnesses to known paths
+#    - This is ok, this /classpath/jazzer/jazzer is guaranteed to be there.
+RUN mv /classpath/jazzer/jazzer /classpath/jazzer/jazzer_real
+RUN cp /shellphish/coverageguy/jazzer_cov /classpath/jazzer/jazzer_cov
+RUN cp /shellphish/coverageguy/jazzer_dump /classpath/jazzer/jazzer_dump
+
+# overwrite harness with our fake harness
+RUN cp /shellphish/coverageguy/jazzer_fake /classpath/jazzer/jazzer
+
+RUN chmod +x /classpath/jazzer/jazzer_cov
+RUN chmod +x /classpath/jazzer/jazzer_dump
+RUN chmod +x /classpath/jazzer/jazzer

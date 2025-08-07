@@ -1,0 +1,66 @@
+# This is a basic workflow to help you get started with Actions
+
+name: RunPipelineOnTargets
+description: "Sets up the current state of the pydatatask pipeline"
+inputs:
+  long_running_timeout:
+    description: "Timeout for long-running jobs in minutes"
+    required: false
+    default: "60"
+
+  github_deploy_token:
+    description: "Token to use to deploy from/to github"
+    required: true
+
+  pipeline:
+    description: "Pipeline to run"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Inject the targets
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE/${{ inputs.pipeline }}
+        ./inject_targets.sh
+
+    - name: Reset the pipeline dump state
+      uses: ./.github/actions/reset_pipeline_dump_state
+      with:
+        pipeline: ${{ inputs.pipeline }}
+
+    - name: Dump the pipeline state
+      uses: ./.github/actions/dump_pipeline_state
+      with:
+        pipeline: ${{ inputs.pipeline }}
+        snapshot_name: injected_targets
+        dump_backup: "false"
+
+    - name: Run the pipeline
+      id: run_pipeline
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE/${{ inputs.pipeline }}
+        set +e
+        pd --verbose --fail-fast --debug-trace run # --require-success
+        run_output="$?"
+        echo "exit_code=$run_output" >> $GITHUB_OUTPUT
+
+    - name: Dump the pipeline state
+      uses: ./.github/actions/dump_pipeline_state
+      with:
+        pipeline: ${{ inputs.pipeline }}
+        snapshot_name: finished
+        dump_backup: "true"
+
+    - name: Commit the pipeline state
+      uses: ./.github/actions/commit_pipeline_state
+      with:
+        pipeline: ${{ inputs.pipeline }}
+        github_deploy_token: ${{ inputs.github_deploy_token }}
+
+    - name: Exit with the exit code after the artifacts were dumped
+      shell: bash
+      run: |
+        exit ${{ steps.run_pipeline.outputs.exit_code }}

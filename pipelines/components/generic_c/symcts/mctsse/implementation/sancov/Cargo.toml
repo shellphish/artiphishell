@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "sancov_shared",
+    "sancov_instrumentation",
+    "sancov_collection",
+]
+

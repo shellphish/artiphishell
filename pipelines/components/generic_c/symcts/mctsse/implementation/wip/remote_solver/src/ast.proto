@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+message NodeId {
+    uint64 id = 1;
+}
+enum UnOp {
+    Not = 0;
+    Neg = 1;
+    Reversed = 2;
+}
+enum BinOp {
+    Add=0;
+    Sub=1;
+    Mul=2;
+    Div=3;
+    SDiv=4;
+    And=5;
+    Or=6;
+    Xor=7;
+}
+enum CmpUnOp {
+    IsZero = 0;
+    IsSigned = 1;
+}
+enum CmpBinOp{
+    Eq = 0;
+    Ne = 1;
+    Le = 2;
+    Lt = 3;
+    Ge = 4;
+    Gt = 5;
+}
+message BuildAst {
+    message UnaryOp {
+        UnOp op = 1;
+        NodeId arg = 2;
+    }
+    message BinaryOp {
+        BinOp op = 1;
+        NodeId left = 2;
+        NodeId right = 3;
+    }
+    message BinaryPredicate {
+        CmpBinOp op = 1;
+        NodeId left = 2;
+        NodeId right = 3;
+    }
+    message UnaryPredicate {
+        CmpUnOp op = 1;
+        NodeId arg = 2;
+    }
+    message Extract {
+        NodeId inner = 1;
+        uint64 start = 2;
+        uint64 size = 3;
+    }
+    message Concat {
+        repeated NodeId partial_ids = 1;
+    }
+    message ZeroExt {
+        NodeId inner = 1;
+        uint64 by_bits = 2;
+    }
+    message SignExt {
+        NodeId inner = 1;
+        uint64 by_bits = 2;
+    }
+
+    message SymbolicInput {
+        string name = 1;
+        uint64 bits = 2;
+        uint64 byte_offset = 3;
+    }
+    message Constant {
+        uint64 value = 1;
+        uint64 bits = 2;
+    }
+
+    oneof message {
+        Constant constant = 1;
+        SymbolicInput sym_input = 2;
+
+        UnaryOp op_unary = 3;
+        BinaryOp op_binary = 4;
+
+        UnaryPredicate pred_unary = 5;
+        BinaryPredicate pred_binary = 6;
+
+        Extract extract = 7;
+        Concat concat = 8;
+        ZeroExt zero_ext = 9;
+        SignExt sign_ext = 10;
+    }
+}

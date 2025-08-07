@@ -1,0 +1,7 @@
+cp_harness_binary_path: out/harnesses/three/aixcc-harness.jar
+cp_harness_id: id_3
+cp_harness_name: JenkinsThree
+cp_harness_source_path: src/jenkins-harnesses/jenkins-harness-three/src/main/java/com/aixcc/jenkins/harnesses/three/JenkinsThree.java
+fuzzer: jazzer
+harness_info_id: 18eb7787d8238a31ed55707808a8c063
+target_id: 1

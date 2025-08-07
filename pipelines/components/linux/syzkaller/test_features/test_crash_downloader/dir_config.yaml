@@ -1,0 +1,79 @@
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel 602112 May 29 18:10 syzkaller_fuzzing.benign_cprogs
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel 688128 May 29 18:10 syzkaller_fuzzing.benign_cprogs.meta
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel 602112 May 29 18:10 syzkaller_fuzzing.benign_syzprogs
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel 688128 May 29 18:10 syzkaller_fuzzing.benign_syzprogs.meta
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     37 May 29 18:08 syzkaller_fuzzing.built_kernel_root_dir -> syzkaller_build.built_kernel_root_dir
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel   4096 May 29 18:08 syzkaller_fuzzing.crash_descriptions
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel   4096 May 29 18:08 syzkaller_fuzzing.crash_descriptions.meta
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel  24576 May 29 18:08 syzkaller_fuzzing.crash_logs
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel  24576 May 29 18:08 syzkaller_fuzzing.crash_logs.meta
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     37 May 29 18:08 syzkaller_fuzzing.crash_reports -> poiguy_syzkaller.syzlang_crash_report
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     46 May 29 18:08 syzkaller_fuzzing.crash_reports.meta -> poiguy_syzkaller.syzlang_crash_report_metadata
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel   4096 May 29 18:08 syzkaller_fuzzing.done
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     37 May 29 18:08 syzkaller_fuzzing.kernel_target_id -> syzkaller_build.built_kernel_root_dir
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel   4096 May 29 18:08 syzkaller_fuzzing.logs
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     22 May 29 18:08 syzkaller_fuzzing.success.__footprint.0 -> syzkaller_fuzzing.done
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     20 May 29 18:08 syzkaller_fuzzing.syzkaller_build_success.__footprint.0 -> syzkaller_build.done
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     31 May 29 18:08 syzkaller_fuzzing_targeted.benign_cprogs -> syzkaller_fuzzing.benign_cprogs
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     36 May 29 18:08 syzkaller_fuzzing_targeted.benign_cprogs.meta -> syzkaller_fuzzing.benign_cprogs.meta
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     33 May 29 18:08 syzkaller_fuzzing_targeted.benign_syzprogs -> syzkaller_fuzzing.benign_syzprogs
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     38 May 29 18:08 syzkaller_fuzzing_targeted.benign_syzprogs.meta -> syzkaller_fuzzing.benign_syzprogs.meta
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     37 May 29 18:08 syzkaller_fuzzing_targeted.built_kernel_root_dir -> syzkaller_build.built_kernel_root_dir
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     36 May 29 18:08 syzkaller_fuzzing_targeted.crash_descriptions -> syzkaller_fuzzing.crash_descriptions
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     41 May 29 18:08 syzkaller_fuzzing_targeted.crash_descriptions.meta -> syzkaller_fuzzing.crash_descriptions.meta
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     28 May 29 18:08 syzkaller_fuzzing_targeted.crash_logs -> syzkaller_fuzzing.crash_logs
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     33 May 29 18:08 syzkaller_fuzzing_targeted.crash_logs.meta -> syzkaller_fuzzing.crash_logs.meta
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     37 May 29 18:08 syzkaller_fuzzing_targeted.crash_reports -> poiguy_syzkaller.syzlang_crash_report
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     46 May 29 18:08 syzkaller_fuzzing_targeted.crash_reports.meta -> poiguy_syzkaller.syzlang_crash_report_metadata
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel   4096 May 29 18:08 syzkaller_fuzzing_targeted.done
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     40 May 29 18:08 syzkaller_fuzzing_targeted.extract_kernel_reachability_results_success.__footprint.0 -> extract_kernel_reachability_results.done
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     62 May 29 18:08 syzkaller_fuzzing_targeted.kernel_reachability_meta -> extract_kernel_reachability_results.kernel_reachability_result
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     62 May 29 18:08 syzkaller_fuzzing_targeted.kernel_reachability_meta_path -> extract_kernel_reachability_results.kernel_reachability_result
+# drwxrwxr-x   2 Lukas-Dresel Lukas-Dresel   4096 May 29 18:08 syzkaller_fuzzing_targeted.logs
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     31 May 29 18:08 syzkaller_fuzzing_targeted.success.__footprint.0 -> syzkaller_fuzzing_targeted.done
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     20 May 29 18:08 syzkaller_fuzzing_targeted.syzkaller_build_success.__footprint.0 -> syzkaller_build.done
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     36 May 29 18:08 test_task.crash_descriptions -> syzkaller_fuzzing.crash_descriptions
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     41 May 29 18:08 test_task.crash_descriptions_metadatas -> syzkaller_fuzzing.crash_descriptions.meta
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     28 May 29 18:08 test_task.crash_logs -> syzkaller_fuzzing.crash_logs
+# lrwxrwxrwx   1 Lukas-Dresel Lukas-Dresel     33 May 29 18:08 test_task.crash_logs_metadatas -> syzkaller_fuzzing.crash_logs.meta
+
+
+
+# WANTED:
+#       crash_descriptions:
+#         repo: syzlang_crashes_descriptions
+#         kind: StreamingInputFilepath
+#       crash_descriptions_metadatas:
+#         repo: syzlang_crashes_descriptions_metadatas
+#         kind: StreamingInputFilepath
+#       crash_logs:
+#         repo: syzlang_crashes_logs
+#         kind: StreamingInputFilepath
+#       crash_logs_metadatas:
+#         repo: syzlang_crashes_logs_metadatas
+#         kind: StreamingInputFilepath
+#       crash_reports:
+#         repo: syzlang_crashes_reports
+#         kind: StreamingInputFilepath
+#       crash_reports_metadatas:
+#         repo: syzlang_crashes_reports_metadatas
+#         kind: StreamingInputFilepath
+crash_descriptions:
+  main_dir:     "/tmp/backup_full/syzkaller_fuzzing.crash_descriptions/"
+  lock_dir:     "/tmp/fake_lock"
+crash_descriptions_metadatas:
+  main_dir:     "/tmp/backup_full/syzkaller_fuzzing.crash_descriptions.meta/"
+  lock_dir:     "/tmp/fake_lock"
+crash_logs:
+  main_dir:     "/tmp/backup_full/syzkaller_fuzzing.crash_logs/"
+  lock_dir:     "/tmp/fake_lock"
+crash_logs_metadatas:
+  main_dir:     "/tmp/backup_full/syzkaller_fuzzing.crash_logs.meta/"
+  lock_dir:     "/tmp/fake_lock"
+crash_reports:
+  main_dir:     "/tmp/backup_full/syzkaller_fuzzing.crash_reports/"
+  lock_dir:     "/tmp/fake_lock"
+crash_reports_metadatas:
+  main_dir:     "/tmp/backup_full/syzkaller_fuzzing.crash_reports.meta/"
+  lock_dir:     "/tmp/fake_lock"
+

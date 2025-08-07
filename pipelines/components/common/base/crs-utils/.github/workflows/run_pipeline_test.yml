@@ -1,0 +1,33 @@
+name: Test on Last Good Pipeline Run
+on:
+    - push
+    - workflow_dispatch
+jobs:
+  tests:
+    runs-on: self-hosted
+    name: Test ${{ matrix.tasks.name }} on last good working pipeline
+    strategy:
+      fail-fast: false
+      matrix:
+        tasks:
+          - name: povguy
+            maintainers: <@320594955779309569>
+          - name: fuzz_requestor
+            maintainers: <@320594955779309569> <@272835764965081090>
+          - name: harness_splitter
+            maintainers: <@320594955779309569> <@272835764965081090>
+          - name: analyze_target
+            maintainers: <@320594955779309569> <@272835764965081090>
+            
+    steps:
+      - uses: shellphish-support-syndicate/action-test-component@main
+        timeout-minutes: 15
+        with:
+          ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          ci-ssh-key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+          component-dir: components/common/base/crs-utils
+          task-name: ${{ matrix.tasks.name }}
+          maintainers: ${{ matrix.tasks.maintainers }}
+          discord-webhook: ${{ secrets.DISCORD_CI_WEBHOOK }}

@@ -1,0 +1,2 @@
+request: "I / HTTP/1.0\n\n"
+reply: "HTTP/5.6 303\nLocation:#Access-Controxpose-Headers\n\n"

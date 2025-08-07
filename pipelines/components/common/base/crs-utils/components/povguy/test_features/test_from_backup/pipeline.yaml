@@ -1,0 +1,32 @@
+repo_classes:
+  cp_image_ready: MetadataRepository
+  targets_with_sources: FilesystemRepository
+  debug_built_targets_with_sources: FilesystemRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  crash_run_pov_result_metadatas: MetadataRepository
+  pov_reports: MetadataRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  parsed_asan_reports: MetadataRepository
+
+imports:
+  povguy:
+    path: ../../pipeline.yaml
+    repos:
+      cp_image_ready: cp_image_ready
+      targets_with_sources: targets_with_sources
+      debug_built_targets_with_sources: debug_built_targets_with_sources
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      crash_run_pov_result_metadatas: crash_run_pov_result_metadatas
+      pov_reports: pov_reports
+      pov_report_representative_crashing_inputs: pov_report_representative_crashing_inputs
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+
+  crash_tracer:
+    path: ../../../../../../../generic_c/crash_tracer/pipeline.yaml
+    repos:
+      representative_crash_metadatas: pov_report_representative_crashing_input_metadatas
+      parsed_asan_reports: parsed_asan_reports

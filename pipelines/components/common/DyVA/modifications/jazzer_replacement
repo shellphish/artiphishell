@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+echo "$@" >> /src/jazzer_args.txt
+CUR_PATH=$(dirname $(realpath $0))
+$CUR_PATH/.jazzer $@

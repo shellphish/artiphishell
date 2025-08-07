@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/5.6 302\nLocation:#\n\n"

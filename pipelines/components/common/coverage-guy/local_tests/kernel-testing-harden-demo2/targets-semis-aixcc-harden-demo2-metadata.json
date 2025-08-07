@@ -1,0 +1,52 @@
+{
+  "cp_name": "harden-demo2",
+  "language": "c",
+  "cp_address": {
+    "linux-kernel": {
+      "address": "https://github.com/shellphish-support-syndicate/targets-semis-harden-demo2-linux-kernel-source.git",
+      "directory": ".readonly/linux-kernel"
+    }
+  },
+  "docker_image": "exemplar-harden-demo2:base",
+  "sanitizers": {
+    "id_1": "KASAN: slab-out-of-bounds"
+  },
+  "harnesses": {
+    "id_1": {
+      "binary": "out/even_nilo_can_hack_this",
+      "name": "even_nilo_can_hack_this",
+      "source": "harnesses/even_nilo_can_hack_this.c"
+    }
+  },
+  "shellphish": {
+    "known_sources": {
+      "linux_kernel": [
+        {
+          "relative_path": "src/linux-kernel",
+          "metadata": {
+            "version": "6.6.25"
+          }
+        }
+      ]
+    },
+    "files_by_language": {
+      "html": 1,
+      "ruby": 1,
+      "certificates": 1,
+      "markdown": 2,
+      "css": 3,
+      "autotools": 3,
+      "office": 4,
+      "cpp": 5,
+      "lex-yacc": 20,
+      "perl": 54,
+      "images": 75,
+      "python": 188,
+      "json": 738,
+      "shell": 849,
+      "text": 1834,
+      "yaml": 3714,
+      "c": 56951
+    }
+  }
+}

@@ -1,0 +1,94 @@
++ export REPLICA_ID=0
++ export TASK_NAME=poiguy_jazzer
++ export JOB_ID=c27047267322dcff09ff44dfc06e5538
++ export MEM_QUOTA=268435456
++ export CPU_QUOTA=100000
++ export NPROC_VAL=1
++ export PDT_AGENT_SECRET=13370017268961452007602334939904450627588
++ export PDT_AGENT_URL=http://172.17.0.1:28087
++ export AIXCC_LITELLM_HOSTNAME=http://beatty.unfiltered.seclab.cs.ucsb.edu:4000
++ export LITELLM_KEY=sk-artiphishell
++ export SHUTDOWN_SCRIPT=/tmp/pydatatask-runner-shutdown_script-eufhkecm
++ export SHUTTING_DOWN=/tmp/pydatatask-runner-shutting_down-buqxbudw
++ echo export IN_SHUTDOWN_SCRIPT=1
++ touch /tmp/pydatatask-runner-shutdown_script-eufhkecm
++ trap sigterm_func TERM
++ URL=http://172.17.0.1:28087/data/poiguy_jazzer/pov_guy_report/c27047267322dcff09ff44dfc06e5538
++ mktemp
++ FILENAME=/tmp/tmp.xxXXLtC4hM
++ mktemp
++ ERR_FILENAME=/tmp/tmp.7Zw2NP9a7G
++ [ -d /tmp/tmp.xxXXLtC4hM ]
++ wget -v -O- http://172.17.0.1:28087/data/poiguy_jazzer/pov_guy_report/c27047267322dcff09ff44dfc06e5538 --header Cookie: secret=13370017268961452007602334939904450627588
++ rm /tmp/tmp.7Zw2NP9a7G
++ cat /tmp/tmp.xxXXLtC4hM
++ rm /tmp/tmp.xxXXLtC4hM
++ URL=http://172.17.0.1:28087/data/poiguy_jazzer/function_index_csv/1
++ mktemp
++ FILENAME=/tmp/tmp.LTNqdIZnxf
++ mktemp
++ ERR_FILENAME=/tmp/tmp.X2vctyvyQg
++ [ -d /tmp/tmp.LTNqdIZnxf ]
++ wget -v -O- http://172.17.0.1:28087/data/poiguy_jazzer/function_index_csv/1 --header Cookie: secret=13370017268961452007602334939904450627588
++ rm /tmp/tmp.X2vctyvyQg
++ cat /tmp/tmp.LTNqdIZnxf
++ rm /tmp/tmp.LTNqdIZnxf
++ URL=http://172.17.0.1:28087/data/poiguy_jazzer/target_metadata/1
++ mktemp
++ FILENAME=/tmp/tmp.QNj1T5ziXJ
++ mktemp
++ ERR_FILENAME=/tmp/tmp.5aTQ3bOukL
++ [ -d /tmp/tmp.QNj1T5ziXJ ]
++ wget -v -O- http://172.17.0.1:28087/data/poiguy_jazzer/target_metadata/1 --header Cookie: secret=13370017268961452007602334939904450627588
++ rm /tmp/tmp.5aTQ3bOukL
++ cat /tmp/tmp.QNj1T5ziXJ
++ rm /tmp/tmp.QNj1T5ziXJ
++ mkdir -p /tmp/pydatatask-runner-streaming-output-poi_reports-c27047267322dcff09ff44dfc06e5538-murekkaj
++ mkdir -p /tmp/pydatatask-runner-scratch-rsxnwlgs
++ mkdir -p /tmp/pydatatask-runner-lock-acggyglq
++ WATCHER_PID_dlmjbwewgu=29
++ set +e
++ watcher_dlmjbwewgu
++ WATCHER_LAST=
++ [ -d /tmp/pydatatask-runner-streaming-output-poi_reports-c27047267322dcff09ff44dfc06e5538-murekkaj ]
++ cd /tmp/pydatatask-runner-streaming-output-poi_reports-c27047267322dcff09ff44dfc06e5538-murekkaj
++ [ -z  ]
++ sleep 5
++ set -e
++ set -u
++ set -x
++ mkdir -p /tmp/pois
++ python /app/poiguyrun.py --target 1 --scanner jazzer --scan_report_dir /tmp/pydatatask-runner-input-pov_guy_report-c27047267322dcff09ff44dfc06e5538-royjohek --crash_report_id c27047267322dcff09ff44dfc06e5538 --index_csv_path /tmp/pydatatask-runner-input-function_index_csv-1-jgmsrjtc --poi_normalized_dir /tmp/pois --harness_id id_1 --target_metadata /tmp/pydatatask-runner-input-target_metadata-1-ylsveqlt
+2024-07-12 07:38:42,134 - INFO - Starting POI dump process
+2024-07-12 07:38:42,134 - INFO - Reading index CSV file from /tmp/pydatatask-runner-input-function_index_csv-1-jgmsrjtc
+2024-07-12 07:38:42,138 - INFO - Loading Jazzer crash report from /tmp/pydatatask-runner-input-pov_guy_report-c27047267322dcff09ff44dfc06e5538-royjohek
+2024-07-12 07:38:42,159 - INFO - Parsing Jazzer report
+Traceback (most recent call last):
+  File "/app/poiguyrun.py", line 125, in <module>
+    main()
+  File "/app/poiguyrun.py", line 118, in main
+    dump_jazzer_poi(target_id=TARGET, jazzer_crash_report=SCAN_DIR, crash_report_id=REPORT_ID,
+  File "/app/Jazzer/jazzer.py", line 44, in dump_jazzer_poi
+    parsed_report = jazzer_report_parser(jazzer_report_data)
+  File "/app/poiguy_utils/parser.py", line 278, in jazzer_report_parser
+    for _report in report.get('jazzer').get('reports'):
+AttributeError: 'NoneType' object has no attribute 'get'
++ RETCODE=1
++ ANY_UPLOADS_FAILED=0
++ echo Finishing up
+Finishing up
++ echo 1
++ wait 29
++ [ -f /tmp/pydatatask-runner-finished-mazemlnn ]
++ WATCHER_LAST=1
++ [ -e * ]
++ [ -z 1 ]
++ shutdown_func
++ touch /tmp/pydatatask-runner-shutting_down-buqxbudw
++ echo Shutting down now
++ set +e
++ . /tmp/pydatatask-runner-shutdown_script-eufhkecm
+Shutting down now
++ export IN_SHUTDOWN_SCRIPT=1
++ [ 0 -ne 0 ]
++ exit 1

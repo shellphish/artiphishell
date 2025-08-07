@@ -1,0 +1,29 @@
+repo_classes:
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  target_metadatas: MetadataRepository
+
+tasks:
+
+  analyze_target:
+    require_success: true
+    job_quota:
+      cpu: 1
+      mem: 8Gi
+    links:
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      metadata_path:
+        repo: target_metadatas
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        template: |
+          set -ex
+          python /shellphish/crs-utils/components/target_identifier/analyze_target.py {{target_with_sources | shquote}} {{metadata_path | shquote}}

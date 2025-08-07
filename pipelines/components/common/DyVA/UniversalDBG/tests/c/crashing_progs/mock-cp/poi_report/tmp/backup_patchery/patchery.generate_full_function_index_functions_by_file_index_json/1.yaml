@@ -1,0 +1,39 @@
+src/samples/mock_vp.c:
+- end_column: 2
+  end_line: 28
+  end_offset: 512
+  function_signature: src/samples/mock_vp.c:20:1::void func_b()
+  start_column: 1
+  start_line: 20
+  start_offset: 319
+- end_column: 2
+  end_line: 40
+  end_offset: 593
+  function_signature: src/samples/mock_vp.c:31:1::int main()
+  start_column: 1
+  start_line: 31
+  start_offset: 533
+- end_column: 2
+  end_line: 18
+  end_offset: 317
+  function_signature: src/samples/mock_vp.c:7:1::void func_a()
+  start_column: 1
+  start_line: 7
+  start_offset: 80
+src/test/filein_harness.c:
+- end_column: 2
+  end_line: 48
+  end_offset: 972
+  function_signature: src/test/filein_harness.c:12:1::int setup_pipe_data(const uint8_t
+    *, size_t)
+  start_column: 1
+  start_line: 12
+  start_offset: 241
+- end_column: 2
+  end_line: 62
+  end_offset: 1172
+  function_signature: src/test/filein_harness.c:50:1::int LLVMFuzzerTestOneInput(const
+    uint8_t *, size_t)
+  start_column: 1
+  start_line: 50
+  start_offset: 974

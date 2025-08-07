@@ -1,0 +1,47 @@
+TITLE: "A Large-Scale Study of Usability Criteria Addressed by Static Analysis Tools"
+PUBLISHED_AT: "ISSTA '22: 31st ACM SIGSOFT International Symposium on Software Testing and Analysis"
+PUBLICATION_TYPE: Symposium
+YEAR: 2022
+AUTHORS:
+- FIRSTNAME: "Marcus"
+  LASTNAME: "Nachtigall"
+  EMAIL: "marcus.nachtigall@uni-paderborn.de"
+  AFFILIATION:
+    - COUNTRY: Germany
+      CITY: "Paderborn"
+      INSTITUTION: "Heinz Nixdorf Institute, Paderborn University"
+- FIRSTNAME: "Michael"
+  LASTNAME: "Schlichtig"
+  EMAIL: "michael.schlichtig@uni-paderborn.de"
+  AFFILIATION:
+    - COUNTRY: Germany
+      CITY: "Paderborn"
+      INSTITUTION: "Heinz Nixdorf Institute, Paderborn University"
+- FIRSTNAME: "Eric"
+  LASTNAME: "Bodden"
+  EMAIL: "eric.bodden@uni-paderborn.de"
+  AFFILIATION:
+    - COUNTRY: Germany
+      CITY: "Paderborn"
+      INSTITUTION: "Heinz Nixdorf Institute, Paderborn University & Fraunhofer IEM"
+
+PDF: "nsb22large.pdf"
+
+LINKS:
+  - URL: "https://doi.org/10.1145/3533767.3534374"
+    TYPE: DOILINK
+
+BIBTEX:
+  - |
+    @inproceedings{Nachtigall2022LargeScale,
+      title={A Large-Scale Study of Usability Criteria Addressed by Static Analysis Tools},
+      author={Nachtigall, Marcus and Schlichtig, Michael and Bodden, Eric},
+      booktitle={Proceedings of the 31st ACM SIGSOFT International Symposium on Software Testing and Analysis},
+      year={2022},
+      organization={ACM}
+    }
+
+ABSTRACT: |
+  Static analysis tools support developers in detecting potential coding issues, such as bugs or vulnerabilities. Research on static analysis emphasizes its technical challenges but also mentions severe usability shortcomings. These shortcomings hinder the adoption of static analysis tools, and in some cases, user dissatisfaction even leads to tool abandonment. This paper presents the first systematic usability evaluation in a wide range of static analysis tools. We derived a set of 36 relevant criteria from the scientific literature and gathered a collection of 46 static analysis tools complying with our inclusion and exclusion criteria—a representative set of mainly non-proprietary tools. Then, we evaluated how well these tools fulfill the aforementioned criteria. The evaluation shows that more than half of the considered tools offer poor warning messages, while about three-quarters of the tools provide hardly any fix support. Furthermore, the integration of user knowledge is strongly neglected, which could be used for improved handling of false positives and tuning the results for the corresponding developer. Finally, issues regarding workflow integration and specialized user interfaces are further proved.
+
+

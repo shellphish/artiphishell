@@ -1,0 +1,38 @@
+{
+    "nilo:nilo_the_force_awakens_c_128": {
+        "violations": [
+            {
+                "is": "max(argv)==140737488349944",
+                "was": "max(argv)==140737488349896"
+            }
+        ],
+        "file": "nilo-the-force-awakens.c",
+        "line": "128",
+        "func": "main",
+        "unique_to_crash": false
+    },
+    "nilo:nilo_the_force_awakens_c_90": {
+        "violations": [
+            {
+                "is": "max(fds)==31243722414882816",
+                "was": "max(fds)==12094627905536"
+            }
+        ],
+        "file": "nilo-the-force-awakens.c",
+        "line": "90",
+        "func": "harness",
+        "unique_to_crash": false
+    },
+    "nilo:nilo_the_force_awakens_c_19": {
+        "violations": [
+            {
+                "is": "max(fds)==140737488344976",
+                "was": "max(fds)==140737488344928"
+            }
+        ],
+        "file": "nilo-the-force-awakens.c",
+        "line": "19",
+        "func": "perform_select",
+        "unique_to_crash": false
+    }
+}

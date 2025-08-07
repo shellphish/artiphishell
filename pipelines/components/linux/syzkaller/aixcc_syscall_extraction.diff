@@ -1,0 +1,188 @@
+diff --git a/Makefile b/Makefile
+index 0f47e9389..296c0016f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -112,7 +112,7 @@ endif
+ 	presubmit_arch_executor presubmit_dashboard presubmit_race presubmit_race_dashboard presubmit_old
+ 
+ all: host target
+-host: manager runtest repro mutate prog2c db upgrade
++host: manager runtest repro mutate prog2c db upgrade config-gen
+ target: fuzzer execprog stress executor
+ 
+ executor: descriptions
+@@ -221,6 +221,9 @@ verifier: descriptions
+ runner:  descriptions
+ 	GOOS=$(TARGETGOOS) GOARCH=$(TARGETGOARCH) $(GO) build $(GOTARGETFLAGS) -o ./bin/$(TARGETOS)_$(TARGETVMARCH)/syz-runner$(EXE) github.com/google/syzkaller/syz-runner
+ 
++config-gen: descriptions
++	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(HOSTGO) build $(GOHOSTFLAGS) -o ./bin/config-gen github.com/google/syzkaller/tools/config-gen
++
+ # `extract` extracts const files from various kernel sources, and may only
+ # re-generate parts of files.
+ extract: bin/syz-extract
+diff --git a/prog/resources.go b/prog/resources.go
+index c200b2c5c..4d8fbd16e 100644
+--- a/prog/resources.go
++++ b/prog/resources.go
+@@ -142,6 +142,10 @@ func isCompatibleResourceImpl(dst, src []string, precise bool) bool {
+ 	return true
+ }
+ 
++func (s *Syscall) GetInputResources(t *Target) []*ResourceDesc {
++	return t.getInputResources(s)
++}
++
+ func (target *Target) getInputResources(c *Syscall) []*ResourceDesc {
+ 	dedup := make(map[*ResourceDesc]bool)
+ 	var resources []*ResourceDesc
+diff --git a/prog/target.go b/prog/target.go
+index bb49a6f5c..537f34ab9 100644
+--- a/prog/target.go
++++ b/prog/target.go
+@@ -80,6 +80,14 @@ type Target struct {
+ 	defaultChoiceTable *ChoiceTable
+ }
+ 
++func (t *Target) GetResourceDesc(name string) *ResourceDesc {
++	return t.resourceMap[name]
++}
++
++func (t *Target) GetTypes() []Type {
++	return t.types
++}
++
+ const maxSpecialPointers = 16
+ 
+ var targets = make(map[string]*Target)
+diff --git a/tools/config-gen/script.go b/tools/config-gen/script.go
+new file mode 100644
+index 000000000..e6d613151
+--- /dev/null
++++ b/tools/config-gen/script.go
+@@ -0,0 +1,125 @@
++package main
++
++import (
++	"os"
++	"fmt"
++	//"encoding/json"
++	"io/ioutil"
++
++	"github.com/google/syzkaller/prog"
++	_ "github.com/google/syzkaller/sys"
++	"gopkg.in/yaml.v3"
++)
++
++func lessSpecific(a, b []string) bool {
++	if len(a) >= len(b) {
++		return false
++	}
++
++	for i := range a {
++		if a[i] != b[i] {
++			return false
++		}
++	}
++
++	return true
++}
++
++func print_config(syscalls []prog.Syscall) {
++	fmt.Println(",\n\t\"enable_syscalls\": [")
++	for i, c := range syscalls {
++		if i == len(syscalls)-1 {
++			fmt.Printf("\t\t\"%v\"\n", c.Name)
++		} else {
++			fmt.Printf("\t\t\"%v\",\n", c.Name)
++		}
++	}
++	fmt.Println("\t]")
++}
++
++func retrieve_all_syscalls(syscalls []string, target *prog.Target) []prog.Syscall {
++	calls := make(map[string]bool)
++	for _, s_str := range syscalls {
++		s, ok := target.SyscallMap[s_str]
++		if !ok {
++			continue
++		}
++		calls[s_str] = true
++		for _, desc := range s.GetInputResources(target) {
++			// get constructors
++			for _, ctor := range desc.Ctors {
++				calls[ctor.Call.Name] = true
++			}
++			// get all users
++			for _, c := range target.Syscalls {
++				for _, inp := range c.GetInputResources(target) {
++					if inp.Name == desc.Name || lessSpecific(inp.Kind, desc.Kind){
++						calls[c.Name] = true
++						break
++					}
++				}
++			}
++		}
++	}
++
++	syscalls_final := []prog.Syscall{}
++	for c := range calls {
++		syscalls_final = append(syscalls_final, *target.SyscallMap[c])
++	}
++
++	return syscalls_final
++}
++
++type Input struct {
++	Syscalls []string `yaml:"syscalls"`
++}
++
++func main() {
++	if len(os.Args) != 3 {
++		fmt.Printf("Usage: %v <os> <arch>\n", os.Args[0])
++		os.Exit(1)
++	}
++
++	target, err := prog.GetTarget(os.Args[1], os.Args[2])
++	if err != nil {
++		fmt.Printf("Error: %v\n", err)
++		os.Exit(1)
++	}
++
++	syz_config, err := ioutil.ReadFile("syzconfig.cfg")
++	if err != nil {
++		fmt.Printf("Error: %v\n", err)
++		os.Exit(1)
++	}
++
++	content, err := ioutil.ReadFile("codeql.json")
++	if err != nil {
++		fmt.Println(string(syz_config))
++		//fmt.Printf("Error: %v\n", err)
++		os.Exit(0)
++	}
++
++	var i Input
++	err = yaml.Unmarshal(content, &i)
++	if err != nil {
++		fmt.Printf("Error: %v\n", err)
++		os.Exit(1)
++	}
++
++	syscalls := retrieve_all_syscalls(i.Syscalls, target)
++
++	/*
++	input := make(map[string][]string)
++	err = json.Unmarshal([]byte(content), &input)
++	if err != nil {
++		fmt.Printf("Error: %v\n", err)
++		os.Exit(1)
++	}
++
++	syscalls := retrieve_all_syscalls(input["syscalls"], target)
++	*/
++
++	fmt.Printf("%v", string(syz_config[:len(syz_config)-3]))
++	print_config(syscalls)
++
++}

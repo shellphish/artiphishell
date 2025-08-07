@@ -1,0 +1,52 @@
+# This is a basic workflow to help you get started with Actions
+
+name: DumpPipelineStats
+description: "Dumps a snapshot the current state of the pydatatask pipeline to a directory"
+inputs:
+  pipeline:
+    description: 'Pipeline to dump'
+    required: true
+  snapshot_name:
+    description: 'Name of the snapshot to dump'
+    required: true
+  dump_backup:
+    description: 'Whether to dump the full data backup'
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Dump the stats to the output directory
+      shell: bash
+      run: |
+        mkdir -p /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}
+
+        cd $GITHUB_WORKSPACE/${{ inputs.pipeline }}
+
+        pd graph -o /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/
+        pd status --as-json --output /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/status.json
+
+        if [ "${{ inputs.dump_backup }}" == "true" ]; then
+          pd backup --all /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/backup/
+          cd /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/backup/
+        fi
+        cp $GITHUB_WORKSPACE/${{ inputs.pipeline }}/pipeline.{yaml,lock} /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/
+        cp $GITHUB_WORKSPACE/components/component_commits.txt /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/
+
+        cp /tmp/pydatatask-$(whoami)/agent-stdout-* /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/
+
+    - name: Tar the results into a timestamped tarball
+      shell: bash
+      run: |
+        mkdir -p /tmp/latest_pipeline_ci_run/archive/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/
+        chown -R :runners /tmp/latest_pipeline_ci_run/archive/
+        cd /tmp/latest_pipeline_ci_run/${{ runner.name }}/
+        DATE_AND_TIME=$(date +"%Y-%m-%d_%H-%M-%S")
+        tar -czf ${{ inputs.pipeline }}_${{ inputs.snapshot_name }}.tar.gz ${{ inputs.pipeline }}
+
+        mv ${{ inputs.pipeline }}_${{ inputs.snapshot_name }}.tar.gz /tmp/latest_pipeline_ci_run/archive/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/${DATE_AND_TIME}.tar.gz
+
+        rm -rf /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/latest.tar.gz
+        ln -sf /tmp/latest_pipeline_ci_run/archive/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/${DATE_AND_TIME}.tar.gz /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/${{ inputs.snapshot_name }}/latest.tar.gz

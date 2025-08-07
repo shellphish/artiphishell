@@ -1,0 +1,70 @@
++ export REPLICA_ID=0
++ export JOB_ID=c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac
++ export MEM_QUOTA=268435456
++ export CPU_QUOTA=100000
++ export PDT_AGENT_SECRET=86331918413637483690797809584864246012475
++ export PDT_AGENT_URL=http://172.17.0.1:30662
++ URL=http://172.17.0.1:30662/data/find_first_crash_commit/crashing_input_path/c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac
++ mktemp
++ FILENAME=/tmp/tmp.ttyVNCZ2E8
++ mktemp
++ ERR_FILENAME=/tmp/tmp.38aowj2gvO
++ [ -d /tmp/tmp.ttyVNCZ2E8 ]
++ wget -v -O- http://172.17.0.1:30662/data/find_first_crash_commit/crashing_input_path/c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac --header Cookie: secret=86331918413637483690797809584864246012475
++ rm /tmp/tmp.38aowj2gvO
++ cat /tmp/tmp.ttyVNCZ2E8
++ rm /tmp/tmp.ttyVNCZ2E8
++ URL=http://172.17.0.1:30662/data/find_first_crash_commit/crashing_input_meta_file/c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac
++ mktemp
++ FILENAME=/tmp/tmp.fcVmLnjn8S
++ mktemp
++ ERR_FILENAME=/tmp/tmp.1JVIaGcH9A
++ [ -d /tmp/tmp.fcVmLnjn8S ]
++ wget -v -O- http://172.17.0.1:30662/data/find_first_crash_commit/crashing_input_meta_file/c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac --header Cookie: secret=86331918413637483690797809584864246012475
++ rm /tmp/tmp.1JVIaGcH9A
++ cat /tmp/tmp.fcVmLnjn8S
++ rm /tmp/tmp.fcVmLnjn8S
++ URL=http://172.17.0.1:30662/data/find_first_crash_commit/target_with_source/1
++ mktemp
++ FILENAME=/tmp/tmp.F3DJBTaGIZ
++ mktemp
++ ERR_FILENAME=/tmp/tmp.2oJg4ZjK6S
++ [ -d /tmp/tmp.F3DJBTaGIZ ]
++ wget -v -O- http://172.17.0.1:30662/data/find_first_crash_commit/target_with_source/1 --header Cookie: secret=86331918413637483690797809584864246012475
++ rm /tmp/tmp.2oJg4ZjK6S
++ cat /tmp/tmp.F3DJBTaGIZ
++ rm /tmp/tmp.F3DJBTaGIZ
++ mkdir -p /tmp/pydatatask-Lukas-Dresel-input-target_with_source-1-kyqkujqn
++ cd /tmp/pydatatask-Lukas-Dresel-input-target_with_source-1-kyqkujqn
++ tar -xf /tmp/pydatatask-Lukas-Dresel-1-zip-acihuphs
++ cd -
++ mkdir -p /tmp/pydatatask-Lukas-Dresel-streaming-output-crashing_commit-c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac-pbpkabyp
+/
++ mkdir -p /tmp/pydatatask-Lukas-Dresel-scratch-fzowmytt
++ mkdir -p /tmp/pydatatask-Lukas-Dresel-lock-mldkzvwi
++ WATCHER_PID_salkrsjgtr=31
++ set +e
++ watcher
++ WATCHER_LAST=
++ [ -d /tmp/pydatatask-Lukas-Dresel-streaming-output-crashing_commit-c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac-pbpkabyp ]
++ cd /tmp/pydatatask-Lukas-Dresel-streaming-output-crashing_commit-c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac-pbpkabyp
++ [ -z  ]
++ sleep 5
++ set -e
++ set -x
++ set -e
++ mkdir -p /shared/commit_tester/
++ mktemp -d -p /shared/commit_tester/
++ TEMP_DIR=/shared/commit_tester/tmp.1FtstdWnMx
++ rsync -raz /tmp/pydatatask-Lukas-Dresel-input-target_with_source-1-kyqkujqn/ /shared/commit_tester/tmp.1FtstdWnMx
++ cd /shared/commit_tester/tmp.1FtstdWnMx
++ export PYTHONUNBUFFERED=1
++ python3 /find_first_crash_commit.py --cp-repo /shared/commit_tester/tmp.1FtstdWnMx --crash-input-path /tmp/pydatatask-Lukas-Dresel-input-crashing_input_path-c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac-yjtnjmpf --crash-input-meta /tmp/pydatatask-Lukas-Dresel-input-crashing_input_meta_file-c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac-xapubvjj --crash-input-id c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac --output /tmp/pydatatask-Lukas-Dresel-streaming-output-crashing_commit-c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac-pbpkabyp
+cp_source=<shellphish_crs_utils.challenge_project.ChallengeProjectSource object at 0x7ffff6e76b00>
+Get Commits: repo_dir=PosixPath('/shared/commit_tester/tmp.1FtstdWnMx/src/samples') commits=['e66dc3c8ad2488bedf3447ef171f2afb02816efa', '11dafa9a5babc127357d710ee090eb4c0c05154f', 'c86ae6ec2cbf7383507039abc44e9e3bbece9054', '22e7f707e16ab7f6ef8a7e9adbb60b24bde49e27', 'c168de5941ce592e0b3fdcc3f9b862cbbc6c9919']
+We have 5 commits
+Searching latest=0 mid=2 oldest=4
+ATTEMPTING: c86ae6ec2cbf7383507039abc44e9e3bbece9054
+Testing Crash: commit_cp.project_path=PosixPath('/shared/commit_tester/e4phvg5w/cp_repo') crash_input_path=PosixPath('/tmp/pydatatask-Lukas-Dresel-input-crashing_input_path-c73f4a0bf9b4dfbf24575c080ebe50c4208040a7967f76b1042d4c5faa51d9ac-yjtnjmpf') harness_name='filein_harness'
+Building Project
+Running PoV

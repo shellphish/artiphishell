@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/2.6 070\nLINK\nLINK\nLINK\nLINK\n\n"

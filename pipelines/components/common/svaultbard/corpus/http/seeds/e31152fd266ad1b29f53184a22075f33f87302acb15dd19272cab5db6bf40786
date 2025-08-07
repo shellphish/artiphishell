@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/2.7 283\nExpires\n\n"

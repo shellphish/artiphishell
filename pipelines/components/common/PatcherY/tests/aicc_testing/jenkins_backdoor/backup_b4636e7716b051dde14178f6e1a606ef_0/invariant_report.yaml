@@ -1,0 +1,21 @@
+io.jenkins.plugins.UtilPlug.UtilMain:containsHeader:RETURN:225:
+  file: io/jenkins/plugins/UtilPlug/UtilMain.java
+  func: containsHeader
+  key_index: '?'
+  line: '225'
+  unique_to_crash: true
+  violations: []
+io.jenkins.plugins.UtilPlug.UtilMain:createUtils:ENTRY:157:
+  file: io/jenkins/plugins/UtilPlug/UtilMain.java
+  func: createUtils
+  key_index: '?'
+  line: '157'
+  unique_to_crash: true
+  violations: []
+io.jenkins.plugins.UtilPlug.UtilMain:createUtils:RETURN:211:
+  file: io/jenkins/plugins/UtilPlug/UtilMain.java
+  func: createUtils
+  key_index: '?'
+  line: '211'
+  unique_to_crash: true
+  violations: []

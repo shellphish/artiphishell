@@ -1,0 +1,73 @@
+name: apt-cache-check
+run-name: Apt Cache Check
+on:
+  # Triggers the workflow on pushes to main branch 
+  push:
+    branches: main
+
+jobs:
+  check-fix-apt-cache:
+    runs-on: self-hosted
+    name: Check APT mirror, fix if can, scream if not
+    steps:
+      - name: clean
+        run: |
+          rm -rf ./pipelines-apt-cache
+
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          persist-credentials: true
+          path: pipelines-apt-cache
+          lfs: false
+          submodules: recursive
+          clean: true
+
+      - name: run apt-mirrors
+        id: bump-apt-cache
+        working-directory: ./pipelines-apt-cache/apis/apt-mirrors
+        run: |
+          set -x
+          # Set us up on main
+          git config --global user.name "CI BOI"
+          git config --global user.email "ci"
+          git fetch origin main
+          git pull -ff origin main
+          git checkout main
+          python3 find_docker_apts.py ../../components > ./assets/packages
+
+          if git status --porcelain | grep assets/packages
+          then
+            git add ./assets/packages
+            git commit -m "Updated assets/packages in CI" --author="CI BOI <ci>"
+            git push
+            echo "UPDATED_APT_MIRROR=true" >> $GITHUB_ENV
+          else
+            echo "UPDATED_APT_MIRROR=false" >> $GITHUB_ENV
+          fi
+
+      - name: Big ping cause we can't bump
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: |
+            ATTN: <@515024380749807628> <@320594955779309569> <@272835764965081090>, couldn't auto bump apt-mirrors from CI
+
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        if: failure() && steps.bump-apt-cache.conclusion == 'failure'  && github.ref == 'refs/heads/main'
+
+      - name: Push updated apt-mirrors
+        id: update-apt-mirrors
+        working-directory: pipelines-apt-cache
+        if: ${{ env.UPDATED_APT_MIRROR == 'true' }}
+        run: |
+          set -x
+          git add ./apis/apt-mirrors
+          git commit -m "Bump apt-mirrors from CI"
+          git push
+
+      - name: Fail if we did update, which will prevent future workflows from running 
+        if: ${{ steps.update-apt-mirrors.conclusion == 'success' }}
+        run: |
+          exit -1

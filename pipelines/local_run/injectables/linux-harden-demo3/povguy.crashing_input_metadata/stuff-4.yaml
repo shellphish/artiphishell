@@ -1,0 +1,7 @@
+cp_harness_id: id_4
+cp_harness_binary_path: out/even_justin_can_hack_this
+cp_harness_name: even_justin_can_hack_this
+cp_harness_source_path: src/harnesses/even_justin_can_hack_this.c
+fuzzer: snapchange
+harness_info_id: 93457221207f26da3d707b3b3dc0cd96
+target_id: 4

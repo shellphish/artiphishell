@@ -1,0 +1,10 @@
+torch
+fairscale
+fire
+sentencepiece
+transformers
+tokenizers
+flask
+protobuf
+sentence-transformers
+openai

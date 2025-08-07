@@ -1,0 +1,23 @@
+[package]
+name = "sancov_collection"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+
+[dependencies]
+libc = "*"
+cty = "*"
+log = "*"
+pete = "*"
+sancov_shared = { path = "../sancov_shared", features = ["global_vars"]}
+syscall-numbers = "*"
+
+[features]
+default = ["pcs_table", "inline_bool_flags", "inline_8bit_counters", "trace_pc", "trace_pc_indirect", "pc_guards"]
+pcs_table = []
+trace_pc = []
+trace_pc_indirect = []
+pc_guards = []
+inline_bool_flags = []
+inline_8bit_counters = []

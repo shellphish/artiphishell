@@ -1,0 +1,4 @@
+filename: corpus-pattern-2
+sha256: 2e4da41ed09c39c336a6130ff3c7a3d3d0e8190cbbcd7ff7991a390a3002c9a5
+source: https://github.com/lpereira/lwan
+source_relative_path: fuzz/corpus/corpus-pattern-2

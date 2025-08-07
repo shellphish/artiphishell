@@ -1,0 +1,103 @@
+repo_classes:
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backup: True
+    compress_backend: True
+  fuzz_requests: MetadataRepository
+    #info_extraction_requests: MetadataRepository
+  info_extraction_results: MetadataRepository
+  benign_coverages_full_report: BlobRepository
+  # codeql_query_report: FilesystemRepository
+
+  #targets_with_sources: FilesystemRepository
+  full_function_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+
+  ###### OUTPUTS ######
+  to_be_triaged_harness_inputs: BlobRepository
+  to_be_triaged_harness_inputs_metadatas: MetadataRepository
+
+
+
+tasks:
+  quick_seed_no_coverage:
+  # Make sure QuickSeed work without coverage report
+    links:
+      fuzz_request_id:
+        repo: fuzz_requests
+        kind: InputId
+      fuzz_request:
+        repo: fuzz_requests
+        kind: InputMetadata
+
+      codeql_extraction_results:
+        repo: info_extraction_results
+        kind: InputFilepath
+        key: fuzz_request.reachability_request_id
+
+      target:
+        repo: targets_with_sources
+        kind: InputFilepath
+        key: fuzz_request.target_id
+      full_function_index:
+        repo: full_function_indices
+        kind: InputFilepath
+        key: fuzz_request.target_id
+      function_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: fuzz_request.target_id
+
+
+      to_be_triaged_harness_inputs:
+        repo: to_be_triaged_harness_inputs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: to_be_triaged_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          fuzz_request_id: fuzz_request_id
+          harness_info_id: fuzz_request.harness_id
+          target_id: fuzz_request.target_id
+          reachability_request_id: fuzz_request.reachability_request_id
+          fuzzer: quickseed
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-quickseed
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+          # timeout 20 docker login ghcr.io -u player-c3f09220 -p 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 || true
+
+          export SRC="{{ target | shquote }}"
+
+          mkdir -p /shared/quickseed/
+          TEMP_DIR=$(mktemp -d -p /shared/quickseed/)
+
+          rsync -ra "${SRC}/" ${TEMP_DIR}/
+          cd "${TEMP_DIR}"
+          RAND=$(head /dev/urandom -c 5 | xxd -p | tr -d '\n')
+
+          export CP_NAME="$(yq '.cp_name' "$SRC"/project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')"
+          export FUZZ_DUMP_DIR="/shared/jazzer_sync/${CP_NAME}-dump"
+          mkdir -p "$FUZZ_DUMP_DIR"
+          mkdir -p "$FUZZ_DUMP_DIR/benign_harness_inputs"
+          mkdir -p "$FUZZ_DUMP_DIR/crashing_harness_inputs"
+          mkdir -p "/shared/quickseed-agentlib-cost"
+
+          QuickSeed \
+            --target-root "${TEMP_DIR}" \
+            --target {{ target | shquote }} \
+            --func-dir {{ function_jsons_dir | shquote }} \
+            --func-index {{ full_function_index | shquote }} \
+            --report {{codeql_extraction_results | shquote}} \
+            --crash-dir "$FUZZ_DUMP_DIR/crashing_harness_inputs" \
+            --benign-dir "$FUZZ_DUMP_DIR/benign_harness_inputs"

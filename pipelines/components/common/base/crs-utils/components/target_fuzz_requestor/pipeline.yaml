@@ -1,0 +1,46 @@
+repo_classes:
+
+  ################################### INPUTS ##########################################
+  target_harness_infos: MetadataRepository
+  info_extraction_requests: MetadataRepository
+
+
+
+  ################################### OUTPUTS #########################################
+  # 1 - N relationship with targets_with_sources (1 per harness, linked with target_harness_info.target_id
+  target_directed_fuzz_requests: MetadataRepository
+
+tasks:
+
+  fuzz_requestor:
+    links:
+      harness_info:
+        repo: target_harness_infos
+        kind: InputMetadata
+
+      harness_info_id:
+        repo: target_harness_infos
+        kind: InputId
+
+      reachability_request:
+        repo: info_extraction_requests
+        kind: InputMetadata
+        key: harness_info.target_id
+
+      directed_fuzz_request:
+        repo: target_directed_fuzz_requests
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        template: |
+          set -ex
+
+          cat <<EOF > {{ directed_fuzz_request | shquote }}
+          {
+            "target_id": "{{ harness_info.target_id }}",
+            "harness_id": "{{ harness_info_id }}",
+            "reachability_request_id": "{{ harness_info.target_id }}"
+          }
+          EOF

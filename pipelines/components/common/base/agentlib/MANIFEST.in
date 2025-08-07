@@ -1,0 +1,4 @@
+include pyproject.toml
+recursive-include agentlib/prompts **
+recursive-include agentlib/static **
+

@@ -1,0 +1,52 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  target_directed_fuzz_requests: MetadataRepository
+  target_harness_infos: MetadataRepository
+  
+  target_directed_seeds: 
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+
+
+tasks:
+  svaultbard_corpus_dump:
+    job_quota:
+      cpu: 1
+      mem: 8Gi
+    annotations:
+      authors:
+        - clasm
+        - honululu
+      maturity: inProgress
+      doc: |
+        This task provides initial seeds for a given target.
+    executable:
+      cls: Container
+      args:
+        image: aixcc-svaultbard
+
+        template: |
+          set -e
+          set -x
+
+          rsync -ra /corpus/common/ {{ seeds | shquote }}
+          rsync -ra /corpus/jenkins/ {{ seeds | shquote }}
+          #rsync -ra /corpus/http/seeds/ {{ seeds | shquote }}
+
+    links:
+      directed_fuzz_request:
+        repo: target_directed_fuzz_requests
+        kind: InputMetadata
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+        key: directed_fuzz_request.target_id
+      harness_info:
+        repo: target_harness_infos
+        kind: InputMetadata
+        key: directed_fuzz_request.harness_id
+      seeds:
+        repo: target_directed_seeds
+        kind: OutputFilepath

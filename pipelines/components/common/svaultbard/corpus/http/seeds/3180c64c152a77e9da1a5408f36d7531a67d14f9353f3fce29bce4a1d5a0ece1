@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.2 803\nContent-Type:TE-X-ForwaronnectIon:HEADcccccccccCONNECTcccccccccccccccccclccccccccccccccccclccccccccccccccccccccccccccccccccccccccccded-Host 1\n\n"

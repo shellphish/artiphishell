@@ -1,0 +1,8 @@
+fuzzer 	last_reported_time 	count 	min 	max 	mean 	median
+symcts_afl 	45h30m 	12 	11269 	11302 	11284.0 	11282.5
+symcts_symqemu_afl 	46h0m 	3 	11248 	11248 	11248.0 	11248.0
+symsan 	47h0m 	6 	11119 	11285 	11202.0 	11202.0
+symcc_aflplusplus 	46h15m 	12 	11122 	11301 	11206.5 	11201.5
+aflplusplus 	47h0m 	9 	11037 	11231 	11140.0 	11152.0
+symcts_symqemu 	47h15m 	3 	8516 	8516 	8516.0 	8516.0
+symcts 	46h15m 	3 	8462 	8462 	8462.0 	8462.0

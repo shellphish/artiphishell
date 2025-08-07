@@ -1,0 +1,252 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  harness_infos: MetadataRepository
+  target_metadatas: MetadataRepository
+  points_of_interest: MetadataRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons: FilesystemRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+  crashing_commits: MetadataRepository
+  vds_records: MetadataRepository
+
+  
+
+  ############## OUTPUT ###########################
+  root_causes: 
+    cls: BlobRepository
+    required: false
+  local_variable_reports: MetadataRepository
+
+tasks:
+  dyva_locals:
+    failure_ok: true
+    annotations:
+      maturity: inProgress
+      authors:
+        - clasm
+
+    links:
+      vds_record:
+        repo: vds_records
+        kind: InputMetadata
+      
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: vds_record.crashing_commit_id
+
+      point_of_interest_meta:
+        repo: points_of_interest
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+
+      point_of_interest:
+        repo: points_of_interest
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+
+      crashing_input:
+        repo: pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+
+      povguy_pov_report:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+      
+      function_json:
+        repo: full_functions_jsons
+        kind: InputFilepath
+        key: point_of_interest_meta.target_id
+
+      function_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: point_of_interest_meta.target_id
+      
+      harness_info:
+        repo: harness_infos
+        kind: InputFilepath
+        key: povguy_pov_report.harness_info_id
+
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+        key: point_of_interest_meta.target_id
+
+      target_metadata:
+        repo: target_metadatas
+        kind: InputFilepath
+        key: point_of_interest_meta.target_id
+      
+      ################# OUTPUT ##################
+
+      local_variable_report:
+        repo: local_variable_reports
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-dyva
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+
+          TARGET_SRC_DIR={{ target_with_sources | shquote }}
+          TARGET_METADATA={{ target_metadata | shquote }}
+          POI_REPORT={{ point_of_interest | shquote }}
+          CRASHING_INPUT={{ crashing_input | shquote }}
+          HARNESS_INFO={{ harness_info | shquote }}
+          LOCAL_VARIABLE_REPORT={{ local_variable_report | shquote }}
+          FUNCTION_INDICES={{ function_indices | shquote }}
+          FUNCTION_JSON={{ function_json | shquote }}
+
+
+          BASE_DIR=/shared/dyva
+          mkdir -p $BASE_DIR
+          TEMP_DIR=$(mktemp -d -p $BASE_DIR)
+
+          rsync -ra "${TARGET_SRC_DIR}/" ${TEMP_DIR}/
+
+          chown -R root:root ${TEMP_DIR}
+          python3 /modifications/utils/utils.py --target-dir $TEMP_DIR
+
+          cp /modifications/jazzer_replacement $TEMP_DIR
+          cp /modifications/replace.sh $TEMP_DIR
+          cp /modifications/run_gdbserver.sh $TEMP_DIR
+          cp -r /shellphish $TEMP_DIR
+          cp $CRASHING_INPUT $TEMP_DIR/src/input
+          export PYTHONBUFFERED=1
+          timeout 600 python3 /dyva_runner/locals.py --target-dir $TEMP_DIR \
+                                                     --target-metadata $TARGET_METADATA \
+                                                     --harness-info $HARNESS_INFO \
+                                                     --poi-report $POI_REPORT \
+                                                     --crashing-input $CRASHING_INPUT \
+                                                     --function-indices $FUNCTION_INDICES \
+                                                     --function-json $FUNCTION_JSON \
+                                                     --output-path $LOCAL_VARIABLE_REPORT || true
+          if [ ! -s $LOCAL_VARIABLE_REPORT ]; then
+            echo "debug_trace: null" > $LOCAL_VARIABLE_REPORT
+            exit 1
+          fi
+
+  # dyva_reasoning:
+    # annotations:
+      # maturity: inProgress
+      # authors:
+        # - clasm
+# 
+    # links:
+      # vds_record:
+        # repo: vds_records
+        # kind: InputMetadata
+      # 
+      # crashing_commit:
+        # repo: crashing_commits
+        # kind: InputMetadata
+        # key: vds_record.crashing_commit_id
+# 
+      # point_of_interest_meta:
+        # repo: points_of_interest
+        # kind: InputMetadata
+        # key: crashing_commit.crash_report_id
+# 
+      # point_of_interest:
+        # repo: points_of_interest
+        # kind: InputFilepath
+        # key: crashing_commit.crash_report_id
+# 
+      # crashing_input:
+        # repo: pov_report_representative_crashing_inputs
+        # kind: InputFilepath
+        # key: crashing_commit.crash_report_id
+# 
+      # povguy_pov_report:
+        # repo: pov_report_representative_crashing_input_metadatas
+        # kind: InputMetadata
+        # key: crashing_commit.crash_report_id
+      # 
+      # function_json:
+        # repo: full_functions_jsons
+        # kind: InputFilepath
+        # key: point_of_interest_meta.target_id
+# 
+      # function_indices:
+        # repo: full_functions_indices
+        # kind: InputFilepath
+        # key: point_of_interest_meta.target_id
+      # 
+      # harness_info:
+        # repo: harness_infos
+        # kind: InputFilepath
+        # key: povguy_pov_report.harness_info_id
+# 
+      # target_with_sources:
+        # repo: targets_with_sources
+        # kind: InputFilepath
+        # key: point_of_interest_meta.target_id
+# 
+      # target_metadata:
+        # repo: target_metadatas
+        # kind: InputFilepath
+        # key: point_of_interest_meta.target_id
+      # 
+      ################ OUTPUT ##################
+# 
+      # local_variable_report:
+        # repo: local_variable_reports
+        # kind: OutputFilepath
+# 
+    # executable:
+      # cls: Container
+      # args:
+        # image: aixcc-dyva
+        # host_mounts:
+          # "/var/run/docker.sock": "/var/run/docker.sock"
+          # "/shared/": "/shared/"
+        # template: |
+          # set -x
+# 
+          # TARGET_SRC_DIR={{ target_with_sources | shquote }}
+          # TARGET_METADATA={{ target_metadata | shquote }}
+          # POI_REPORT={{ point_of_interest | shquote }}
+          # CRASHING_INPUT={{ crashing_input | shquote }}
+          # HARNESS_INFO={{ harness_info | shquote }}
+          # LOCAL_VARIABLE_REPORT={{ local_variable_report | shquote }}
+          # FUNCTION_INDICES={{ function_indices | shquote }}
+          # FUNCTION_JSON={{ function_json | shquote }}
+# 
+# 
+          # BASE_DIR=/shared/dyva
+          # mkdir -p $BASE_DIR
+          # TEMP_DIR=$(mktemp -d -p $BASE_DIR)
+# 
+          # rsync -ra "${TARGET_SRC_DIR}/" ${TEMP_DIR}/
+# 
+          # chown -R root:root ${TEMP_DIR}
+          # python3 /modifications/utils/utils.py --target-dir $TEMP_DIR
+# 
+          # cp /modifications/jazzer_replacement $TEMP_DIR
+          # cp /modifications/replace.sh $TEMP_DIR
+          # cp /modifications/run_gdbserver.sh $TEMP_DIR
+          # cp -r /shellphish $TEMP_DIR
+          # cp $CRASHING_INPUT $TEMP_DIR/src/input
+          # export PYTHONBUFFERED=1
+          # timeout 600 python3 /dyva_runner/main.py --target-dir $TEMP_DIR \
+                                                  #  --target-metadata $TARGET_METADATA \
+                                                  #  --harness-info $HARNESS_INFO \
+                                                  #  --poi-report $POI_REPORT \
+                                                  #  --crashing-input $CRASHING_INPUT \
+                                                  #  --function-indices $FUNCTION_INDICES \
+                                                  #  --function-json $FUNCTION_JSON \
+                                                  #  --output-path $LOCAL_VARIABLE_REPORT || true
+          # if [ ! -s $LOCAL_VARIABLE_REPORT ]; then
+            # echo "debug_trace: null" > $LOCAL_VARIABLE_REPORT
+            # exit 1
+          # fi
+# 

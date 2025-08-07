@@ -1,0 +1,46 @@
+# Use the latest Ubuntu base image
+FROM ubuntu:22.04
+ENV DISTRIBUTION="jammy"
+# Install aptly, Nginx, and tools required for managing the repository
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update --allow-unauthenticated && apt-get install -y aptly nginx xz-utils curl apt-rdepends
+RUN rm -rf /var/lib/apt/lists/*
+
+COPY ./assets/gen-key-script.gpg /gen-key-script.gpg
+RUN gpg --batch --pinentry-mode loopback --gen-key /gen-key-script.gpg
+
+# Configure aptly
+COPY ./assets/aptly.conf /etc/aptly.conf
+COPY ./assets/list_deps.sh /list_deps.sh
+COPY ./assets/packages /wanted_packages
+
+ENV REPO_NAME="aptly-repo"
+ENV MIRROR_NAME="${DISTRIBUTION}-main"
+
+RUN aptly repo create -distribution=${DISTRIBUTION} -component=main $REPO_NAME
+
+RUN apt update && for dep in $(cat /wanted_packages); do apt-rdepends $dep | grep -v "^ "; done | sort | uniq | tr '\n' '|' | sed 's/|$//' | sed 's/^|//' > /deps
+
+RUN aptly mirror create -filter="$(cat /deps)" -filter-with-deps -dep-follow-all-variants -dep-follow-recommends $MIRROR_NAME http://archive.ubuntu.com/ubuntu/ ${DISTRIBUTION} main universe
+RUN aptly mirror create -filter="$(cat /deps)" -filter-with-deps -dep-follow-all-variants -dep-follow-recommends ${MIRROR_NAME}-security http://security.ubuntu.com/ubuntu/ ${DISTRIBUTION}-security main universe
+RUN aptly mirror create -filter="$(cat /deps)" -filter-with-deps -dep-follow-all-variants -dep-follow-recommends ${MIRROR_NAME}-updates http://archive.ubuntu.com/ubuntu/ ${DISTRIBUTION}-updates main universe
+RUN aptly mirror update $MIRROR_NAME
+RUN aptly mirror update ${MIRROR_NAME}-security
+RUN aptly mirror update ${MIRROR_NAME}-updates
+
+RUN aptly snapshot create ${REPO_NAME} from mirror ${MIRROR_NAME}
+RUN aptly snapshot create ${REPO_NAME}-security from mirror ${MIRROR_NAME}-security
+RUN aptly snapshot create ${REPO_NAME}-updates from mirror ${MIRROR_NAME}-updates
+RUN aptly snapshot merge ${REPO_NAME}-final ${REPO_NAME} ${REPO_NAME}-security ${REPO_NAME}-updates
+
+RUN aptly publish snapshot -distribution="${DISTRIBUTION}" -architectures="amd64" ${REPO_NAME}-final
+RUN gpg --armor --output /aptly/public/gpg --export
+
+# Add Nginx configuration to serve the repository
+COPY ./assets/nginx.conf /etc/nginx/nginx.conf
+
+# Expose HTTP port
+EXPOSE 80
+
+# Start Nginx to serve the repository
+CMD ["nginx", "-g", "daemon off;"]

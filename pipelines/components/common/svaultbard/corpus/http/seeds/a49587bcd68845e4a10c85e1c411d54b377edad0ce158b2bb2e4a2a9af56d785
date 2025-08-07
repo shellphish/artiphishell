@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.20 022 /TP\r\365est: TCH2"

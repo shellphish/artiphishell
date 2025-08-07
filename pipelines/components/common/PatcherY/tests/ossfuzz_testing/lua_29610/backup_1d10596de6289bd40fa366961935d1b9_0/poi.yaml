@@ -1,0 +1,1092 @@
+additional_information:
+  asan_report_data:
+    cp_harness_binary_path: out/fuzz_lua
+    cp_harness_id: id_1
+    cp_harness_name: fuzz_lua
+    cp_harness_source_path: src/lua/FAILED_TO_LOCATE
+    crash_action:
+      access: write
+      size: 1
+    crash_report_id: 555f1f8b8724fbc2869df3ad6e939235
+    crash_type: heap-use-after-free
+    fuzzer: aflplusplus
+    harness_info_id: 331651d90ca932dc0ff5c3902d2627d8
+    sanitizer: 'AddressSanitizer: heap-use-after-free'
+    stack_traces:
+      allocate:
+      - depth: 0
+        func_name: realloc
+        line: 85
+        signature: realloc
+        src_file: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp
+        src_loc: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:85
+        type: source
+      - depth: 1
+        func_name: luaM_realloc_
+        line: 166
+        signature: luaM_realloc_
+        src_file: lua/lmem.c
+        src_loc: lua/lmem.c:166
+        type: source
+      - depth: 2
+        func_name: luaD_reallocstack
+        line: 184
+        signature: luaD_reallocstack
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:184
+        type: source
+      - depth: 3
+        func_name: luaD_shrinkstack
+        line: 272
+        signature: luaD_shrinkstack
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:272
+        type: source
+      - depth: 4
+        func_name: traversethread
+        line: 644
+        signature: traversethread
+        src_file: lua/lgc.c
+        src_loc: lua/lgc.c:644
+        type: source
+      - depth: 5
+        func_name: propagatemark
+        line: 662
+        signature: propagatemark
+        src_file: lua/lgc.c
+        src_loc: lua/lgc.c:662
+        type: source
+      - depth: 6
+        func_name: incstep
+        line: 1652
+        signature: incstep
+        src_file: lua/lgc.c
+        src_loc: lua/lgc.c:1652
+        type: source
+      - depth: 7
+        func_name: luaC_step
+        line: 1673
+        signature: luaC_step
+        src_file: lua/lgc.c
+        src_loc: lua/lgc.c:1673
+        type: source
+      - depth: 8
+        func_name: luaG_runerror
+        line: 775
+        signature: luaG_runerror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:775
+        type: source
+      - depth: 9
+        func_name: luaG_typeerror
+        line: 687
+        signature: luaG_typeerror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:687
+        type: source
+      - depth: 10
+        func_name: luaG_opinterror
+        line: 720
+        signature: luaG_opinterror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:720
+        type: source
+      - binary: ../../src/lua/ltm.c
+        depth: 11
+        func_name: luaT_trybinTM
+        signature: luaT_trybinTM
+        type: maybe_asan_interceptor
+      - depth: 12
+        func_name: luaT_trybinassocTM
+        line: 179
+        signature: luaT_trybinassocTM
+        src_file: lua/ltm.c
+        src_loc: lua/ltm.c:179
+        type: source
+      - depth: 13
+        func_name: luaV_execute
+        line: 1484
+        signature: luaV_execute
+        src_file: lua/lvm.c
+        src_loc: lua/lvm.c:1484
+        type: source
+      - depth: 14
+        func_name: ccall
+        line: 557
+        signature: ccall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:557
+        type: source
+      - depth: 15
+        func_name: luaD_callnoyield
+        line: 575
+        signature: luaD_callnoyield
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:575
+        type: source
+      - depth: 16
+        func_name: luaD_rawrunprotected
+        line: 144
+        signature: luaD_rawrunprotected
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:144
+        type: source
+      - depth: 17
+        func_name: luaD_pcall
+        line: 864
+        signature: luaD_pcall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:864
+        type: source
+      - depth: 18
+        func_name: lua_pcallk
+        line: 1057
+        signature: lua_pcallk
+        src_file: lua/lapi.c
+        src_loc: lua/lapi.c:1057
+        type: source
+      - depth: 19
+        func_name: docall
+        line: 127
+        signature: docall
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:127
+        type: source
+      - depth: 20
+        func_name: dochunk
+        line: 135
+        signature: dochunk
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:135
+        type: source
+      - depth: 21
+        func_name: LLVMFuzzerTestOneInput
+        line: 150
+        signature: LLVMFuzzerTestOneInput
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:150
+        type: source
+      - depth: 22
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 23
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 24
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 25
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 26
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      free:
+      - depth: 0
+        func_name: realloc
+        line: 85
+        signature: realloc
+        src_file: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp
+        src_loc: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:85
+        type: source
+      - depth: 1
+        func_name: luaM_realloc_
+        line: 166
+        signature: luaM_realloc_
+        src_file: lua/lmem.c
+        src_loc: lua/lmem.c:166
+        type: source
+      - depth: 2
+        func_name: luaD_reallocstack
+        line: 184
+        signature: luaD_reallocstack
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:184
+        type: source
+      - depth: 3
+        func_name: luaD_growstack
+        line: 224
+        signature: luaD_growstack
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:224
+        type: source
+      - depth: 4
+        func_name: luaD_precall
+        line: 500
+        signature: luaD_precall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:500
+        type: source
+      - depth: 5
+        func_name: ccall
+        line: 555
+        signature: ccall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:555
+        type: source
+      - depth: 6
+        func_name: luaD_callnoyield
+        line: 575
+        signature: luaD_callnoyield
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:575
+        type: source
+      - depth: 7
+        func_name: luaF_close
+        line: 211
+        signature: luaF_close
+        src_file: lua/lfunc.c
+        src_loc: lua/lfunc.c:211
+        type: source
+      - depth: 8
+        func_name: lua_closeslot
+        line: 209
+        signature: lua_closeslot
+        src_file: lua/lapi.c
+        src_loc: lua/lapi.c:209
+        type: source
+      - depth: 9
+        func_name: luaL_pushresult
+        line: 586
+        signature: luaL_pushresult
+        src_file: lua/lauxlib.c
+        src_loc: lua/lauxlib.c:586
+        type: source
+      - depth: 10
+        func_name: luaL_traceback
+        line: 163
+        signature: luaL_traceback
+        src_file: lua/lauxlib.c
+        src_loc: lua/lauxlib.c:163
+        type: source
+      - depth: 11
+        func_name: msghandler
+        line: 111
+        signature: msghandler
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:111
+        type: source
+      - depth: 12
+        func_name: luaD_precall
+        line: 512
+        signature: luaD_precall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:512
+        type: source
+      - depth: 13
+        func_name: ccall
+        line: 555
+        signature: ccall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:555
+        type: source
+      - depth: 14
+        func_name: luaD_callnoyield
+        line: 575
+        signature: luaD_callnoyield
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:575
+        type: source
+      - depth: 15
+        func_name: luaG_errormsg
+        line: 765
+        signature: luaG_errormsg
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:765
+        type: source
+      - depth: 16
+        func_name: luaG_runerror
+        line: 781
+        signature: luaG_runerror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:781
+        type: source
+      - depth: 17
+        func_name: luaG_typeerror
+        line: 687
+        signature: luaG_typeerror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:687
+        type: source
+      - depth: 18
+        func_name: luaG_opinterror
+        line: 720
+        signature: luaG_opinterror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:720
+        type: source
+      - binary: ../../src/lua/ltm.c
+        depth: 19
+        func_name: luaT_trybinTM
+        signature: luaT_trybinTM
+        type: maybe_asan_interceptor
+      - depth: 20
+        func_name: luaT_trybinassocTM
+        line: 179
+        signature: luaT_trybinassocTM
+        src_file: lua/ltm.c
+        src_loc: lua/ltm.c:179
+        type: source
+      - depth: 21
+        func_name: luaV_execute
+        line: 1484
+        signature: luaV_execute
+        src_file: lua/lvm.c
+        src_loc: lua/lvm.c:1484
+        type: source
+      - depth: 22
+        func_name: ccall
+        line: 557
+        signature: ccall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:557
+        type: source
+      - depth: 23
+        func_name: luaD_callnoyield
+        line: 575
+        signature: luaD_callnoyield
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:575
+        type: source
+      - depth: 24
+        func_name: luaD_rawrunprotected
+        line: 144
+        signature: luaD_rawrunprotected
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:144
+        type: source
+      - depth: 25
+        func_name: luaD_pcall
+        line: 864
+        signature: luaD_pcall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:864
+        type: source
+      - depth: 26
+        func_name: lua_pcallk
+        line: 1057
+        signature: lua_pcallk
+        src_file: lua/lapi.c
+        src_loc: lua/lapi.c:1057
+        type: source
+      - depth: 27
+        func_name: docall
+        line: 127
+        signature: docall
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:127
+        type: source
+      - depth: 28
+        func_name: dochunk
+        line: 135
+        signature: dochunk
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:135
+        type: source
+      - depth: 29
+        func_name: LLVMFuzzerTestOneInput
+        line: 150
+        signature: LLVMFuzzerTestOneInput
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:150
+        type: source
+      - depth: 30
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 31
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 32
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 33
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 34
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      main:
+      - depth: 0
+        func_name: lua_closeslot
+        line: 210
+        signature: lua_closeslot
+        src_file: lua/lapi.c
+        src_loc: lua/lapi.c:210
+        type: source
+      - depth: 1
+        func_name: luaL_pushresult
+        line: 586
+        signature: luaL_pushresult
+        src_file: lua/lauxlib.c
+        src_loc: lua/lauxlib.c:586
+        type: source
+      - depth: 2
+        func_name: luaL_traceback
+        line: 163
+        signature: luaL_traceback
+        src_file: lua/lauxlib.c
+        src_loc: lua/lauxlib.c:163
+        type: source
+      - depth: 3
+        func_name: msghandler
+        line: 111
+        signature: msghandler
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:111
+        type: source
+      - depth: 4
+        func_name: luaD_precall
+        line: 512
+        signature: luaD_precall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:512
+        type: source
+      - depth: 5
+        func_name: ccall
+        line: 555
+        signature: ccall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:555
+        type: source
+      - depth: 6
+        func_name: luaD_callnoyield
+        line: 575
+        signature: luaD_callnoyield
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:575
+        type: source
+      - depth: 7
+        func_name: luaG_errormsg
+        line: 765
+        signature: luaG_errormsg
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:765
+        type: source
+      - depth: 8
+        func_name: luaG_runerror
+        line: 781
+        signature: luaG_runerror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:781
+        type: source
+      - depth: 9
+        func_name: luaG_typeerror
+        line: 687
+        signature: luaG_typeerror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:687
+        type: source
+      - depth: 10
+        func_name: luaG_opinterror
+        line: 720
+        signature: luaG_opinterror
+        src_file: lua/ldebug.c
+        src_loc: lua/ldebug.c:720
+        type: source
+      - binary: ../../src/lua/ltm.c
+        depth: 11
+        func_name: luaT_trybinTM
+        signature: luaT_trybinTM
+        type: maybe_asan_interceptor
+      - depth: 12
+        func_name: luaT_trybinassocTM
+        line: 179
+        signature: luaT_trybinassocTM
+        src_file: lua/ltm.c
+        src_loc: lua/ltm.c:179
+        type: source
+      - depth: 13
+        func_name: luaV_execute
+        line: 1484
+        signature: luaV_execute
+        src_file: lua/lvm.c
+        src_loc: lua/lvm.c:1484
+        type: source
+      - depth: 14
+        func_name: ccall
+        line: 557
+        signature: ccall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:557
+        type: source
+      - depth: 15
+        func_name: luaD_callnoyield
+        line: 575
+        signature: luaD_callnoyield
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:575
+        type: source
+      - depth: 16
+        func_name: luaD_rawrunprotected
+        line: 144
+        signature: luaD_rawrunprotected
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:144
+        type: source
+      - depth: 17
+        func_name: luaD_pcall
+        line: 864
+        signature: luaD_pcall
+        src_file: lua/ldo.c
+        src_loc: lua/ldo.c:864
+        type: source
+      - depth: 18
+        func_name: lua_pcallk
+        line: 1057
+        signature: lua_pcallk
+        src_file: lua/lapi.c
+        src_loc: lua/lapi.c:1057
+        type: source
+      - depth: 19
+        func_name: docall
+        line: 127
+        signature: docall
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:127
+        type: source
+      - depth: 20
+        func_name: dochunk
+        line: 135
+        signature: dochunk
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:135
+        type: source
+      - depth: 21
+        func_name: LLVMFuzzerTestOneInput
+        line: 150
+        signature: LLVMFuzzerTestOneInput
+        src_file: lua/fuzz_lua.c
+        src_loc: lua/fuzz_lua.c:150
+        type: source
+      - depth: 22
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 23
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 24
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 25
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 26
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      - binary: ../(/out/fuzz_lua+0x6874d)
+        depth: 27
+        func_name: _start
+        signature: _start
+        type: maybe_asan_interceptor
+    target_id: 1
+    triggered_sanitizer_cp_ids:
+    - id_1
+  sanitizer: 'AddressSanitizer: heap-use-after-free'
+crash_id: 555f1f8b8724fbc2869df3ad6e939235
+crash_reason: heap-use-after-free
+detection_strategy: fuzzing
+harness_id: id_1
+pois:
+- reason: heap-use-after-free
+  source_location:
+    function_name: lua_closeslot
+    function_signature: void lua_closeslot(lua_State *, int)
+    key_index: lua/lapi.c:202:1::void lua_closeslot(lua_State *, int)
+    line_number: 210
+    line_text: '  setnilvalue(s2v(level));'
+    relative_file_path: lua/lapi.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaL_pushresult
+    function_signature: void luaL_pushresult(luaL_Buffer *)
+    key_index: lua/lauxlib.c:582:1::void luaL_pushresult(luaL_Buffer *)
+    line_number: 586
+    line_text: '    lua_closeslot(L, -2);  /* close the box */'
+    relative_file_path: lua/lauxlib.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaL_traceback
+    function_signature: void luaL_traceback(lua_State *, lua_State *, const char *,
+      int)
+    key_index: lua/lauxlib.c:131:1::void luaL_traceback(lua_State *, lua_State *,
+      const char *, int)
+    line_number: 163
+    line_text: '  luaL_pushresult(&b);'
+    relative_file_path: lua/lauxlib.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaD_precall
+    function_signature: CallInfo * luaD_precall(lua_State *, StkId, int)
+    key_index: lua/ldo.c:488:1::CallInfo * luaD_precall(lua_State *, StkId, int)
+    line_number: 512
+    line_text: '      n = (*f)(L);  /* do the actual call */'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: ccall
+    function_signature: void ccall(lua_State *, StkId, int, int)
+    key_index: lua/ldo.c:550:1::void ccall(lua_State *, StkId, int, int)
+    line_number: 555
+    line_text: '  if ((ci = luaD_precall(L, func, nResults)) != NULL) {  /* Lua function?
+      */'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaD_callnoyield
+    function_signature: void luaD_callnoyield(lua_State *, StkId, int)
+    key_index: lua/ldo.c:574:1::void luaD_callnoyield(lua_State *, StkId, int)
+    line_number: 575
+    line_text: '  ccall(L, func, nResults, nyci);'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaG_errormsg
+    function_signature: void luaG_errormsg(lua_State *)
+    key_index: lua/ldebug.c:758:1::void luaG_errormsg(lua_State *)
+    line_number: 765
+    line_text: '    luaD_callnoyield(L, L->top - 2, 1);  /* call it */'
+    relative_file_path: lua/ldebug.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaG_runerror
+    function_signature: void luaG_runerror(lua_State *, const char *, ...)
+    key_index: lua/ldebug.c:771:1::void luaG_runerror(lua_State *, const char *, ...)
+    line_number: 781
+    line_text: '  luaG_errormsg(L);'
+    relative_file_path: lua/ldebug.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaG_typeerror
+    function_signature: void luaG_typeerror(lua_State *, const TValue *, const char
+      *)
+    key_index: lua/ldebug.c:685:1::void luaG_typeerror(lua_State *, const TValue *,
+      const char *)
+    line_number: 687
+    line_text: '  luaG_runerror(L, "attempt to %s a %s value%s", op, t, varinfo(L,
+      o));'
+    relative_file_path: lua/ldebug.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaG_opinterror
+    function_signature: void luaG_opinterror(lua_State *, const TValue *, const TValue
+      *, const char *)
+    key_index: lua/ldebug.c:716:1::void luaG_opinterror(lua_State *, const TValue
+      *, const TValue *, const char *)
+    line_number: 720
+    line_text: '  luaG_typeerror(L, p2, msg);'
+    relative_file_path: lua/ldebug.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaT_trybinassocTM
+    function_signature: void luaT_trybinassocTM(lua_State *, const TValue *, const
+      TValue *, int, StkId, TMS)
+    key_index: lua/ltm.c:174:1::void luaT_trybinassocTM(lua_State *, const TValue
+      *, const TValue *, int, StkId, TMS)
+    line_number: 179
+    line_text: '    luaT_trybinTM(L, p1, p2, res, event);'
+    relative_file_path: lua/ltm.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaV_execute
+    function_signature: void luaV_execute(lua_State *, CallInfo *)
+    key_index: lua/lvm.c:1123:1::void luaV_execute(lua_State *, CallInfo *)
+    line_number: 1484
+    line_text: '        Protect(luaT_trybinassocTM(L, s2v(ra), imm, flip, result,
+      tm));'
+    relative_file_path: lua/lvm.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: ccall
+    function_signature: void ccall(lua_State *, StkId, int, int)
+    key_index: lua/ldo.c:550:1::void ccall(lua_State *, StkId, int, int)
+    line_number: 557
+    line_text: '    luaV_execute(L, ci);  /* call it */'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaD_callnoyield
+    function_signature: void luaD_callnoyield(lua_State *, StkId, int)
+    key_index: lua/ldo.c:574:1::void luaD_callnoyield(lua_State *, StkId, int)
+    line_number: 575
+    line_text: '  ccall(L, func, nResults, nyci);'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaD_rawrunprotected
+    function_signature: int luaD_rawrunprotected(lua_State *, Pfunc, void *)
+    key_index: lua/ldo.c:138:1::int luaD_rawrunprotected(lua_State *, Pfunc, void
+      *)
+    line_number: 144
+    line_text: '  LUAI_TRY(L, &lj,'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: luaD_pcall
+    function_signature: int luaD_pcall(lua_State *, Pfunc, void *, ptrdiff_t, ptrdiff_t)
+    key_index: lua/ldo.c:857:1::int luaD_pcall(lua_State *, Pfunc, void *, ptrdiff_t,
+      ptrdiff_t)
+    line_number: 864
+    line_text: '  status = luaD_rawrunprotected(L, func, u);'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-use-after-free
+  source_location:
+    function_name: lua_pcallk
+    function_signature: int lua_pcallk(lua_State *, int, int, int, lua_KContext, lua_KFunction)
+    key_index: lua/lapi.c:1036:1::int lua_pcallk(lua_State *, int, int, int, lua_KContext,
+      lua_KFunction)
+    line_number: 1057
+    line_text: '    status = luaD_pcall(L, f_call, &c, savestack(L, c.func), func);'
+    relative_file_path: lua/lapi.c
+    symbol_offset: 0
+    symbol_size: 0
+scanner: asan
+stack_traces:
+- call_locations:
+  - function: void lua_closeslot(lua_State *, int)
+    function_name: lua_closeslot
+    key_index: lua/lapi.c:202:1::void lua_closeslot(lua_State *, int)
+    line_number: 210
+    line_text: '  setnilvalue(s2v(level));'
+    relative_file_path: lua/lapi.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: lua_closeslot
+  - function: void luaL_pushresult(luaL_Buffer *)
+    function_name: luaL_pushresult
+    key_index: lua/lauxlib.c:582:1::void luaL_pushresult(luaL_Buffer *)
+    line_number: 586
+    line_text: '    lua_closeslot(L, -2);  /* close the box */'
+    relative_file_path: lua/lauxlib.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaL_pushresult
+  - function: void luaL_traceback(lua_State *, lua_State *, const char *, int)
+    function_name: luaL_traceback
+    key_index: lua/lauxlib.c:131:1::void luaL_traceback(lua_State *, lua_State *,
+      const char *, int)
+    line_number: 163
+    line_text: '  luaL_pushresult(&b);'
+    relative_file_path: lua/lauxlib.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaL_traceback
+  - function: msghandler
+    function_name: msghandler
+    key_index: null
+    line_number: 111
+    line_text: null
+    relative_file_path: lua/fuzz_lua.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: msghandler
+  - function: CallInfo * luaD_precall(lua_State *, StkId, int)
+    function_name: luaD_precall
+    key_index: lua/ldo.c:488:1::CallInfo * luaD_precall(lua_State *, StkId, int)
+    line_number: 512
+    line_text: '      n = (*f)(L);  /* do the actual call */'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaD_precall
+  - function: void ccall(lua_State *, StkId, int, int)
+    function_name: ccall
+    key_index: lua/ldo.c:550:1::void ccall(lua_State *, StkId, int, int)
+    line_number: 555
+    line_text: '  if ((ci = luaD_precall(L, func, nResults)) != NULL) {  /* Lua function?
+      */'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: ccall
+  - function: void luaD_callnoyield(lua_State *, StkId, int)
+    function_name: luaD_callnoyield
+    key_index: lua/ldo.c:574:1::void luaD_callnoyield(lua_State *, StkId, int)
+    line_number: 575
+    line_text: '  ccall(L, func, nResults, nyci);'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaD_callnoyield
+  - function: void luaG_errormsg(lua_State *)
+    function_name: luaG_errormsg
+    key_index: lua/ldebug.c:758:1::void luaG_errormsg(lua_State *)
+    line_number: 765
+    line_text: '    luaD_callnoyield(L, L->top - 2, 1);  /* call it */'
+    relative_file_path: lua/ldebug.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaG_errormsg
+  - function: void luaG_runerror(lua_State *, const char *, ...)
+    function_name: luaG_runerror
+    key_index: lua/ldebug.c:771:1::void luaG_runerror(lua_State *, const char *, ...)
+    line_number: 781
+    line_text: '  luaG_errormsg(L);'
+    relative_file_path: lua/ldebug.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaG_runerror
+  - function: void luaG_typeerror(lua_State *, const TValue *, const char *)
+    function_name: luaG_typeerror
+    key_index: lua/ldebug.c:685:1::void luaG_typeerror(lua_State *, const TValue *,
+      const char *)
+    line_number: 687
+    line_text: '  luaG_runerror(L, "attempt to %s a %s value%s", op, t, varinfo(L,
+      o));'
+    relative_file_path: lua/ldebug.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaG_typeerror
+  - function: void luaG_opinterror(lua_State *, const TValue *, const TValue *, const
+      char *)
+    function_name: luaG_opinterror
+    key_index: lua/ldebug.c:716:1::void luaG_opinterror(lua_State *, const TValue
+      *, const TValue *, const char *)
+    line_number: 720
+    line_text: '  luaG_typeerror(L, p2, msg);'
+    relative_file_path: lua/ldebug.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaG_opinterror
+  - function: void luaT_trybinassocTM(lua_State *, const TValue *, const TValue *,
+      int, StkId, TMS)
+    function_name: luaT_trybinassocTM
+    key_index: lua/ltm.c:174:1::void luaT_trybinassocTM(lua_State *, const TValue
+      *, const TValue *, int, StkId, TMS)
+    line_number: 179
+    line_text: '    luaT_trybinTM(L, p1, p2, res, event);'
+    relative_file_path: lua/ltm.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaT_trybinassocTM
+  - function: void luaV_execute(lua_State *, CallInfo *)
+    function_name: luaV_execute
+    key_index: lua/lvm.c:1123:1::void luaV_execute(lua_State *, CallInfo *)
+    line_number: 1484
+    line_text: '        Protect(luaT_trybinassocTM(L, s2v(ra), imm, flip, result,
+      tm));'
+    relative_file_path: lua/lvm.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaV_execute
+  - function: void ccall(lua_State *, StkId, int, int)
+    function_name: ccall
+    key_index: lua/ldo.c:550:1::void ccall(lua_State *, StkId, int, int)
+    line_number: 557
+    line_text: '    luaV_execute(L, ci);  /* call it */'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: ccall
+  - function: void luaD_callnoyield(lua_State *, StkId, int)
+    function_name: luaD_callnoyield
+    key_index: lua/ldo.c:574:1::void luaD_callnoyield(lua_State *, StkId, int)
+    line_number: 575
+    line_text: '  ccall(L, func, nResults, nyci);'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaD_callnoyield
+  - function: int luaD_rawrunprotected(lua_State *, Pfunc, void *)
+    function_name: luaD_rawrunprotected
+    key_index: lua/ldo.c:138:1::int luaD_rawrunprotected(lua_State *, Pfunc, void
+      *)
+    line_number: 144
+    line_text: '  LUAI_TRY(L, &lj,'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaD_rawrunprotected
+  - function: int luaD_pcall(lua_State *, Pfunc, void *, ptrdiff_t, ptrdiff_t)
+    function_name: luaD_pcall
+    key_index: lua/ldo.c:857:1::int luaD_pcall(lua_State *, Pfunc, void *, ptrdiff_t,
+      ptrdiff_t)
+    line_number: 864
+    line_text: '  status = luaD_rawrunprotected(L, func, u);'
+    relative_file_path: lua/ldo.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: luaD_pcall
+  - function: int lua_pcallk(lua_State *, int, int, int, lua_KContext, lua_KFunction)
+    function_name: lua_pcallk
+    key_index: lua/lapi.c:1036:1::int lua_pcallk(lua_State *, int, int, int, lua_KContext,
+      lua_KFunction)
+    line_number: 1057
+    line_text: '    status = luaD_pcall(L, f_call, &c, savestack(L, c.func), func);'
+    relative_file_path: lua/lapi.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: lua_pcallk
+  - function: docall
+    function_name: docall
+    key_index: null
+    line_number: 127
+    line_text: null
+    relative_file_path: lua/fuzz_lua.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: docall
+  - function: dochunk
+    function_name: dochunk
+    key_index: null
+    line_number: 135
+    line_text: null
+    relative_file_path: lua/fuzz_lua.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: dochunk
+  - function: LLVMFuzzerTestOneInput
+    function_name: LLVMFuzzerTestOneInput
+    key_index: null
+    line_number: 150
+    line_text: null
+    relative_file_path: lua/fuzz_lua.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: LLVMFuzzerTestOneInput
+  - function: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)
+    function_name: fuzzer::Fuzzer::ExecuteCallback
+    key_index: null
+    line_number: 614
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)
+  - function: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+    function_name: fuzzer::RunOneTest
+    key_index: null
+    line_number: 327
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+  - function: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned
+      long))
+    function_name: fuzzer::FuzzerDriver
+    key_index: null
+    line_number: 862
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+      unsigned long))
+  - function: main
+    function_name: main
+    key_index: null
+    line_number: 20
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: main
+  - function: __libc_start_main
+    function_name: __libc_start_main
+    key_index: null
+    line_number: 0
+    line_text: null
+    relative_file_path: ../../lib/x86_64-linux-gnu/libc.so.6
+    symbol_offset: 147586
+    symbol_size: 0
+    trace_line: __libc_start_main
+  reason: Not specified
+target_id: '1'

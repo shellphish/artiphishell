@@ -1,0 +1,14 @@
+#!/bin/bash
+
+function program_exists() {
+  which "$1" &>/dev/null
+}
+
+if program_exists clang; then
+    /work/ccache clang "$@"
+elif program_exists gcc; then
+    /work/ccache gcc "$@"
+else
+    echo "Could not find compiler"
+    exit 1
+fi

@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.7 012\n=HEAX\n1;\n=\n1;p+\n=\n1;\n=\n1;p+\n=\n1;p+\n\n;=1pified"

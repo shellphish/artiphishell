@@ -1,0 +1,21 @@
+# aixcc-build: aixcc-component-base
+ARG IMAGE_PREFIX=
+FROM ${IMAGE_PREFIX}aixcc-dependencies-base:latest
+
+######################### MISC #############################
+COPY misc /shellphish/misc
+###################### END MISC ############################
+
+######################### AGENTLIB #########################
+COPY agentlib /shellphish/agentlib
+RUN pip3 install --ignore-installed -e /shellphish/agentlib
+####################### END AGENTLIB #######################
+
+######################## CRS-UTILS ########################
+RUN mkdir -p /shellphish/
+COPY crs-utils /shellphish/crs-utils
+RUN pip3 install -e /shellphish/crs-utils
+###################### END CRS-UTILS ######################
+
+
+WORKDIR /

@@ -1,0 +1,105 @@
+{
+  "cp_name": "jenkins",
+  "language": "java",
+  "cp_sources": {
+    "jenkins": {
+      "address": "https://github.com/shellphish-support-syndicate/aixcc-sc-challenge-002-jenkins-source.git",
+      "ref": "v3.0.0",
+      "artifacts": [
+        "src/jenkins/war/target/jenkins.war"
+      ]
+    },
+    "plugins/pipeline-util-plugin": {
+      "address": "https://github.com/shellphish-support-syndicate/aixcc-sc-challenge-002-jenkins-plugins.git",
+      "ref": "v2.0.0",
+      "artifacts": [
+        "src/plugins/pipeline-util-plugin/target/UtilPlug.jar",
+        "src/plugins/pipeline-util-plugin/target/UtilPlug.hpi"
+      ]
+    }
+  },
+  "docker_image": "ghcr.io/aixcc-sc/challenge-002-jenkins-cp:v3.1.0",
+  "sanitizers": {
+    "id_1": "FuzzerSecurityIssueCritical: OS Command Injection"
+  },
+  "harnesses": {
+    "id_1": {
+      "name": "JenkinsTwo",
+      "source": "src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java",
+      "binary": "out/harnesses/two/aixcc-harness.jar"
+    }
+  },
+  "shellphish": {
+    "known_sources": {
+      "jenkins_core": [
+        {
+          "relative_path": "src/jenkins",
+          "metadata": {
+            "modelVersion": "4.0.0",
+            "groupId": "org.jenkins-ci.main",
+            "artifactId": "jenkins-parent",
+            "version": "${revision}${changelist}",
+            "name": "Jenkins main module",
+            "parent": {
+              "groupId": "org.jenkins-ci",
+              "artifactId": "jenkins",
+              "version": "1.98",
+              "relativePath": null
+            },
+            "modules": [
+              "bom",
+              "websocket/spi",
+              "websocket/jetty10",
+              "core",
+              "war",
+              "test",
+              "cli",
+              "coverage"
+            ],
+            "dependencies": {}
+          }
+        }
+      ],
+      "jenkins_plugin": [
+        {
+          "relative_path": "src/plugins/pipeline-util-plugin",
+          "metadata": {
+            "modelVersion": "4.0.0",
+            "groupId": "io.jenkins.plugins",
+            "artifactId": "UtilPlug",
+            "version": "2.414.3999999-aixcc",
+            "name": "Pipeline Utils Plugin Main Module",
+            "parent": {
+              "groupId": "org.jenkins-ci.plugins",
+              "artifactId": "plugin",
+              "version": "4.73",
+              "relativePath": null
+            },
+            "dependencies": {}
+          }
+        }
+      ]
+    },
+    "files_by_language": {
+      "perl": 1,
+      "yaml": 1,
+      "python": 1,
+      "ruby": 1,
+      "c": 1,
+      "certificates": 2,
+      "batch": 3,
+      "shell": 5,
+      "markdown": 6,
+      "text": 27,
+      "json": 28,
+      "archives": 34,
+      "css": 76,
+      "xml": 149,
+      "javascript": 151,
+      "images": 434,
+      "jelly": 787,
+      "html": 959,
+      "java": 1746
+    }
+  }
+}

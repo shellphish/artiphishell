@@ -1,0 +1,186 @@
+(type bin_t)
+(type kernel_t)
+(type security_t)
+(type unlabeled_t)
+(handleunknown allow)
+(mls true)
+
+(policycap open_perms)
+
+(category c0)
+(category c1)
+(category c2)
+(category c3)
+(category c4)
+(category c5)
+(categoryalias cat0)
+(categoryaliasactual cat0 c0)
+(categoryset cats01 (c0 c1))
+(categoryset cats02 (c2 c3))
+(categoryset cats03 (range c0 c5))
+(categoryset cats04 (not (range c0 c2)))
+(categoryorder (cat0 c1 c2 c3))
+(categoryorder (c3 c4 c5))
+
+(sensitivity s0)
+(sensitivity s1)
+(sensitivity s2)
+(sensitivity s3)
+(sensitivityalias sens0)
+(sensitivityaliasactual sens0 s0)
+(sensitivityorder (s0 s1 s2 s3))
+
+(sensitivitycategory s0 (cats03))
+(sensitivitycategory s1 cats01)
+(sensitivitycategory s1 (c2))
+(sensitivitycategory s2 (cats01 cats02))
+(sensitivitycategory s2 (range c4 c5))
+(sensitivitycategory s2 (range c0 c5))
+
+(level low (s0))
+(level high (s3 (range c0 c3)))
+(levelrange low_high (low high))
+(levelrange lh1 ((s0 (c0)) (s2 (c0 c3))))
+(levelrange lh2 (low (s2( c0 c3))))
+(levelrange lh3 ((s0 cats04) (s2 (range c0 c5))))
+(levelrange lh4 ((s0) (s1)))
+
+(block policy
+	(class file (execute_no_trans entrypoint execmod open audit_access a b c d e))
+	; order should be: file char b c a dir d e f
+	(classorder (file char))
+	(classorder (unordered dir))
+	(classorder (unordered c a b d e f))
+	(classorder (char b c a))
+
+	(common file (ioctl read write create getattr setattr lock relabelfrom
+			relabelto append unlink link rename execute swapon
+			quotaon mounton))
+	(classcommon file file)
+
+	(classpermission file_rw)
+	(classpermissionset file_rw (file (read write getattr setattr lock append)))
+
+	;;(classpermission loop1)))
+
+	(class char (foo))
+	(classcommon char file)
+
+	(class dir ())
+	(class a ())
+	(class b ())
+	(class c ())
+	(class d ())
+	(class e ())
+	(class f ())
+	(classcommon dir file)
+
+	(classpermission char_w)
+	(classpermissionset char_w (file (open read getattr)))
+
+	(classmap files (read))
+	(classmapping files read
+		(file (open read getattr)))
+	(classmapping files read
+		char_w)
+
+	(type auditadm_t)
+	(type console_t)
+	(type console_device_t)
+	(type user_tty_device_t)		
+	(type device_t)
+	(type getty_t)
+	(type exec_t)
+	(type bad_t)
+
+	;;(all
+	(permissionx ioctl_test (ioctl files (and (range 0x1600 0x19FF) (not (range 0x1750 0x175F)))))
+	(allowx console_t console_device_t ioctl_test)
+
+	(boolean secure_mode false)
+	(boolean console_login true)
+	
+	(sid kernel)
+	(sid security)
+	(sid unlabeled)
+	(sidorder (kernel security))
+		
+	(sidorder (security unlabeled))
+	(typeattribute exec_type)
+	(typeattribute foo_type)
+	(typeattribute bar_type)
+	(typeattribute baz_type)
+	(typeattribute not_bad_type)
+	(typeattributeset exec_type (or bin_t kernel_t))
+	(typealias sbin_t)
+	(typealiasactual sbin_t bin_t)
+	(typepermissive device_t) 
+	(typemember device_t bin_t file exec_t)
+	(typetransition device_t console_t files console_device_t)
+
+	(roleattribute exec_role)
+	(roleattribute foo_role)
+	(roleattribute bar_role)
+	(roleattribute baz_role)
+	(roleattribute foo_role_a)
+	(roleattributeset exec_role (or user_r system_r))
+	(roleattributeset bar_role (xor exec_role foo_role))
+	(roleattributeset baz_role (not user_r))
+
+	(rangetransition device_t console_t file low_high)
+
+	
+	(allow foo_type self (file (execute)))
+	(allow bin_t device_t (file (execute)))
+
+	;; Next two rules violate the neverallow rule that follows
+	;;( (ozen)))
+
+	(user system_u)
+	(user user_u)
+	(user foo_u)
+	;userprefix 1 ((s1 (c0)) (s3 (range c0 c3))))
+	(selinuxuserdefault user_u ((s1 (c0)) (s3 (range c0 c3))))
+	(selinuxuserdefault user_u ((s1 (c0)) (s3 (range c0 c3))))
+
+	(role system_r)
+	(role user_r)
+	(role baz_r)
+
+	(roletype system_r bin_t)
+	(roletype system_r kernel_t)
+	(roletype system_r security_t)
+	
+	(roletype system_r exec_type)
+	(roleallow system_r user_r)
+	(roletransition system_r bin_t file user_r)
+
+	(userrole foo_u foo_role)
+	(userlevel foo_u low)
+
+	(userattribute ua1)
+	(userattribute ua2)
+	(userattribute ua7)
+	(userattribute ua4)
+	(userattributeset ua4 (foo_u system_u))
+	(userattributeset ua4 (and ua1 ua2))
+	(user u5)
+	(user u6)
+	(userlevel u5 low)
+	(userlevel u6 low)
+	(userrange u5 low_high)
+	(userrange u6 low_high)
+	(userattributeset ua1 (u5 u6))
+	(userrole ua4 foo_role_a)
+	(userrole system_u system_r)
+
+	(userrange foo_u low_high)
+	(userlevel system_u low)
+
+	(userrange system_u low_high)
+	(userrole user_u user_r)
+
+	(userlevel user_u (s0 (range c0 c3)))
+	(userrange user_u (low high))
+
+	(sidcontext kernel (system_u system_r security_t (low (s3 (range c0 cats01))))))

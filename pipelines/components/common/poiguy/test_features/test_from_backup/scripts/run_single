@@ -1,0 +1,42 @@
+#!/bin/bash
+set -ex
+
+pushd ../../
+docker build -t aixcc-poi-guy .
+popd
+
+pdl --unlock || rm -rf pipeline.lock
+pdl --no-lockstep --ignore-required --name poiguy_test_from_backup
+
+POIGUY_KIND="${1:-asan}"
+BACKUP_DIR="${2:-./backup_mock_cp}"
+
+# check that POIGUY_KIND is a supported one
+if [ "$POIGUY_KIND" != "asan" ] && [ "$POIGUY_KIND" != "jazzer" ] && [ "POIGUY_KIND" != "syzkaller" ]; then
+    echo "🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪  FAIL 🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪 🎪 "
+    echo "POIGUY_KIND must be either 'asan' or 'jazzer'"
+    exit 1
+fi
+
+pd restore "$BACKUP_DIR" --all
+pd rm poiguy_$POIGUY_KIND __all__
+# pd rm poiguy_kernel __all__
+pd --verbose --debug-trace run
+
+poiguy_ran=$(pd status poiguy_${POIGUY_KIND} | grep poiguy_${POIGUY_KIND}.done | awk '{print $2}')
+poiguy_succeeded=$(pd status poiguy_${POIGUY_KIND} | grep poiguy_${POIGUY_KIND}.success | awk '{print $2}')
+
+# if nothing ran, exit with error
+if [ "$poiguy_ran" == "0" ]; then
+    echo "🤡🤡🤡 FAIL 🤡🤡🤡: poiguy_${POIGUY_KIND} did not run"
+    exit 1
+fi
+# if all runs did not succeed, exit with error
+if [ "$poiguy_succeeded" != "$poiguy_ran" ]; then
+    echo "🤡🤡🤡 FAIL 🤡🤡🤡: poiguy_${POIGUY_KIND} did not succeed: $poiguy_ran != $poiguy_succeeded"
+    exit 1
+fi
+
+# Green checkmarks if success
+echo "✅✅✅✅✅✅✅✅✅✅✅ $POIGUY_KIND $BACKUP_DIR ✅✅✅✅✅✅✅✅✅✅✅✅"
+exit 0

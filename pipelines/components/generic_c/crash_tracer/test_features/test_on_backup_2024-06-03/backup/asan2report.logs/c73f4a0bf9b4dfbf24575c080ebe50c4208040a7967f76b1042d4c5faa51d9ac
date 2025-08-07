@@ -1,0 +1,95 @@
++ export REPLICA_ID=0
++ export JOB_ID=bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5
++ export MEM_QUOTA=268435456
++ export CPU_QUOTA=100000
++ export PDT_AGENT_SECRET=86331918413637483690797809584864246012475
++ export PDT_AGENT_URL=http://172.17.0.1:30662
++ URL=http://172.17.0.1:30662/data/asan2report/representative_crash_metadata/bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5
++ mktemp
++ FILENAME=/tmp/tmp.ia0VNvQMm6
++ mktemp
++ ERR_FILENAME=/tmp/tmp.7w8l5KM6Z7
++ [ -d /tmp/tmp.ia0VNvQMm6 ]
++ wget -v -O- http://172.17.0.1:30662/data/asan2report/representative_crash_metadata/bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5 --header Cookie: secret=86331918413637483690797809584864246012475
++ rm /tmp/tmp.7w8l5KM6Z7
++ cat /tmp/tmp.ia0VNvQMm6
++ rm /tmp/tmp.ia0VNvQMm6
++ set +e
++ set -e
++ python3 /asan2report.py /tmp/pydatatask-Lukas-Dresel-input-representative_crash_metadata-bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5-nxvkpbew /tmp/pydatatask-Lukas-Dresel-output-parsed_asan_report-bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5-htnaekii
+ libfuzzer exit=1
+
+ INFO: Running with entropic power schedule (0xFF, 100).
+ INFO: Seed: 3326338455
+ INFO: Loaded 1 modules   (69 inline 8-bit counters): 69 [0x55555575e2c0, 0x55555575e305), 
+ INFO: Loaded 1 PC tables (69 PCs): 69 [0x55555575e308,0x55555575e758), 
+ /out/filein_harness: Running 1 inputs 1 time(s) each.
+ Running: /work/tmp_blob
+ =================================================================
+ ==14==ERROR: AddressSanitizer: global-buffer-overflow on address 0x5555560e79be at pc 0x555555640abc bp 0x7fffffffe260 sp 0x7fffffffda28
+ WRITE of size 31 at 0x5555560e79be thread T0
+     #0 0x555555640abb in fgets /src/llvm-project/compiler-rt/lib/asan/../sanitizer_common/sanitizer_common_interceptors.inc:1204:5
+     #1 0x5555556faa4e in func_a (/out/filein_harness+0x1a6a4e)
+     #2 0x5555556fb771 in LLVMFuzzerTestOneInput (/out/filein_harness+0x1a7771)
+     #3 0x5555555af490 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+     #4 0x555555599c24 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+     #5 0x55555559f6ba in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+     #6 0x5555555cbab2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+     #7 0x7ffff7a59082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0702430aef5fa3dda43986563e9ffcc47efbd75e)
+     #8 0x5555555906fd in _start (/out/filein_harness+0x3c6fd)
+ 
+ 0x5555560e79be is located 34 bytes before global variable 'pipefd' defined in 'filein_harness.c' (0x5555560e79e0) of size 8
+ 0x5555560e79be is located 0 bytes after global variable 'items' defined in 'filein_harness.c' (0x5555560e79a0) of size 30
+ SUMMARY: AddressSanitizer: global-buffer-overflow /src/llvm-project/compiler-rt/lib/asan/../sanitizer_common/sanitizer_common_interceptors.inc:1204:5 in fgets
+ Shadow bytes around the buggy address:
+   0x5555560e7700: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   0x5555560e7780: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   0x5555560e7800: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   0x5555560e7880: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   0x5555560e7900: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ =>0x5555560e7980: 00 00 00 00 00 00 00[06]f9 f9 f9 f9 00 f9 f9 f9
+   0x5555560e7a00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   0x5555560e7a80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   0x5555560e7b00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   0x5555560e7b80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+   0x5555560e7c00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ Shadow byte legend (one shadow byte represents 8 application bytes):
+   Addressable:           00
+   Partially addressable: 01 02 03 04 05 06 07 
+   Heap left redzone:       fa
+   Freed heap region:       fd
+   Stack left redzone:      f1
+   Stack mid redzone:       f2
+   Stack right redzone:     f3
+   Stack after return:      f5
+   Stack use after scope:   f8
+   Global redzone:          f9
+   Global init order:       f6
+   Poisoned by user:        f7
+   Container overflow:      fc
+   Array cookie:            ac
+   Intra object redzone:    bb
+   ASan internal:           fe
+   Left alloca redzone:     ca
+   Right alloca redzone:    cb
+ ==14==ABORTING
+
++ RETCODE=0
++ ANY_UPLOADS_FAILED=0
++ UPLOAD_JOB=bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5
++ URL=http://172.17.0.1:30662/data/asan2report/parsed_asan_report/bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5
++ FILENAME=/tmp/pydatatask-Lukas-Dresel-output-parsed_asan_report-bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5-htnaekii
++ mktemp
++ ERR_FILENAME=/tmp/tmp.LQsKVjOnTW
++ ANY_UPLOADS_FAILED=0
++ [ -e /tmp/pydatatask-Lukas-Dresel-output-parsed_asan_report-bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5-htnaekii ]
++ [ -f /tmp/pydatatask-Lukas-Dresel-output-parsed_asan_report-bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5-htnaekii ]
++ seq 1 3
++ wget -v -O- http://172.17.0.1:30662/data/asan2report/parsed_asan_report/bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5 --header Cookie: secret=86331918413637483690797809584864246012475 --post-file /tmp/pydatatask-Lukas-Dresel-output-parsed_asan_report-bf69e61ef6327bc45f5a538683dbc5c081d05acc5d36135e08422617a897f2a5-htnaekii
++ CUR_UPLOAD_FAILED=0
++ [ 0 -eq 0 ]
++ break
++ [ 0 -ne 0 ]
++ rm /tmp/tmp.LQsKVjOnTW
++ [ 0 -ne 0 ]
++ exit 0

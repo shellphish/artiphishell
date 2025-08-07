@@ -1,0 +1,102 @@
+reports:
+- error_line: 'ERROR: AddressSanitizer: global-buffer-overflow on address 0x<REDACTED>
+    at pc 0x<REDACTED> bp 0x<REDACTED> sp 0x<REDACTED>'
+  report: "\n READ of size <REDACTED> at 0x<REDACTED> thread T0\n     #0 0x<REDACTED>\
+    \ in strcspn /src/llvm-project/compiler-rt/lib/asan/../sanitizer_common/sanitizer_common_interceptors.inc:767:5\n\
+    \     #1 0x<REDACTED> in func_a (/out/filein_harness+0x1a6aea)\n     #2 0x<REDACTED>\
+    \ in LLVMFuzzerTestOneInput (/out/filein_harness+0x1a7771)\n     #3 0x<REDACTED>\
+    \ in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13\n\
+    \     #4 0x<REDACTED> in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned\
+    \ long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6\n    \
+    \ #5 0x<REDACTED> in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char\
+    \ const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9\n\
+    \     #6 0x<REDACTED> in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10\n\
+    \     #7 0x<REDACTED> in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082)\
+    \ (BuildId: 0702430aef5fa3dda43986563e9ffcc47efbd75e)\n     #8 0x<REDACTED> in\
+    \ _start (/out/filein_harness+0x3c6fd)\n \n 0x<REDACTED> is located <REDACTED>\
+    \ bytes before global variable 'pipefd' defined in 'filein_harness.c' (0x<REDACTED>)\
+    \ of size <REDACTED>\n 0x<REDACTED> is located <REDACTED> bytes after global variable\
+    \ 'items' defined in 'filein_harness.c' (0x<REDACTED>) of size <REDACTED>\n SUMMARY:\
+    \ AddressSanitizer: global-buffer-overflow /src/llvm-project/compiler-rt/lib/asan/../sanitizer_common/sanitizer_common_interceptors.inc:767:5\
+    \ in strcspn\n Shadow bytes around the buggy address:\n   0x<REDACTED>: 00 00\
+    \ 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00\
+    \ 00 00 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00\
+    \ 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00 00 00 00 00\
+    \ 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n =>0x<REDACTED>:\
+    \ 00 00 00 00 00 00 00[06]f9 f9 f9 f9 00 f9 f9 f9\n   0x<REDACTED>: 00 00 00 00\
+    \ 00 00 00 00 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00\
+    \ 00 00 00 00 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00 00 00\
+    \ 00 00 00 00\n   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n\
+    \   0x<REDACTED>: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n Shadow byte\
+    \ legend (one shadow byte represents 8 application bytes):\n   Addressable:  \
+    \         00\n   Partially addressable: 01 02 03 04 05 06 07 \n   Heap left redzone:\
+    \       fa\n   Freed heap region:       fd\n   Stack left redzone:      f1\n \
+    \  Stack mid redzone:       f2\n   Stack right redzone:     f3\n   Stack after\
+    \ return:      f5\n   Stack use after scope:   f8\n   Global redzone:        \
+    \  f9\n   Global init order:       f6\n   Poisoned by user:        f7\n   Container\
+    \ overflow:      fc\n   Array cookie:            ac\n   Intra object redzone:\
+    \    bb\n   ASan internal:           fe\n   Left alloca redzone:     ca\n   Right\
+    \ alloca redzone:    cb\n <MARKER>ABORTING"
+  stacktraces:
+  - depth: 0
+    func_name: strcspn
+    line: 767
+    signature: strcspn
+    src_file: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+    src_loc: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:767
+    type: source
+  - binary: ../(/out/filein_harness+0x1a6aea)
+    depth: 1
+    func_name: func_a
+    signature: func_a
+    type: maybe_asan_interceptor
+  - binary: ../(/out/filein_harness+0x1a7771)
+    depth: 2
+    func_name: LLVMFuzzerTestOneInput
+    signature: LLVMFuzzerTestOneInput
+    type: maybe_asan_interceptor
+  - depth: 3
+    func_name: fuzzer::Fuzzer::ExecuteCallback
+    line: 614
+    signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)
+    src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+    src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+    type: source
+  - depth: 4
+    func_name: fuzzer::RunOneTest
+    line: 327
+    signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+    src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+    type: source
+  - depth: 5
+    func_name: fuzzer::FuzzerDriver
+    line: 862
+    signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned
+      long))
+    src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+    type: source
+  - depth: 6
+    func_name: main
+    line: 20
+    signature: main
+    src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+    src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+    type: source
+  - binary: ../lib/x86_64-linux-gnu/libc.so.6
+    build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+    depth: 7
+    func_name: __libc_start_main
+    offset: 147586
+    signature: __libc_start_main
+    type: binary
+  - binary: ../(/out/filein_harness+0x3c6fd)
+    depth: 8
+    func_name: _start
+    signature: _start
+    type: maybe_asan_interceptor
+  triggered_sanitizers:
+  - id_1
+triggered_sanitizers: !!set
+  id_1: null

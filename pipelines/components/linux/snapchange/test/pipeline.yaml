@@ -1,0 +1,36 @@
+repo_classes:
+  extracted_results: FilesystemRepository
+  patched_results: FilesystemRepository
+
+  buildRequests: MetadataRepository
+  my_buildResults: FilesystemRepository
+  my_installResults: FilesystemRepository
+  my_targets: BlobRepository
+
+  afl_seeds_output: FilesystemRepository
+  afl_seed_input: BlobRepository
+
+
+imports:
+  extractorguy:
+    path: ../../buildguy/pipeline-extract.yaml
+    repos:
+      targets: my_targets
+      extractResults: extracted_results
+
+  buildguy:
+    path: ../../buildguy/pipeline.yaml
+    repos:
+      requests: buildRequests
+      targets: patched_results
+      buildResults: my_buildResults
+      installResults: my_installResults
+
+  snapchange:
+    path: ../pipeline.yaml
+    repos:
+      targets: extracted_results
+      patchResults: patched_results
+      buildRequests: buildRequests
+      installResults: my_installResults
+

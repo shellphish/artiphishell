@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "COUNTRY": {
+      "type": "string",
+      "minLength": 1
+    },
+    "CITY": {
+      "type": "string",
+      "minLength": 1
+    },
+    "INSTITUTION": {
+      "type": "string",
+      "minLength": 1
+    },
+    "SCHOOL": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "INSTITUTION"
+  ],
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "title": "Beijing University of Posts and Telecommunications Information",
+      "type": "object",
+      "properties": {
+        "COUNTRY": {
+          "type": "string",
+          "enum": ["China"]
+        },
+        "CITY": {
+          "type": "string",
+          "enum": ["Beijing"]
+        },
+        "INSTITUTION": {
+          "type": "string",
+          "enum": ["Beijing University of Posts and Telecommunications"]
+        },
+        "SCHOOL": {
+          "type": "string",
+          "enum": ["School of Computer Science"]
+        }
+      },
+      "required": [
+        "COUNTRY",
+        "CITY",
+        "INSTITUTION"
+      ]
+    },
+    {
+      "title": "Wuhan University",
+      "type": "object",
+      "properties": {
+        "COUNTRY": {
+          "type": "string",
+          "enum": ["China"]
+        },
+        "CITY": {
+          "type": "string",
+          "enum": ["Wuhan"]
+        },
+        "INSTITUTION": {
+          "type": "string",
+          "enum": ["Wuhan University"]
+        },
+        "SCHOOL": {
+          "type": "string",
+          "enum": ["School of Cyber Science and Engineering", "School of Computer Science"]
+        }
+      },
+      "required": [
+        "COUNTRY",
+        "CITY",
+        "INSTITUTION",
+        "SCHOOL"
+      ]
+    },
+    {
+      "title": "University of California, Riverside",
+      "type": "object",
+      "properties": {
+        "COUNTRY": {
+          "type": "string",
+          "enum": ["United States"]
+        },
+        "CITY": {
+          "type": "string",
+          "enum": ["Riverside"]
+        },
+        "INSTITUTION": {
+          "type": "string",
+          "enum": ["University of California, Riverside", "UCR", "UC Riverside"]
+        },
+        "SCHOOL": {
+          "type": "string",
+          "enum": ["Department of Computer Science and Engineering"]
+        }
+      },
+      "required": [
+        "COUNTRY",
+        "CITY",
+        "INSTITUTION"
+      ]
+    },
+    {
+      "title": "Artificial Intelligence Research Center(AIRC)",
+      "type": "object",
+      "properties": {
+        "COUNTRY": {
+          "type": "string",
+          "enum": ["China"]
+        },
+        "CITY": {
+          "type": "string",
+          "enum": ["Beijing"]
+        },
+        "INSTITUTION": {
+          "type": "string",
+          "enum": ["Artificial Intelligence Research Center", "AIRC", "Artificial Intelligence Research Center (AIRC)"]
+        },
+        "SCHOOL": {
+          "type": "string",
+          "enum": ["Department of Computer Science and Engineering"]
+        }
+      },
+      "required": [
+        "COUNTRY",
+        "CITY",
+        "INSTITUTION"
+      ]
+    },
+    {
+      "title": "University of Bristol",
+      "type": "object",
+      "properties": {
+        "COUNTRY": {
+          "type": "string",
+          "enum": ["United Kingdom"]
+        },
+        "CITY": {
+          "type": "string",
+          "enum": ["Bristol"]
+        },
+        "INSTITUTION": {
+          "type": "string",
+          "enum": ["University of Bristol"]
+        }
+      },
+      "required": [
+        "COUNTRY",
+        "CITY",
+        "INSTITUTION"
+      ]
+    },
+    {
+      "title": "Vrije Universiteit Amsterdam",
+      "type": "object",
+      "properties": {
+        "COUNTRY": {
+          "type": "string",
+          "enum": ["The Netherlands"]
+        },
+        "CITY": {
+          "type": "string",
+          "enum": ["Amsterdam"]
+        },
+        "INSTITUTION": {
+          "type": "string",
+          "enum": ["Vrije Universiteit Amsterdam"]
+        }
+      },
+      "required": [
+        "COUNTRY",
+        "CITY",
+        "INSTITUTION"
+      ]
+    },
+    {
+      "title": "Russian Academy of Sciences (RAS)",
+      "type": "object",
+      "properties": {
+        "COUNTRY": {
+          "type": "string",
+          "enum": ["Russia"]
+        },
+        "CITY": {
+          "type": "string",
+          "enum": ["Moscow"]
+        },
+        "INSTITUTION": {
+          "type": "string",
+          "enum": ["Russian Academy of Sciences", "RAS"]
+        },
+        "SCHOOL": {
+          "type": "string",
+          "enum": ["Ivannikov Institute for System Programming"]
+        }
+      },
+      "required": [
+        "COUNTRY",
+        "CITY",
+        "INSTITUTION"
+      ]
+    },
+    {
+      "title": "Lomonosov Moscow State University",
+      "type": "object",
+      "properties": {
+        "COUNTRY": {
+          "type": "string",
+          "enum": ["Russia"]
+        },
+        "CITY": {
+          "type": "string",
+          "enum": ["Moscow"]
+        },
+        "INSTITUTION": {
+          "type": "string",
+          "enum": ["Lomonosov Moscow State University", "Moscow State University", "MSU"]
+        },
+        "SCHOOL": {
+          "type": "string",
+          "enum": ["Ivannikov Institute for System Programming"]
+        }
+      },
+      "required": [
+        "COUNTRY",
+        "CITY",
+        "INSTITUTION"
+      ]
+    }
+  ]
+}

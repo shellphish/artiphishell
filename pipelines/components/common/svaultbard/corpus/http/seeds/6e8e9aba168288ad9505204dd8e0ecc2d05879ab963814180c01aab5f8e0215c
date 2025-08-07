@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/4.1 208\nContent-Range\nCOIND\n\n"

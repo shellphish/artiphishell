@@ -1,0 +1,7 @@
+---
+library: false
+name: jenkins-infra/jenkins-codeql
+version: 0.0.2-dev
+dependencies:
+  codeql/java-all: 0.8.1 # https://github.com/github/codeql/blob/main/java/ql/src/CHANGELOG.md
+  jenkins-infra/jenkins-codeql-lib: '*'

@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.0 108\nCache-Control\nCache-ControL\nCache-ContrOl\nC\nCache-ContrrOl\nC\254\nCache-Control\nCache-ControL\nCache-ContrOl\nCache-ContrOl\nCache-ContrOl\nCache-Control\n"

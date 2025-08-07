@@ -1,0 +1,11 @@
+
+imports:
+  poiguy_asan:
+    path: "../../pipeline_poiguy_asan.yaml"
+    repos: {}
+  poiguy_jazzer:
+    path: "../../pipeline_poiguy_jazzer.yaml"
+    repos: {}
+  poiguy_syzkaller:
+    path: "../../pipeline_poiguy_syzkaller.yaml"
+    repos: {}

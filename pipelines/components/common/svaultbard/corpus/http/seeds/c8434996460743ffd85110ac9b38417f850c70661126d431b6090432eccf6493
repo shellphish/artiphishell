@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/2.0 392\nContent-Type:;                7\n\n"

@@ -1,0 +1,23 @@
+repo_classes:
+  input: MetadataRepository
+  output: MetadataRepository
+  extra:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+tasks:
+  task_1:
+    executable:
+      cls: Process
+      args:
+        template: echo hi
+    links:
+      input:
+        repo: input
+        kind: InputFilepath
+      output:
+        repo: output
+        kind: OutputFilepath
+      extra:
+        repo: extra
+        kind: InputFilepath

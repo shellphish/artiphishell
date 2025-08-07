@@ -1,0 +1,10 @@
+name: Crashing Commit Feature Tests
+on:
+    - push
+    - workflow_dispatch
+jobs:
+  crashing_commit_feature_tests:
+    uses: shellphish-support-syndicate/test-repo/.github/workflows/run_feature_tests.yml@main
+    secrets: inherit
+    with:
+      maintainers: '<@272835764965081090>'

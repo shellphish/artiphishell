@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/6.1 008\nConnectIon:Ion:\nConnectIon\nConnectIon:cc8\nConnectIon:\nConnectIon\nConnectIon:c8n:\nConnectIon\nConnectIon:cc8\nConnectIon:\nConnectIon\nConnectIon:c8\nHTTP/6.1 008\nConnectIon:Ion:\nConnectIon\nConnectIon:cc8\nConnectIon:\nConnectIon\nConnectIon:c8n:\nConnectIon\nConnectIon:cc8\nConnectIon:\nConnectIon\nConnectIon:c8\nConnectIon:\nCo\222\221ectIon:\nConnectIon:c\nConnectIon:\nConnectIon:\nConnectIon:c\nConnectIon:\nCo\222\221ectIon:\nConnectIon:c\nConnectIon:\nConnectIon:\nConnectIon:c\n"

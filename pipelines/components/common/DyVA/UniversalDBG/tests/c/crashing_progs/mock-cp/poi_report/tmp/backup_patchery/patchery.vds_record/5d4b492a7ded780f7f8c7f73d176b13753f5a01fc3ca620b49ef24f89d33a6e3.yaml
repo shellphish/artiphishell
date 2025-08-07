@@ -1,0 +1,19 @@
+crashing_commit_id: 485cbcb7fed1ff91df7425c17e564a1853a1d0e6c33d2cefdc199aef6a3fa876
+response:
+  cpv_uuid: adc32187-bbc3-4767-9e18-218eb2c66dfa
+  status: accepted
+  vd_uuid: d2f9d0eb-fed8-434d-8cdd-1f765e950446
+submission:
+  cp_name: Mock CP
+  pou:
+    commit_sha1: E66DC3C8AD2488BEDF3447EF171F2AFB02816EFA
+    sanitizer: id_1
+  pov:
+    data: 'AAAAgAAAAAAAAAAAAAAAAA+AZnl5aHl5eXl5eXl5eXl5eQAAAAAAMmZmZgAAAAAAABOAAH//AABm
+
+      AAAAgGZ//gAFAAAAymYAAAAQZmZlAAA=
+
+      '
+    harness: id_1
+unix_time_created: 1720076731
+unix_time_done: 1720076763

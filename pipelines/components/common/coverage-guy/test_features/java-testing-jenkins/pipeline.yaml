@@ -1,0 +1,6 @@
+repo_classes: {}
+
+imports:
+  coverageguy:
+    path: ../../pipeline.yaml
+    repos: {}

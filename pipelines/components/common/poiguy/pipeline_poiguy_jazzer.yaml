@@ -1,0 +1,76 @@
+repo_classes:
+  ################ INPUTS ################
+  functions_index_csvs: BlobRepository
+  target_metadatas: MetadataRepository
+  harness_infos: MetadataRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  ################ OUTPUTS ################
+  points_of_interest: MetadataRepository
+
+tasks:
+  poiguy_jazzer:
+    failure_ok: true
+    job_quota:
+      cpu: 1
+      mem: "2Gi"
+    priority: 10000
+    links:
+      pov_guy_report:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputFilepath
+
+      pov_guy_report_id:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputId
+
+      pov_guy_report_metadata:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputMetadata
+
+      harness_info:
+        repo: harness_infos
+        kind: InputMetadata
+        key: pov_guy_report_metadata.harness_info_id
+
+      function_index_csv:
+        repo: functions_index_csvs
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      target_metadata:
+        repo: target_metadatas
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      ################# OUTPUT ###################
+      poi_reports:
+        repo: points_of_interest
+        kind: OutputFilepath
+
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the jazzer scanner results.
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-poi-guy'
+        template: |
+          set -x
+          mkdir -p /tmp/pois
+
+          python /app/poiguyrun.py \
+          --target {{ harness_info.target_id | shquote }} \
+          --harness-info-id {{ pov_guy_report_metadata.harness_info_id | shquote }} \
+          --scanner "jazzer" \
+          --scan_report_dir {{ pov_guy_report | shquote }} \
+          --crash_report_id {{ pov_guy_report_id }} \
+          --index_csv_path {{ function_index_csv | shquote }} \
+          --poi_normalized_dir /tmp/pois \
+          --harness_id  {{ harness_info.cp_harness_id | shquote }} \
+          --target_metadata {{ target_metadata | shquote }}
+
+          mv /tmp/pois/poi-report-*.yaml {{ poi_reports | shquote }}

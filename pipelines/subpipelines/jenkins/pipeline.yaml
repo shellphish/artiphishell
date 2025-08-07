@@ -1,0 +1,75 @@
+repo_classes:
+  java_linted_targets: FilesystemRepository
+  cp_image_ready: MetadataRepository
+    
+  poiguy_full_functions_index_csvs: BlobRepository
+  poiguy_full_functions_indices: BlobRepository
+  poiguy_full_functions_jsons_dirs: FilesystemRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  benign_coverages_full_report: BlobRepository
+  harness_infos: MetadataRepository
+  target_metadatas: MetadataRepository
+  target_directed_fuzz_requests: MetadataRepository
+  info_extraction_requests: MetadataRepository
+  info_extraction_results: MetadataRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  codeql_targets_strings: 
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  points_of_interest: MetadataRepository
+  
+  ############################## INTERMEDIATES ##############################
+  jazzer_crash_reports: { "cls": "BlobRepository", "required": false }
+  jazzer_crash_reports_metadatas: { "cls": "MetadataRepository", "required": false }
+
+  to_be_triaged_harness_inputs:
+    cls: BlobRepository
+    required: false
+  to_be_triaged_harness_inputs_metadatas:
+    cls: MetadataRepository
+    required: false
+  
+
+imports:
+  jazzer:
+    path: ../../components/jenkins/jenkins_jazzer_harness/pipeline.yaml
+    repos:
+      cp_image_ready: cp_image_ready
+      jenkins_targets_with_sources: java_linted_targets
+      jenkins_harness_infos: harness_infos
+      target_directed_fuzz_requests: target_directed_fuzz_requests
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      full_function_indices: poiguy_full_functions_indices
+      info_extraction_results: info_extraction_results
+
+  quickseed:
+    path: ../../components/jenkins/QuickSeed/pipeline.yaml
+    repos:
+      fuzz_requests: target_directed_fuzz_requests
+      info_extraction_results: info_extraction_results
+      benign_coverages_full_report: benign_coverages_full_report
+      targets_with_sources: java_linted_targets
+      full_function_indices: poiguy_full_functions_indices
+      full_functions_jsons_dirs: poiguy_full_functions_jsons_dirs
+
+      to_be_triaged_harness_inputs: to_be_triaged_harness_inputs
+      to_be_triaged_harness_inputs_metadatas: to_be_triaged_harness_inputs_metadatas
+
+  jazzer_poiguy:
+    path: ../../components/common/poiguy/pipeline_poiguy_jazzer.yaml
+    repos:
+      harness_infos: harness_infos
+      target_metadatas: target_metadatas
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+      functions_index_csvs: poiguy_full_functions_index_csvs
+      points_of_interest: points_of_interest
+

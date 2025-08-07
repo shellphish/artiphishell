@@ -1,0 +1,75 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+*.log
+*.bin
+*.lock
+*/target/debug/*
+*/examples/ghidra/
+*/examples/01_getpid/harness/*
+*/examples/01_getpid/snapshot/
+*/examples/01_getpid/qemu_snapshot/
+*/examples/01_getpid/target/debug/*
+rootfs/chroot
+rootfs/bookworm.img
+rootfs/bookworm.id_rsa
+rootfs/bookworm.id_rsa.pub
+.vscode/
+**/Cargo.lock
+snapchange/target/.rustc_info.json
+snapchange/fuzzer/target/.rustc_info.json
+test_features/fuzz_harness/*.tar.gz
+test_features/fuzz_harness/cached/tipc/**
+test_features/fuzz_harness/cached/harden/**
+test_features/fuzz_harness/cached/fsconfig/**
+test_features/fuzz_harness/cached/demo3/**

@@ -1,0 +1,6 @@
+---
+library: false
+name: shellphish-support-syndicate/kernel-ql-pack
+version: 0.0.1
+dependencies:
+  codeql/cpp-all: "*"

@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.38 198\nTranSfer-Encoding:chunked\r\n\n0\r\n=\377\377\377\377\377K\r\365\302\365\316\362\365\226\266d"

@@ -1,0 +1,13 @@
+{
+    "yaml.schemas": {
+        "./components/pipeline/pydatatask/schema/pipeline.json": [
+            "pipeline*.yaml"
+        ]
+    },
+    "github-actions.workflows.pinned.workflows": [
+        ".github/workflows/on_push_build_pipeline.yml",
+        ".github/workflows/on_push_check_schemas.yml",
+        ".github/workflows/pipeline_jenkins.yml",
+        ".github/workflows/pipeline_linux.yml",
+    ]
+}

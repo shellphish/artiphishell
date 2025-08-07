@@ -1,0 +1,52 @@
+# This is a basic workflow to help you get started with Actions
+
+name: SetupPipeline
+description: "Sets up the current state of the pydatatask pipeline"
+inputs:
+  long_running_timeout:
+    description: 'Timeout for long-running jobs in minutes'
+    required: false
+    default: "60"
+  pipeline:
+    description: 'Pipeline to setup'
+    required: true
+  ci_deploy_token:
+    description: 'Token to use for CI'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    # pip install pydatatask it with -e mode to ensure it's up-to-date and editable
+    - name: Install pydatatask
+      shell: bash
+      run: |
+        pip install -e $GITHUB_WORKSPACE/components/pipeline/pydatatask
+
+    # Runs a single command using the runners shell
+    - name: Create the pipeline lock and build the containers
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE/${{ inputs.pipeline }}
+        pdl --long-running-timeout ${{ inputs.long_running_timeout }}
+
+    # Run a single `pd status` command to show the status of the pipeline
+    - name: Show the pipeline status
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE/${{ inputs.pipeline }}
+        pd status
+
+    # Push all shellphishsupportsyndicate/* containers to docker hub
+    - name: Push all shellphishsupportsyndicate/* containers to docker hub
+      shell: bash
+      run: |
+        for container in $(docker images | grep 'aixcc-' | grep -v 'ghcr.io' | awk '{print $1 ":" $2}'); do
+          docker tag $container ghcr.io/${{ github.repository_owner }}/$container
+          docker push ghcr.io/${{ github.repository_owner }}/$container
+        done
+
+
+
+

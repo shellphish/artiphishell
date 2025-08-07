@@ -1,0 +1,468 @@
+repo_classes:
+  cp_image_ready: MetadataRepository
+  targets_with_sources: FilesystemRepository
+  target_harness_infos: MetadataRepository
+  fuzz_requests: MetadataRepository
+  fuzz_requests_seeds: FilesystemRepository
+
+  info_extraction_results: MetadataRepository
+
+  ################### OUTPUTS #####################
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metas: MetadataRepository
+
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+
+  reaching_functions_dicts: BlobRepository
+  reaching_files_dicts: BlobRepository
+
+  ################# INTERMEDIATES #################
+
+  raw_benign_harness_inputs:
+    cls: BlobRepository
+    required: false
+  raw_crashing_harness_inputs:
+    cls: BlobRepository
+    required: false
+
+  aflpp_built_targets:
+    cls: FilesystemRepository
+    required: false
+  aflpp_cmplog_built_targets:
+    cls: FilesystemRepository
+    required: false
+  aflpp_coverage_filtered_built_targets:
+    cls: FilesystemRepository
+    required: false
+  aflpp_image_ready:
+    cls: MetadataRepository
+    required: false
+
+tasks:
+  aflpp_build_image:
+    priority: 5
+    job_quota:
+      max: 0.45
+    links: 
+      target_id:
+        repo: cp_image_ready
+        kind: InputId
+      target:
+        repo: targets_with_sources
+        kind: InputFilepath
+      aflpp_image_ready:
+        repo: aflpp_image_ready
+        kind: OutputFilepath
+    
+    executable:
+      cls: Container
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export TARGET_DIR={{target | shquote}}
+          export DOCKERFILE_PATH=/shellphish/aflpp/Dockerfile.aflpp
+
+          CP_NAME=$(yq '.cp_name' "${TARGET_DIR}/project.yaml" | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')
+          export DOCKER_IMAGE_NAME="aixcc-aflpp-${CP_NAME}-{{target_id}}"
+
+          /shellphish/aflpp/build_docker_image.sh
+
+          cat <<EOF > {{aflpp_image_ready}}
+          image_name: "${DOCKER_IMAGE_NAME}"
+          EOF
+
+  aflpp_build:
+    priority: 2
+    # job_quota:
+    #   cpu: 32
+    #   mem: "64Gi"
+    job_quota:
+      max: 0.4
+      
+    links:
+      target_id:
+        repo: aflpp_image_ready
+        kind: InputId
+      target_image:
+        repo: aflpp_image_ready
+        kind: InputMetadata
+      target:
+        repo: targets_with_sources
+        kind: InputFilepath
+      aflpp_built_target:
+        repo: aflpp_built_targets
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export TARGET_ID={{target_id | shquote}}
+          export BUILD_NAME=build
+          export TARGET_DIR={{target | shquote}}
+          export DOCKERFILE_PATH=/shellphish/aflpp/Dockerfile.aflpp
+          export DOCKER_ENV_PATH=/shellphish/aflpp/.env.docker.build_aflpp
+          export PROJECT_ENV_PATH=""
+          export RESULTS_DIR={{aflpp_built_target | shquote}}
+
+          export DOCKER_IMAGE_NAME={{target_image.image_name|shquote}}
+          /shellphish/aflpp/build_target.sh
+
+  aflpp_build_cmplog:
+    links:
+      target_id:
+        repo: aflpp_image_ready
+        kind: InputId
+      target_image:
+        repo: aflpp_image_ready
+        kind: InputMetadata
+      target:
+        repo: targets_with_sources
+        kind: InputFilepath
+      aflpp_cmplog_built_target:
+        repo: aflpp_cmplog_built_targets
+        kind: OutputFilepath
+
+    priority: 2
+    # job_quota:
+    #   cpu: 32
+    #   mem: "64Gi"
+
+    job_quota:
+      max: 0.4
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export TARGET_ID={{target_id | shquote}}
+          export TARGET_DIR={{target | shquote}}
+          export DOCKERFILE_PATH=/shellphish/aflpp/Dockerfile.aflpp
+          export DOCKER_ENV_PATH=/shellphish/aflpp/.env.docker.build_aflpp_cmplog
+          export PROJECT_ENV_PATH=""
+          export RESULTS_DIR={{aflpp_cmplog_built_target | shquote}}
+
+          export DOCKER_IMAGE_NAME={{target_image.image_name|shquote}}
+
+          /shellphish/aflpp/build_target.sh
+
+  aflpp_build_coverage_filter:
+    priority: 2
+    # job_quota:
+    #   cpu: 32
+    #   mem: "64Gi"
+    job_quota:
+      max: 0.4
+      
+    links:
+      fuzz_request:
+        repo: fuzz_requests
+        kind: InputMetadata
+      
+      info_extraction_results:
+        repo: info_extraction_results
+        kind: InputFilepath
+        key: fuzz_request.fuzz_request_id
+
+      target_id:
+        repo: aflpp_image_ready
+        kind: InputId
+        key: fuzz_request.target_id
+
+      target_image:
+        repo: aflpp_image_ready
+        kind: InputMetadata
+        key: fuzz_request.target_id
+      target:
+        repo: targets_with_sources
+        kind: InputFilepath
+        key: fuzz_request.target_id
+
+      aflpp_coverage_filtered_built_target:
+        repo: aflpp_coverage_filtered_built_targets
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export TARGET_ID={{target_id | shquote}}
+          export BUILD_NAME=build
+          export TARGET_DIR={{target | shquote}}
+          export DOCKERFILE_PATH=/shellphish/aflpp/Dockerfile.aflpp
+          export DOCKER_ENV_PATH=/shellphish/aflpp/.env.docker.build_aflpp_coverage_filter
+          export PROJECT_ENV_PATH=""
+          export RESULTS_DIR={{aflpp_coverage_filtered_built_target | shquote}}
+
+          # TODO: create whitelist
+          cp whitelist.txt "${TARGET_DIR}/work/coverage-whitelist.txt"
+
+          export DOCKER_IMAGE_NAME={{target_image.image_name|shquote}}
+          /shellphish/aflpp/build_target.sh
+
+  aflpp_fuzz:
+    long_running: true
+    replicable: true
+    job_quota:
+      cpu: 8
+      mem: "12Gi"
+
+    timeout:
+      minutes: 240
+    annotations:
+      maturity: inProgress
+      authors:
+        - clasm
+        - 4rbit3r
+        - honululu
+    links:
+      harness_id:
+        repo: target_harness_infos
+        kind: InputId
+      harness_info:
+        repo: target_harness_infos
+        kind: InputMetadata
+      
+      target_image:
+        repo: aflpp_image_ready
+        kind: InputMetadata
+        key: harness_info.target_id
+      aflpp_built_target:
+        repo: aflpp_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+      aflpp_cmplog_built_target:
+        repo: aflpp_cmplog_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+      
+    executable:
+      cls: Container
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        entrypoint: ["/bin/bash", "-c"]
+
+        template: |
+          set -x
+          set -e
+
+          export CMPLOG_TARGET_DIR={{aflpp_cmplog_built_target | shquote}}
+          export TARGET_DIR={{aflpp_built_target | shquote}}
+          export CP_HARNESS_ID={{harness_info.cp_harness_id}}
+          export CP_HARNESS_NAME={{harness_info.cp_harness_name}}
+          export CP_HARNESS_BINARY_PATH={{harness_info.cp_harness_binary_path}}
+          export DOCKER_IMAGE_NAME={{target_image.image_name | shquote}}
+          
+          . /shellphish/aflpp/setup_cp_name.sh
+
+          export INSTANCE_DIR="/shared/aflpp/fuzz/multi-{{harness_info.target_id}}-${CP_NAME}-${JOB_ID}-${REPLICA_ID}"
+          mkdir -p "$INSTANCE_DIR"
+          cp {{aflpp_built_target | shquote}}/out/"${CP_HARNESS_NAME}" {{aflpp_built_target | shquote}}/out/"${CP_HARNESS_NAME}.original"
+          rsync -raz {{aflpp_built_target | shquote}}/ ${INSTANCE_DIR}/
+          
+          fuzz() {
+            set -- "$@"
+            . /shellphish/aflpp/run_fuzzer_instance_in_background.sh
+          }
+          fuzz ${JOB_ID}_${REPLICA_ID}_0_cmplog -t 1000 -c "/$CP_HARNESS_BINARY_PATH.cmplog"
+          fuzz ${JOB_ID}_${REPLICA_ID}_1_afldict -t 1000 -x /work/dictionary.txt
+          fuzz ${JOB_ID}_${REPLICA_ID}_2 -t 500
+          fuzz ${JOB_ID}_${REPLICA_ID}_3 -t 500
+          fuzz ${JOB_ID}_${REPLICA_ID}_4 -t 1000
+          fuzz ${JOB_ID}_${REPLICA_ID}_5 -t 1000
+          fuzz ${JOB_ID}_${REPLICA_ID}_6 -t 2000
+          fuzz ${JOB_ID}_${REPLICA_ID}_7 -t 5000
+
+          wait -n
+
+
+  aflpp_fuzz_main_replicant:
+    long_running: true
+    require_success: true
+
+    job_quota:
+      cpu: 1
+      mem: "4Gi"
+
+    timeout:
+      minutes: 240
+    annotations:
+      maturity: inProgress
+      authors:
+        - honululu
+    links:
+      harness_id:
+        repo: target_harness_infos
+        kind: InputId
+      harness_info:
+        repo: target_harness_infos
+        kind: InputMetadata
+      
+      target_image:
+        repo: aflpp_image_ready
+        kind: InputMetadata
+        key: harness_info.target_id
+      aflpp_built_target:
+        repo: aflpp_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+
+    executable:
+      cls: ContainerSet
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+          export TARGET_DIR={{aflpp_built_target | shquote}}
+          export CP_HARNESS_ID={{harness_info.cp_harness_id}}
+          export CP_HARNESS_NAME={{harness_info.cp_harness_name}}
+          export DOCKER_IMAGE_NAME={{target_image.image_name | shquote}}
+          
+          . /shellphish/aflpp/setup_cp_name.sh
+
+          export INSTANCE_DIR="/shared/aflpp/fuzz/main-{{harness_info.target_id}}-${CP_NAME}-${JOB_ID}"
+          mkdir -p "$INSTANCE_DIR"
+          cp {{aflpp_built_target | shquote}}/out/"${CP_HARNESS_NAME}" {{aflpp_built_target | shquote}}/out/"${CP_HARNESS_NAME}.original"
+          rsync -raz {{aflpp_built_target | shquote}}/ ${INSTANCE_DIR}/
+          
+          /shellphish/aflpp/run_fuzzer_instance_in_background.sh main -t 1000
+          
+          /shellphish/aflpp/main_node_rsync_shit.sh
+
+  aflpp_fuzz_merge:
+    long_running: true
+    job_quota:
+      cpu: 2
+      mem: "32Gi"
+
+    timeout:
+      minutes: 240
+    annotations:
+      maturity: inProgress
+      authors:
+        - honululu
+    links:
+      harness_id:
+        repo: target_harness_infos
+        kind: InputId
+      harness_info:
+        repo: target_harness_infos
+        kind: InputMetadata
+      
+      target_image:
+        repo: aflpp_image_ready
+        kind: InputMetadata
+        key: harness_info.target_id
+      aflpp_built_target:
+        repo: aflpp_built_targets
+        kind: InputFilepath
+        key: harness_info.target_id
+
+      benigns_dir:
+        repo: benign_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: benign_harness_inputs_metas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_id }}"
+          target_id: "{{ harness_info.target_id }}"
+          cp_harness_id: "{{ harness_info.cp_harness_id }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_source_path: "{{ harness_info.cp_harness_source_path }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          fuzzer: aflplusplus
+      crashes:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_id }}"
+          target_id: "{{ harness_info.target_id }}"
+          cp_harness_id: "{{ harness_info.cp_harness_id }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_source_path: "{{ harness_info.cp_harness_source_path }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          fuzzer: aflplusplus
+    executable:
+      cls: Container
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+          export TARGET_DIR={{aflpp_built_target | shquote}}
+          export CP_HARNESS_ID={{harness_info.cp_harness_id}}
+          export CP_HARNESS_NAME={{harness_info.cp_harness_name}}
+          export DOCKER_IMAGE_NAME={{target_image.image_name | shquote}}
+          
+          . /shellphish/aflpp/setup_cp_name.sh
+
+          export INSTANCE_DIR="/shared/aflpp/fuzz/merge-{{harness_info.target_id}}-${CP_NAME}-${JOB_ID}"
+          mkdir -p "$INSTANCE_DIR"
+          cp {{aflpp_built_target | shquote}}/out/"${CP_HARNESS_NAME}" {{aflpp_built_target | shquote}}/out/"${CP_HARNESS_NAME}.original"
+          rsync -raz {{aflpp_built_target | shquote}}/ ${INSTANCE_DIR}/
+          cd "${INSTANCE_DIR}"
+          
+          /shellphish/aflpp/run_fuzzer_instance_in_background.sh merge -t 1000
+                    
+          sleep 20
+          /bin/bash -x /shellphish/aflpp/merge_afl_sync_dir.sh \
+                  "${CP_NAME}" \
+                  "/shared/aflpp_sync/${CP_NAME}-${CP_HARNESS_NAME}/merge/" \
+                  {{benigns_dir | shquote}} \
+                  {{crashes | shquote}}

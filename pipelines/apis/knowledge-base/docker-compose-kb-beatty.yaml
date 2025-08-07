@@ -1,0 +1,82 @@
+version: '3'
+services:
+  # ABSOLUTELY DO NOT TOUCH ANYTHING ABOVE THIS LINE. ABSOLUTELY DO NOT CHANGE THE INDENTATION SCHEME IN THIS FILE. ABSOLUTELY DO NOT ADD ANYTHING OTHER THAN SERVICES TO THIS FILE. WE ARE DUMPING THE BELOW TEXT DIRECTLY INTO ANOTHER YAML FILE. IF THIS ANNOYS YOU PLEASE FIX GENERATE_DOCKER_COMPOSE.YAML.
+  knowledge-base-jenkins:
+    image: aixcc-apis-knowledge-base
+    build:
+      context: ./knowledge-base/
+      dockerfile: .devcontainer/Dockerfile.beatty-kb # this is relative to the build context
+      args:
+        KB_NAME: "jenkins"
+
+    command: "neo4j console" # /bin/bash -c "neo4j start && while true; do sleep 1; done" #
+    environment:
+      NEO4J_AUTH: "neo4j/!!Shellphish!!"
+      NEO4J_HOME: "/knowledge-base-data/"
+    volumes:
+      - ./knowledge-base-jenkins-data/:/knowledge-base-data/
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+
+  knowledge-base-kernel:
+    image: aixcc-apis-knowledge-base
+    build:
+      context: ./knowledge-base/
+      dockerfile: .devcontainer/Dockerfile.beatty-kb # this is relative to the build context
+      args:
+        KB_NAME: "kernel"
+
+    command: "neo4j console" # /bin/bash -c "neo4j start && while true; do sleep 1; done" #
+    environment:
+      NEO4J_AUTH: "neo4j/!!Shellphish!!"
+      NEO4J_HOME: "/knowledge-base-data/"
+    volumes:
+      - ./knowledge-base-kernel-data/:/knowledge-base-data/
+    ports:
+      - "7575:7474"
+      - "7688:7687"
+
+  knowledge-base-generic-c:
+    image: aixcc-apis-knowledge-base
+    build:
+      context: ./knowledge-base/
+      dockerfile: .devcontainer/Dockerfile.beatty-kb # this is relative to the build context
+      args:
+        KB_NAME: "generic-c"
+
+    command: "neo4j console" # /bin/bash -c "neo4j start && while true; do sleep 1; done" #
+    environment:
+      NEO4J_AUTH: "neo4j/!!Shellphish!!"
+      NEO4J_HOME: "/knowledge-base-data/"
+    volumes:
+      - ./knowledge-base-generic-c-data/:/knowledge-base-data/
+    ports:
+      - "7676:7474"
+      - "7689:7687"
+
+  embedding-api:
+    image: aixcc-apis-embedding
+    build:
+      context: ./embedding_api/
+      dockerfile: Dockerfile # this is relative to the build context
+    ports:
+      - "49152:49152"
+
+  retrieval-api:
+    image: aixcc-apis-retrieval
+    build:
+      context: ./knowledge-base/
+      dockerfile: .devcontainer/Dockerfile.retrieval # this is relative to the build context
+    command: |
+      /bin/bash -c "set -x; while true; do kb_retrieval_api bolt://knowledge-base-jenkins:7687 bolt://knowledge-base-kernel:7687 bolt://knowledge-base-generic-c:7687 http://embedding-api:49152 --retrieval-host 0.0.0.0 --neo4j-username=neo4j --neo4j-password=!!Shellphish!!; sleep 1; done"
+    environment:
+      NEO4J_AUTH: "neo4j/!!Shellphish!!"
+    ports:
+      - "48751:48751"
+
+    depends_on:
+      - embedding-api
+      - knowledge-base-jenkins
+      - knowledge-base-kernel
+      - knowledge-base-generic-c

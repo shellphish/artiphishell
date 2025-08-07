@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/6.6 008\nConnectIon:=LLCK\n"

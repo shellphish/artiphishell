@@ -1,0 +1,10 @@
+name: Invariant Guy Feature Tests
+on:
+    - push
+    - workflow_dispatch
+jobs:
+  invariant_guy_feature_tests:
+    uses: shellphish-support-syndicate/test-repo/.github/workflows/run_feature_tests.yml@main
+    secrets: inherit
+    with:
+      maintainers: '<@943593619430977566> & <@641676081186996225>'

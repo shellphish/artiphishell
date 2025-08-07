@@ -1,0 +1,5 @@
+target_id: '004'
+cp_harness_id: 'id_1'
+cp_harness_name: 'filein_harness'
+cp_harness_source_path: 'src/test/filein_harness.c'
+cp_harness_binary_path: 'out/filein_harness'

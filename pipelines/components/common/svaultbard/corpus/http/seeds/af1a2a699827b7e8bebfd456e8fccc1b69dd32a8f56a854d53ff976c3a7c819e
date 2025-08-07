@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/3.6 291\nLocation:\031\n\n"

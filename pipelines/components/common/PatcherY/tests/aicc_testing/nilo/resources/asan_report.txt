@@ -1,0 +1,18 @@
+[INFO] Executing 3 commands
+nilo-the-force-awakens.c:19:9: runtime error: load of address 0x8000000dac90 with insufficient space for an object of type '__fd_mask'
+0x8000000dac90: note: pointer points here
+<memory cannot be printed>
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==75664==ERROR: AddressSanitizer: SEGV on unknown address 0x100080013592 (pc 0x555555638f54 bp 0x7fffffffcd80 sp 0x7fffffffcbd0 T0)
+==75664==The signal is caused by a READ memory access.
+    #0 0x555555638f54 in perform_select /home/degrigis/aixcc-blueberry/targets-semis-nilo-the-force-awakens/src/nilo-the-force-awakens/nilo-the-force-awakens.c:19
+    #1 0x55555563ad8e in harness /home/degrigis/aixcc-blueberry/targets-semis-nilo-the-force-awakens/src/nilo-the-force-awakens/nilo-the-force-awakens.c:90
+    #2 0x5555555628eb in main /home/degrigis/aixcc-blueberry/targets-semis-nilo-the-force-awakens/src/nilo-the-force-awakens/nilo-the-force-awakens.c:128
+    #3 0x7ffff7672d8f in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #4 0x7ffff7672e3f in __libc_start_main_impl ../csu/libc-start.c:392
+    #5 0x555555562f54 in _start (/home/degrigis/aixcc-blueberry/targets-semis-nilo-the-force-awakens/src/nilo-the-force-awakens/nilo-the-force-awakens+0xef54)
+
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV /home/degrigis/aixcc-blueberry/targets-semis-nilo-the-force-awakens/src/nilo-the-force-awakens/nilo-the-force-awakens.c:19 in perform_select
+==75664==ABORTING

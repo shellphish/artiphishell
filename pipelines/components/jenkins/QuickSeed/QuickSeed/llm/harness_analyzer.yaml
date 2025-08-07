@@ -1,0 +1,65 @@
+1:
+  name: "summarize_harness_code"
+  description: "Read harness_code and think step by step to summarize the code. 
+    Give a detailed breakdown of the input structure that will trigger the harness.
+    Also tell me what function this harness is going to trigger"
+
+2:
+  name: "summarize_source_code"
+  description: "Read the source codes of the functions from the call graph that starts with harness.
+    You will be provided multiple functions in the order of triggering.
+    And we will provide the exact statement that this function uses to call the next function.
+    And summarize each function we give you.
+    "
+
+3:
+  name: "read_pois"
+  description: "Read the following points of interest (POI) and memorize them for later use. 
+    They probably are some encoding/encryption function that is blocking us"
+
+4: 
+  name: "generate_seed"
+  description:
+      "Based on the summarization of the harness code and source codes, and the path you proposed,
+      please generate an input seed that will trigger the sink." 
+
+5:
+  name: "refine_seed"
+  description:
+    "
+    You should substitute the input you pass to the sink from the last step to a magic string.
+    The following is a json that describes magic strings to trigger jazzer's sanitizers.
+    In the given json, there is a list of dictrionary.
+    Each dictionary represents a vulnerability type, and have three fields: `Vulnerability Classs`, `Sink Class or Method` and `Magic String`.
+    When you see the sink method or class from  `Sink Class or Method`, you should pass the `Magic String` as an argument to sink method or class.
+    For example, if the sink method or class is in FileWriter, File, read or write.
+    You should call this method with the corresponding magic string.
+
+    We provide two examples here:
+
+    exmaple 1:
+    If you identify the sink class is a call to class `File` and the vulnerability type is file read and write.
+    Accoring to the json we provide you, the magic string to file read and write should be `jazzer`
+    Then you should pass `jazzer` as the file name to `File`, so if you identify the vulnerability is file read and write, the constructer of File should be File('jazzer') .
+    And if you identify the vulnerability is File path traversal, the constructer of File should look like `File('../../jazzer-traversal')`
+
+    example 2:
+    Another example is if you identigy the sink class is a call to class `ProcessBuilder`, then the magic string is `jazze`.
+    Then you should pass `jazze` to `ProcessBuilder` like ProcessBuiler('jazze').
+
+    A special case is deserialization, what we provide as a magic string is the hex format of the actually magic string.
+    All the other magic string are string literal and can directly pass to sink.
+    Only for deserialization, you should pass a hex decoding the magic string to `ObjectStreamInput`.
+    You MUST pass the correct magic string to the sink method or class, if there is any, to trigger the sink correctl. 
+    We only need to pass it once. Do not pass it multiple times.
+    And for those sink method does not have a corresponding magic string, just pass an input that can trigger the vulnerability.
+    Please find the magic string of this vulneraability if there is any and put it in the correct part of the input."
+
+6:
+  name: "generate_script"
+  description:
+    "Based on the summarization of the harness and the detailed breakdown of the input format. 
+    please write a python script that will convert the input seed to bytes. it has to match the size in the seed_structure and save it in a binary file called output.bin. For example a 2 bytes integer 13 is 000d in big endian. PLEASE USE Python and output the script in the following format.
+    ```python
+      {script}
+    ```"

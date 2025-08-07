@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+set -x
+# find out which argument is the pov file, and replace it with /work/pov
+POV_MD5=$(echo "known-pov-contents" | md5sum | cut -d' ' -f1)
+JAZZER_ARGS=()
+for arg in "$@"; do
+    if [ -f "$arg" ]; then
+        ARG_MD5=$(md5sum "$arg" | cut -d' ' -f1)
+        if [ "$ARG_MD5" == "$POV_MD5" ]; then
+            JAZZER_ARGS+=("/work/pov")
+            continue
+        fi
+    fi
+    JAZZER_ARGS+=("$arg")
+done
+# run our in-docker monitor
+python3 $THE_FUCKING_SCRIPT --jazzer-args ${JAZZER_ARGS[@]}

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+if [[ -f "$SHUTTING_DOWN" && -z "$IN_SHUTDOWN_SCRIPT" ]]; then
+	echo "Job shutting down, no more docker allowed" >&2
+	exit 1
+fi
+
+if [[ -n "$SHUTDOWN_SCRIPT" ]]; then
+	if ! grep 'automatic docker ownership' "$SHUTDOWN_SCRIPT" &>/dev/null; then
+		echo "docker rm -f \$(docker ps -aq --filter label=owner_task=${TASK_NAME} --filter label=owner_job=${JOB_ID} --filter label=owner_replica=${REPLICA_ID}) 2>/dev/null || true  # automatic docker ownership" >>"$SHUTDOWN_SCRIPT"
+	fi
+fi
+
+DOCKER_CMD="$1"
+shift
+the_args=
+case "$DOCKER_CMD" in run|build) the_args="${DOCKER_EXTRA_ARGS_SHELLPHISH}" ;; esac
+case "$DOCKER_CMD" in run) the_args+=" --label owner_task=${TASK_NAME} --label owner_job=${JOB_ID} --label owner_replica=${REPLICA_ID}" ;; esac
+case "$DOCKER_CMD" in build) test -z "$ABSOLUTELY_NO_INTERNET" || the_args+=" --build-arg ISOLATED=1" ;; esac
+.docker.wrapped "$DOCKER_CMD" $the_args "$@"
+RESULT=$?
+
+case "$DOCKER_CMD" in load|build|tag|commit) test -n "$DOCKER_SYNC" && curl -s "${DOCKER_SYNC}" ;; esac
+
+exit $RESULT

@@ -1,0 +1,62 @@
+pov_harness_real:ngx_event_posted_c_34:
+  file: nginx/src/event/ngx_event_posted.c
+  func: ngx_event_process_posted
+  key_index: nginx/src/event/ngx_event_posted.c:18:1::void ngx_event_process_posted(int
+    *, int *)
+  line: '34'
+  unique_to_crash: false
+  violations:
+  - is: max(ev)==89060441850784
+    was: max(ev)==89060441850272
+  - is: max(q)==89060441850864
+    was: max(q)==89060441850352
+pov_harness_real:ngx_http_core_module_c_858:
+  file: nginx/src/http/ngx_http_core_module.c
+  func: ngx_http_handler
+  key_index: nginx/src/http/ngx_http_core_module.c:819:1::void ngx_http_handler(ngx_http_request_t
+    *)
+  line: '858'
+  unique_to_crash: false
+  violations:
+  - is: max(cmcf)==140737488345568
+    was: max(cmcf)==140737488345536
+pov_harness_real:ngx_http_request_c_1529:
+  file: nginx/src/http/ngx_http_request.c
+  func: ngx_http_process_request_headers
+  key_index: nginx/src/http/ngx_http_request.c:1366:1::void ngx_http_process_request_headers(int
+    *)
+  line: '1529'
+  unique_to_crash: false
+  violations:
+  - is: min(rv)==38568687158232712
+    was: min(rv)==90198930364851300
+  - is: max(hh)==88167088671032
+    was: max(hh)==51355692384
+  - is: max(rev)==89060441850784
+    was: max(rev)==89060441850272
+  - is: min(h)==51355099296
+    was: min(h)==140737303846464
+  - is: max(p)==140737488348992
+    was: max(p)==140737304440128
+  - is: max(len)==140737303847040
+    was: max(len)==1024
+pov_harness_real:ngx_http_special_response_c_727:
+  file: nginx/src/http/ngx_http_special_response.c
+  func: ngx_http_send_special_response
+  key_index: nginx/src/http/ngx_http_special_response.c:672:1::int ngx_http_send_special_response(ngx_http_request_t
+    *, ngx_http_core_loc_conf_t *, int)
+  line: '727'
+  unique_to_crash: false
+  violations:
+  - is: max(rc)==90198936885938002
+    was: max(rc)==90198936885937952
+pov_harness_real:ngx_string_c_1330:
+  file: nginx/src/core/ngx_string.c
+  func: ngx_decode_base64_internal
+  key_index: nginx/src/core/ngx_string.c:1304:1::ngx_int_t ngx_decode_base64_internal(ngx_str_t
+    *, ngx_str_t *, const int *)
+  line: '1330'
+  unique_to_crash: false
+  violations:
+  - is: max(len)==128
+    was: max(len)==75

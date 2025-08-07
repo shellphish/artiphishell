@@ -1,0 +1,2 @@
+request: "T /Last-Modified HTTP/1.0\n\n"
+reply: "HTTP/1.0 200\nContent-Length:002\nCon00`0CO39137750\n\n"

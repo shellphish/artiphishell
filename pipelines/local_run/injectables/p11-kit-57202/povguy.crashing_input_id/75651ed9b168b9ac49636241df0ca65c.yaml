@@ -1,0 +1,7 @@
+cp_harness_binary_path: out/rpc_fuzzer
+cp_harness_id: id_1
+cp_harness_name: rpc_fuzzer
+cp_harness_source_path: src/p11-kit/fuzz/fuzz.h
+fuzzer: aflplusplus
+harness_info_id: a7e2de27a55f4a4bd8c979419da18640
+target_id: 1

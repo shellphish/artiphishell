@@ -1,0 +1,27 @@
+diff --git a/pkg/mgrconfig/config.go b/pkg/mgrconfig/config.go
+index 19ba352f7..959cb8459 100644
+--- a/pkg/mgrconfig/config.go
++++ b/pkg/mgrconfig/config.go
+@@ -207,6 +207,8 @@ type Config struct {
+ 	// Experimental options.
+ 	Experimental Experimental
+ 
++	BenignSyzProgsDir string `json:"benign_syz_progs_dir,omitempty"`
++
+ 	// Implementation details beyond this point. Filled after parsing.
+ 	Derived `json:"-"`
+ }
+diff --git a/syz-manager/manager.go b/syz-manager/manager.go
+index 1ce59f82e..41658fd48 100644
+--- a/syz-manager/manager.go
++++ b/syz-manager/manager.go
+@@ -1216,6 +1216,9 @@ func (mgr *Manager) corpusInputHandler(updates <-chan corpus.NewItemEvent) {
+ 			log.Errorf("failed to save corpus database: %v", err)
+ 		}
+ 		mgr.corpusDBMu.Unlock()
++
++		filename := filepath.Join(mgr.cfg.BenignSyzProgsDir, update.Sig)
++		os.WriteFile(filename, update.ProgData, 0644)
+ 	}
+ }
+ 

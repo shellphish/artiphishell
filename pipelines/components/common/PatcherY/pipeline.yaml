@@ -1,0 +1,505 @@
+repo_classes:
+  targets_with_sources: 
+    cls: FilesystemRepository
+    compress_backup: True
+    compress_backend: True
+
+  target_functions_jsons_dirs: FilesystemRepository
+  target_functions_by_commit_jsons_dirs: FilesystemRepository
+  function_indices: BlobRepository
+  commit_indices: BlobRepository
+
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+  crashing_commits: MetadataRepository
+
+  poi_reports: MetadataRepository
+  invariant_reports: MetadataRepository
+  vds_records: MetadataRepository
+  gp_records: MetadataRepository
+
+  
+  # need one more input harness_id
+  local_variable_reports: MetadataRepository
+
+
+
+  # the final target with the patch applied
+  patch_diffs: BlobRepository
+  # any available metadata about the patch: reasoning, verification results, comments, previous attempts? etc.
+  patch_metadatas: MetadataRepository
+
+
+tasks:
+  patchery:
+    priority: 1000000
+    job_quota:
+      cpu: 16
+      mem: "32Gi"
+    # first, the component interface
+    links:     
+      vds_record:
+        repo: vds_records
+        kind: InputMetadata
+      vds_record_id:
+        repo: vds_records
+        kind: InputId
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: vds_record.crashing_commit_id
+      poi_report_meta:
+        repo: poi_reports
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+      poi_report_id:
+        repo: poi_reports
+        kind: InputId
+        key: crashing_commit.crash_report_id
+      poi_report:
+        repo: poi_reports
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      # invariance_report:
+      #   repo: invariant_reports
+      #   kind: InputFilepath
+      #   key:  crashing_commit.crash_report_id 
+      crashing_input_id:
+        repo: pov_report_representative_crashing_inputs 
+        kind: InputId
+        key: crashing_commit.crash_report_id
+      crashing_input_path:
+        repo: pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      povguy_pov_report_path:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      target_with_source:
+        repo: targets_with_sources 
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_functions_jsons_dir:
+        repo: target_functions_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_functions_by_commits_jsons_dir:
+        repo: target_functions_by_commit_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_commit_index:
+        repo: commit_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      function_index:
+        repo: function_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      out_patch:
+        repo: patch_diffs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: patch_metadatas
+        auto_meta: meta
+        auto_values:
+          pdt_vds_id: '{{ vds_record_id }}'
+          pdt_crashing_commit_id: '{{ vds_record.crashing_commit_id }}'
+          pdt_report_id: '{{ crashing_commit.crash_report_id }}'
+          pdt_target_id: '{{ poi_report_meta.target_id }}'
+          pdt_harness_info_id: '{{ poi_report_meta.harness_info_id }}'
+          cpv_uuid: '{{ vds_record.response.cpv_uuid }}'
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patchery
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+          
+          export SRC={{ target_with_source | shquote }}
+          
+          export CRASHING_INPUT={{ crashing_input_path | shquote }}
+          export SANITIZER_ID={{ vds_record.submission.pou.sanitizer }}
+          export SANITIZER_STRING=$(yq -r ".sanitizers.${SANITIZER_ID}" {{ target_with_source | shquote }}/project.yaml)
+
+          mkdir -p /shared/patchery/
+          TEMP_DIR=$(mktemp -d -p /shared/patchery/)
+
+          rsync -ra "${SRC}/" ${TEMP_DIR}/
+          cd "${TEMP_DIR}"
+
+
+          echo {{crashing_commit.crashing_commit | shquote}}
+          patchery --generate-aixcc-patch \
+            --target-root "${TEMP_DIR}" \
+            --report-yaml {{poi_report | shquote}} \
+            --function-json-dir {{target_functions_jsons_dir | shquote}} \
+            --functions-by-commit-jsons-dir {{target_functions_by_commits_jsons_dir | shquote}} \
+            --function-indices {{function_index | shquote}} \
+            --indices-by-commit {{target_commit_index | shquote }} \
+            --alerting-inputs "${CRASHING_INPUT}" \
+            --vds-record-id {{ vds_record_id | shquote}} \
+            --patch-output-dir {{ out_patch | shquote }} \
+            --patch-meta-output-dir {{out_patch.cokeyed_dirs.meta | shquote}} \
+            --sanitizer-string "${SANITIZER_STRING}" \
+            --crashing-commit {{crashing_commit.crashing_commit | shquote}} \
+            --raw-report {{povguy_pov_report_path | shquote}} \
+            --max-attempts 10 \
+            --max-pois 8
+          sleep 10
+
+
+  patchery_debuginfo:
+    # first, the component interface
+    priority: 1000000
+    links:     
+      vds_record:
+        repo: vds_records
+        kind: InputMetadata
+      vds_record_id:
+        repo: vds_records
+        kind: InputId
+      local_variable_report:
+        repo: local_variable_reports
+        kind: InputFilepath
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: vds_record.crashing_commit_id
+      poi_report_meta:
+        repo: poi_reports
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+      poi_report_id:
+        repo: poi_reports
+        kind: InputId
+        key: crashing_commit.crash_report_id
+      poi_report:
+        repo: poi_reports
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      crashing_input_id:
+        repo: pov_report_representative_crashing_inputs 
+        kind: InputId
+        key: crashing_commit.crash_report_id
+      crashing_input_path:
+        repo: pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      povguy_pov_report_path:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      target_with_source:
+        repo: targets_with_sources 
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_functions_jsons_dir:
+        repo: target_functions_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_functions_by_commits_jsons_dir:
+        repo: target_functions_by_commit_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_commit_index:
+        repo: commit_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      function_index:
+        repo: function_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      out_patch:
+        repo: patch_diffs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: patch_metadatas
+        auto_meta: meta
+        auto_values:
+          pdt_vds_id: '{{ vds_record_id }}'
+          pdt_crashing_commit_id: '{{ vds_record.crashing_commit_id }}'
+          pdt_report_id: '{{ crashing_commit.crash_report_id }}'
+          pdt_target_id: '{{ poi_report_meta.target_id }}'
+          pdt_harness_info_id: '{{ poi_report_meta.harness_info_id }}'
+          cpv_uuid: '{{ vds_record.response.cpv_uuid }}'
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patchery
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+          
+          export SRC={{ target_with_source | shquote }}
+          
+          export CRASHING_INPUT={{ crashing_input_path | shquote }}
+          export SANITIZER_ID={{ vds_record.submission.pou.sanitizer }}
+          export SANITIZER_STRING=$(yq -r ".sanitizers.${SANITIZER_ID}" {{ target_with_source | shquote }}/project.yaml)
+
+          mkdir -p /shared/patchery/
+          TEMP_DIR=$(mktemp -d -p /shared/patchery/)
+
+          rsync -ra "${SRC}/" ${TEMP_DIR}/
+          cd "${TEMP_DIR}"
+
+          echo {{crashing_commit.crashing_commit | shquote}}
+          patchery --generate-aixcc-patch \
+            --target-root "${TEMP_DIR}" \
+            --report-yaml {{poi_report | shquote}} \
+            --function-json-dir {{target_functions_jsons_dir | shquote}} \
+            --functions-by-commit-jsons-dir {{target_functions_by_commits_jsons_dir | shquote}} \
+            --function-indices {{function_index | shquote}} \
+            --indices-by-commit {{target_commit_index | shquote }} \
+            --alerting-inputs "${CRASHING_INPUT}" \
+            --vds-record-id {{ vds_record_id | shquote}} \
+            --patch-output-dir {{ out_patch | shquote }} \
+            --patch-meta-output-dir {{out_patch.cokeyed_dirs.meta | shquote}} \
+            --crashing-commit {{crashing_commit.crashing_commit | shquote}} \
+            --sanitizer-string "${SANITIZER_STRING}" \
+            --raw-report {{povguy_pov_report_path | shquote}} \
+            --debug-report {{local_variable_report | shquote}} \
+            --max-attempts 5 \
+            --max-pois 4
+          sleep 10
+
+  patchery_invariants:
+    # first, the component interface
+    priority: 1000000
+    links:     
+      vds_record:
+        repo: vds_records
+        kind: InputMetadata
+      vds_record_id:
+        repo: vds_records
+        kind: InputId
+      invariance_report:
+        repo: invariant_reports
+        kind: InputFilepath
+
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: vds_record.crashing_commit_id
+      poi_report_meta:
+        repo: poi_reports
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+      poi_report_id:
+        repo: poi_reports
+        kind: InputId
+        key: crashing_commit.crash_report_id
+      poi_report:
+        repo: poi_reports
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      crashing_input_id:
+        repo: pov_report_representative_crashing_inputs 
+        kind: InputId
+        key: crashing_commit.crash_report_id
+      crashing_input_path:
+        repo: pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      povguy_pov_report_path:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      target_with_source:
+        repo: targets_with_sources 
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_functions_jsons_dir:
+        repo: target_functions_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_functions_by_commits_jsons_dir:
+        repo: target_functions_by_commit_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      target_commit_index:
+        repo: commit_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      function_index:
+        repo: function_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      out_patch:
+        repo: patch_diffs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: patch_metadatas
+        auto_meta: meta
+        auto_values:
+          pdt_vds_id: '{{ vds_record_id }}'
+          pdt_crashing_commit_id: '{{ vds_record.crashing_commit_id }}'
+          pdt_report_id: '{{ crashing_commit.crash_report_id }}'
+          pdt_target_id: '{{ poi_report_meta.target_id }}'
+          pdt_harness_info_id: '{{ poi_report_meta.harness_info_id }}'
+          cpv_uuid: '{{ vds_record.response.cpv_uuid }}'
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patchery
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+          
+          export SRC={{ target_with_source | shquote }}
+          
+          export CRASHING_INPUT={{ crashing_input_path | shquote }}
+          export SANITIZER_ID={{ vds_record.submission.pou.sanitizer }}
+          export SANITIZER_STRING=$(yq -r ".sanitizers.${SANITIZER_ID}" {{ target_with_source | shquote }}/project.yaml)
+
+          mkdir -p /shared/patchery/
+          TEMP_DIR=$(mktemp -d -p /shared/patchery/)
+
+          rsync -ra "${SRC}/" ${TEMP_DIR}/
+          cd "${TEMP_DIR}"
+
+          echo {{crashing_commit.crashing_commit | shquote}}
+          patchery --generate-aixcc-patch \
+            --target-root "${TEMP_DIR}" \
+            --report-yaml {{poi_report | shquote}} \
+            --function-json-dir {{target_functions_jsons_dir | shquote}} \
+            --functions-by-commit-jsons-dir {{target_functions_by_commits_jsons_dir | shquote}} \
+            --function-indices {{function_index | shquote}} \
+            --indices-by-commit {{target_commit_index | shquote }} \
+            --alerting-inputs "${CRASHING_INPUT}" \
+            --vds-record-id {{ vds_record_id | shquote}} \
+            --patch-output-dir {{ out_patch | shquote }} \
+            --patch-meta-output-dir {{out_patch.cokeyed_dirs.meta | shquote}} \
+            --crashing-commit {{crashing_commit.crashing_commit | shquote}} \
+            --sanitizer-string "${SANITIZER_STRING}" \
+            --raw-report {{povguy_pov_report_path | shquote}} \
+            --invariance-report {{invariance_report | shquote}} \
+            --max-attempts 10 \
+            --max-pois 4
+          sleep 10
+
+
+  # patchery_mock:
+  #   # first, the component interface
+  #   links:     
+  #     vds_record:
+  #       repo: vds_records
+  #       kind: InputMetadata
+  #     vds_record_id:
+  #       repo: vds_records
+  #       kind: InputId
+  #     crashing_commit:
+  #       repo: crashing_commits
+  #       kind: InputMetadata
+  #       key: vds_record.crashing_commit_id
+  #     poi_report_meta:
+  #       repo: poi_reports
+  #       kind: InputMetadata
+  #       key: crashing_commit.crash_report_id
+  #     poi_report_id:
+  #       repo: poi_reports
+  #       kind: InputId
+  #       key: crashing_commit.crash_report_id
+  #     poi_report:
+  #       repo: poi_reports
+  #       kind: InputFilepath
+  #       key: crashing_commit.crash_report_id
+  #     crashing_input_id:
+  #       repo: pov_report_representative_crashing_inputs 
+  #       kind: InputId
+  #       key: crashing_commit.crash_report_id
+  #     crashing_input_path:
+  #       repo: pov_report_representative_crashing_inputs
+  #       kind: InputFilepath
+  #       key: crashing_commit.crash_report_id
+  #     povguy_crash_run_pov_result_metadata_path:
+  #       repo: pov_report_representative_crashing_input_metadatas
+  #       kind: InputFilepath
+  #       key: crashing_commit.crash_report_id
+  #     target_with_source:
+  #       repo: targets_with_sources 
+  #       kind: InputFilepath
+  #       key: poi_report_meta.target_id
+  #     target_functions_jsons_dir:
+  #       repo: target_functions_jsons_dirs
+  #       kind: InputFilepath
+  #       key: poi_report_meta.target_id
+  #     target_functions_by_commits_jsons_dir:
+  #       repo: target_functions_by_commit_jsons_dirs
+  #       kind: InputFilepath
+  #       key: poi_report_meta.target_id
+  #     target_commit_index:
+  #       repo: commit_indices
+  #       kind: InputFilepath
+  #       key: poi_report_meta.target_id
+  #     function_index:
+  #       repo: function_indices
+  #       kind: InputFilepath
+  #       key: poi_report_meta.target_id
+  #     out_patch:
+  #       repo: patch_diffs
+  #       kind: StreamingOutputFilepath
+  #       cokeyed:
+  #         meta: patch_metadatas
+  #       auto_meta: meta
+  #       auto_values:
+  #         pdt_vds_id: '{{ vds_record_id }}'
+  #         pdt_crashing_commit_id: '{{ vds_record.crashing_commit_id }}'
+  #         pdt_report_id: '{{ crashing_commit.crash_report_id }}'
+  #         pdt_target_id: '{{ poi_report_meta.target_id }}'
+  #         cpv_uuid: '{{ vds_record.response.cpv_uuid }}'
+
+  #   executable:
+  #     cls: Container
+  #     args:
+  #       image: aixcc-patchery
+
+  #       privileged: true
+  #       host_mounts:
+  #         "/var/run/docker.sock": "/var/run/docker.sock"
+  #         "/shared": "/shared"
+  #       template: |
+  #         set -x
+  #         set -e
+
+  #         mkdir -p /tmp/patch_dir
+  #         PATCH_DIR=$(mktemp -d -p /tmp/patch_dir/)
+  #         PATCH_1="/tmp/1.patch"
+  #         PATCH_2="/tmp/2.patch"
+  #         echo "ZGlmZiAtLWdpdCBhL21vY2tfdnAuYyBiL21vY2tfdnAuYwppbmRleCA5ZGM2YmYwLi43MjY3OGJlIDEwMDY0NAotLS0gYS9tb2NrX3ZwLmMKKysrIGIvbW9ja192cC5jCkBAIC0xMCw3ICsxMCw4IEBAIGZ1bmNfYSgpewogICAgICAgICBwcmludGYoImlucHV0IGl0ZW06Iik7CiAgICAgICAgIGJ1ZmYgPSAmaXRlbXNbaV1bMF07CiAgICAgICAgIGkrKzsKLSAgICAgICAgZmdldHMoYnVmZiwgNDAsIHN0ZGluKTsKKyAgICAgICAgZmdldHMoYnVmZiwgOSwgc3RkaW4pOworICAgICAgICBpZiAoaT09Myl7YnVmZlswXT0gMDt9CiAgICAgICAgIGJ1ZmZbc3RyY3NwbihidWZmLCAiXG4iKV0gPSAwOwogICAgIH13aGlsZShzdHJsZW4oYnVmZikhPTApOwogICAgIGktLTsK" | base64 -d > $PATCH_1
+  #         echo "ZGlmZiAtLWdpdCBhL21vY2tfdnAuYyBiL21vY2tfdnAuYwppbmRleCA5ZGM2YmYwLi5jYTgwZWQxIDEwMDY0NAotLS0gYS9tb2NrX3ZwLmMKKysrIGIvbW9ja192cC5jCkBAIC0yMiw4ICsyMiwxMCBAQCBmdW5jX2IoKXsKICAgICBpbnQgajsKICAgICBwcmludGYoImRpc3BsYXkgaXRlbSAjOiIpOwogICAgIHNjYW5mKCIlZCIsICZqKTsKLSAgICBidWZmID0gJml0ZW1zW2pdWzBdOwotICAgIHByaW50ZigiaXRlbSAlZDogJXNcbiIsIGosIGJ1ZmYpOworICAgIGlmIChqIDwgMCB8fCBqPjIpezt9ZWxzZXsKKyAgICAgICAgYnVmZiA9ICZpdGVtc1tqXVswXTsKKyAgICAgICAgcHJpbnRmKCJpdGVtICVkOiAlc1xuIiwgaiwgYnVmZik7CisgICAgfQogfQogCiAjaWZuZGVmIF9fX1RFU1RfX18K" | base64 -d > $PATCH_2
+  #         if [ "{{ crashing_commit.crashing_commit }}" = "11dafa9a5babc127357d710ee090eb4c0c05154f" ]; then
+  #           mv $PATCH_1 /tmp/patch
+  #         else
+  #           mv $PATCH_2 /tmp/patch
+  #         fi
+  #         yq e -n '.cp_source = "samples", .patch = load_str("/tmp/patch")' > $PATCH_DIR/patch.yaml
+
+  #         for file in $(find $PATCH_DIR -type f); do
+  #           touch {{out_patch.lock_dir}}/$(basename $file)
+  #           cp $file {{ out_patch | shquote }}
+  #           rm {{out_patch.lock_dir}}/$(basename $file)
+  #         done
+  #         sleep 5

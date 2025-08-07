@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/3.0 830.\nContent-Type:;CH;C:;PROPPATCHC;E;E;CC;E;C:C;E;CC;CC;EC;E;E;;CC;EC;E;E;CCype;CH;C:;CHC;E;CC;E;E;CC;E;C:C;;E;C:C;E;C;C;CH;C:;CHE;C;E;CG;E;E;H;C:;C;E;CC;E;CC;E;C:C;E;CC;CC;E;C;C;CH;C:;CHE;CE;CC;;C:;C;E;CC;E;CC;E;C:C;E;CC;CC;E;C;C;CH;C:;CHE;CE;CC;E;E;H;C:;CHE9C;E;CC;E;CCC;EE;CC;E;C:\n\n"

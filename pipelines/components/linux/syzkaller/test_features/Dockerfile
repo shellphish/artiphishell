@@ -1,0 +1,60 @@
+# Start from a base image
+ARG IMAGE_PREFIX=
+FROM ${IMAGE_PREFIX}aixcc-component-base
+
+# Set working directory
+WORKDIR /root
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    git \
+    make \
+    gcc \
+    flex \
+    bison \
+    libncurses-dev \
+    libelf-dev \
+    libssl-dev \
+    build-essential \
+    g++ \
+    qemu-system-x86 \
+    zip \
+    unzip \
+    debootstrap \
+    bc \
+    rsync
+RUN apt-get update && apt-get install -y curl
+
+# Download and extract Go
+RUN wget https://dl.google.com/go/go1.20.1.linux-amd64.tar.gz \
+    && tar -xf go1.20.1.linux-amd64.tar.gz \
+    && rm go1.20.1.linux-amd64.tar.gz
+
+# Set environment variables
+ENV GOROOT /root/go
+ENV PATH $GOROOT/bin:$PATH
+
+# Clone and build syzkaller
+RUN git clone https://github.com/google/syzkaller \
+    && cd syzkaller \
+    && mkdir workdir \
+    && make
+
+# create the image while creating the docker container
+COPY image/bullseye.img /kernel/image/
+COPY image/bullseye.id_rsa /kernel/image/
+
+# copy kernel files
+#COPY kernel/linux-5.14 /kernel/linux-5.14
+
+COPY syzconfig.cfg /shellphish/syzkaller/
+COPY kernel.config /shellphish/syzkaller/
+COPY run_repro.sh /shellphish/syzkaller/
+
+RUN git clone git@github.com:shellphish-support-syndicate/Kernel-CVE-Reproducer.git
+RUN git clone git@github.com:shellphish-support-syndicate/targets.git
+
+# Set entrypoint to check script
+USER root
+#ENTRYPOINT ["/bin/bash"]

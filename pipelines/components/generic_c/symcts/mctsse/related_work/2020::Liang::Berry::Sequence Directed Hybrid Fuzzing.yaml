@@ -1,0 +1,76 @@
+
+TITLE: "Sequence Directed Hybrid Fuzzing"
+PUBLISHED_AT: "IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)"
+PUBLICATION_TYPE: Conference
+YEAR: 2020
+AUTHORS:
+- FIRSTNAME: Hongliang
+  LASTNAME: Liang
+  EMAIL: "hliang@bupt.edu.cn"
+  AFFILIATION:
+    COUNTRY: China
+    CITY: Beijing
+    INSTITUTION: Beijing University of Posts and Telecommunications
+- FIRSTNAME: Lin
+  LASTNAME: Jiang
+  EMAIL: "jianglin@bupt.edu.cn"
+  AFFILIATION:
+    COUNTRY: China
+    CITY: Beijing
+    INSTITUTION: Beijing University of Posts and Telecommunications
+- FIRSTNAME: Lu
+  LASTNAME: Ai
+  EMAIL: "im.ailu@outlook.com"
+  AFFILIATION:
+    COUNTRY: China
+    CITY: Beijing
+    INSTITUTION: Beijing University of Posts and Telecommunications
+- FIRSTNAME: Jinyi
+  LASTNAME: Wei
+  EMAIL: "lrwei@bupt.edu.cn"
+  AFFILIATION:
+    COUNTRY: China
+    CITY: Beijing
+    INSTITUTION: Beijing University of Posts and Telecommunications
+
+TOOL_NAME: Berry
+TOOL_ARTIFACTS: []
+
+BENCHMARKS:
+  - Name: LAVA-M
+
+COMPARES_AGAINST:
+  - tool: AFLGo
+  - tool: BugRedux
+  - tool: Lolly
+  - tool: QSYM
+
+PDF: files/Sequence_Directed_Hybrid_Fuzzing.pdf
+
+LINKS:
+  - URL: "https://wcventure.github.io/FuzzingPaper/Paper/SANER20_Sequence.pdf"
+    TYPE: PDF
+
+  - URL: "https://ieeexplore.ieee.org/document/9054807"
+    TYPE: IEEE-XPLORE
+
+BIBTEX:
+  - |
+    @INPROCEEDINGS{9054807,
+      author={Liang, Hongliang and Jiang, Lin and Ai, Lu and Wei, Jinyi},
+      booktitle={2020 IEEE 27th International Conference on Software Analysis, Evolution and Reengineering (SANER)},
+      title={Sequence Directed Hybrid Fuzzing},
+      year={2020},
+      volume={},
+      number={},
+      pages={127-137},
+      keywords={Fuzzing;Computer bugs;Switches;Tools;Instruments;Schedules;sequence guidance;concolic execution;crash reproduction;true positive verification;vulnerability detection},
+      doi={10.1109/SANER48275.2020.9054807}
+    }
+
+
+ABSTRACT: |
+  Existing directed grey-box fuzzers are effective compared with coverage-based fuzzers. However, they fail to achieve a balance between effectiveness and efficiency, and it is difficult to cover complex paths due to random mutation. To mitigate the issue, we propose a novel approach, sequence directed hybrid fuzzing (SDHF), which leverages a sequence-directed strategy and concolic execution technique to enhance the effectiveness of fuzzing. Given a set of target statement sequences of a program, SDHF aims to generate inputs that can reach the statements in each sequence in order and trigger potential bugs in the program. We implement the proposed approach in a tool called Berry and evaluate its capability on crash reproduction, true positive verification, and vulnerability detection. Experimental results demonstrate that Berry outperforms four state-of-the-art fuzzers, including directed fuzzers BugRedux, AFLGo and Lolly, and undirected hybrid fuzzer QSYM. Moreover, Berry found 7 new vulnerabilities in real-world programs such as UPX and GNU Libextractor, and 3 new CVEs were assigned.
+
+NOTES:
+  SYMCTS: []

@@ -1,0 +1,9 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  target_metadatas: MetadataRepository
+imports:
+  antlr4_guy:
+    path: ../pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas

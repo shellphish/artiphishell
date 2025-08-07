@@ -1,0 +1,91 @@
+repo_classes:
+
+  crashing_commits: MetadataRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  patch_diffs: BlobRepository
+  patch_metadatas: MetadataRepository
+  targets_with_sources: FilesystemRepository
+  target_start_times: MetadataRepository
+  patch_rankings: MetadataRepository
+
+  vds_records: MetadataRepository
+  gp_records: MetadataRepository
+
+tasks:
+  submitter:
+    require_success: true
+
+    annotations:
+      authors:
+        - clasm
+      maturity: fullyIntegrated
+      require_success: true
+      # long_running: true
+      # timeout:
+        # minutes: 240
+      doc: |
+        This task will create a vulnerability description
+    links:
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      target_id:
+        repo: targets_with_sources
+        kind: InputId
+      target_start_time:
+        repo: target_start_times
+        kind: InputMetadata
+      crashing_commit:
+        repo: crashing_commits
+        kind: StreamingInputFilepath
+      crashing_input_path:
+        repo: pov_report_representative_crashing_inputs
+        kind: StreamingInputFilepath
+      patch_diff:
+        repo: patch_diffs
+        kind: StreamingInputFilepath
+      patch_diff_meta:
+        repo: patch_metadatas
+        kind: StreamingInputFilepath
+      patch_ranking:
+        repo: patch_rankings
+        kind: StreamingInputFilepath
+
+      vds_record:
+        repo: vds_records
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+      gp_record:
+        repo: gp_records
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+    executable:
+      cls: Container
+      args:
+        image: aixcc-submitter
+        host_mounts:
+          "/crs_scratch/": "/crs_scratch/"
+
+        template: |
+          set -e
+          set -x
+          env
+          SAVED_RESULTS=/crs_scratch/submission/
+          while true; do
+            mkdir -p $SAVED_RESULTS
+            python /app/submit.py --saved-results $SAVED_RESULTS \
+                                  --project {{ target_with_sources | shquote }} \
+                                  --crashing-commit {{ crashing_commit | shquote }} \
+                                  --crashing-seed {{ crashing_input_path | shquote }} \
+                                  --patch {{ patch_diff | shquote }} \
+                                  --patch-meta {{ patch_diff_meta | shquote }} \
+                                  --patch-ranking {{ patch_ranking | shquote }} \
+                                  --vds-output {{ vds_record | shquote }} \
+                                  --vds-output-lock {{ vds_record.lock_dir | shquote }} \
+                                  --gp-output {{ gp_record | shquote }} \
+                                  --gp-output-lock {{ gp_record.lock_dir | shquote }} \
+                                  --start-time {{ target_start_time.time | shquote }} || true
+
+            sleep 5
+          done
+          exit 1

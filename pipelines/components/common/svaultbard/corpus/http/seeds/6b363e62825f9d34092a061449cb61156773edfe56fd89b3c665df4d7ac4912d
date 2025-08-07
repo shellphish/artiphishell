@@ -1,0 +1,2 @@
+request: "G / HTTP/1.5\n;:\nQ:a  \nq:a \nQ:a \n;:Q \n~:Q:a \n;:Q \nq:a \n;:Q \n~:Q 1Q:a \n~:\n;:Q \n~:Q \n~:Q  \nq:a \nQ:a \n~:Q  \nq:a \n;:Q \n~:Q \nQ:a \n~:\n;:Q \n~:Q \n~:Q  \nq:a \nQ:a \n;:Q \n~:Q5 \n;:Q a \n~:Q \nq:a \nQ:a \n;:Q \n~:Q  per~:Q \n BIND"
+reply: ""

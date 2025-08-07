@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.9 881.1e\nSet-Cookie:\nSet-Cookie\nSet-Cookie\nSet-Cookie\ne"

@@ -1,0 +1,96 @@
++ export REPLICA_ID=0
++ export TASK_NAME=poiguy_asan
++ export JOB_ID=c27047267322dcff09ff44dfc06e5538
++ export MEM_QUOTA=268435456
++ export CPU_QUOTA=100000
++ export NPROC_VAL=1
++ export PDT_AGENT_SECRET=13370017268961452007602334939904450627588
++ export PDT_AGENT_URL=http://172.17.0.1:28087
++ export AIXCC_LITELLM_HOSTNAME=http://beatty.unfiltered.seclab.cs.ucsb.edu:4000
++ export LITELLM_KEY=sk-artiphishell
++ export SHUTDOWN_SCRIPT=/tmp/pydatatask-runner-shutdown_script-yxkpmoww
++ export SHUTTING_DOWN=/tmp/pydatatask-runner-shutting_down-rodktpop
++ echo export IN_SHUTDOWN_SCRIPT=1
++ touch /tmp/pydatatask-runner-shutdown_script-yxkpmoww
++ trap sigterm_func TERM
++ URL=http://172.17.0.1:28087/data/poiguy_asan/asan_report_path/c27047267322dcff09ff44dfc06e5538
++ mktemp
++ FILENAME=/tmp/tmp.iINKLqENVx
++ mktemp
++ ERR_FILENAME=/tmp/tmp.pVVVkyYW8k
++ [ -d /tmp/tmp.iINKLqENVx ]
++ wget -v -O- http://172.17.0.1:28087/data/poiguy_asan/asan_report_path/c27047267322dcff09ff44dfc06e5538 --header Cookie: secret=13370017268961452007602334939904450627588
++ rm /tmp/tmp.pVVVkyYW8k
++ cat /tmp/tmp.iINKLqENVx
++ rm /tmp/tmp.iINKLqENVx
++ URL=http://172.17.0.1:28087/data/poiguy_asan/full_functions_index_csv_path/1
++ mktemp
++ FILENAME=/tmp/tmp.niKTqJvquw
++ mktemp
++ ERR_FILENAME=/tmp/tmp.NxJwOWYusV
++ [ -d /tmp/tmp.niKTqJvquw ]
++ wget -v -O- http://172.17.0.1:28087/data/poiguy_asan/full_functions_index_csv_path/1 --header Cookie: secret=13370017268961452007602334939904450627588
++ rm /tmp/tmp.NxJwOWYusV
++ cat /tmp/tmp.niKTqJvquw
++ rm /tmp/tmp.niKTqJvquw
++ set +e
++ set -e
++ set -u
++ set -x
++ mkdir -p /tmp/pois
++ python /app/poiguyrun.py --target 1 --scanner asan --scan_report_dir /tmp/pydatatask-runner-input-asan_report_path-c27047267322dcff09ff44dfc06e5538-gyvhovev --index_csv_path /tmp/pydatatask-runner-input-full_functions_index_csv_path-1-kwgvqfhl --poi_normalized_dir /tmp/pois/
+2024-07-12 07:38:49,109 - INFO - Starting dump_asn_poi function
+2024-07-12 07:38:49,130 - INFO - Loaded ASAN crash report
+2024-07-12 07:38:49,130 - INFO - Reading index CSV file from /tmp/pydatatask-runner-input-full_functions_index_csv_path-1-kwgvqfhl
+2024-07-12 07:38:49,133 - INFO - Loaded clang index CSV
+2024-07-12 07:38:49,135 - INFO - Processed POI: {'depth': 0, 'func_name': '__sanitizer::internal_strlen', 'line': 176, 'signature': '__sanitizer::internal_strlen(char const*)', 'src_file': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_libc.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_libc.cpp:176', 'type': 'source'}
+2024-07-12 07:38:49,137 - INFO - Processed POI: {'depth': 1, 'func_name': 'printf_common', 'line': 561, 'signature': 'printf_common(void*, char const*, __va_list_tag*)', 'src_file': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors_format.inc', 'src_loc': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors_format.inc:561', 'type': 'source'}
+2024-07-12 07:38:49,138 - INFO - Processed POI: {'depth': 2, 'func_name': 'vprintf', 'line': 1641, 'signature': 'vprintf', 'src_file': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc', 'src_loc': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:1641', 'type': 'source'}
+2024-07-12 07:38:49,138 - INFO - Processed POI: {'depth': 3, 'func_name': 'printf', 'line': 1699, 'signature': 'printf', 'src_file': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc', 'src_loc': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:1699', 'type': 'source'}
+2024-07-12 07:38:49,139 - INFO - Processed POI: {'depth': 4, 'func_name': 'func_b', 'line': 27, 'signature': 'func_b', 'src_file': 'samples/mock_vp.c', 'src_loc': 'samples/mock_vp.c:27', 'type': 'source'}
+2024-07-12 07:38:49,140 - INFO - Processed POI: {'depth': 6, 'func_name': 'fuzzer::Fuzzer::ExecuteCallback', 'line': 614, 'signature': 'fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)', 'src_file': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614', 'type': 'source'}
+2024-07-12 07:38:49,141 - INFO - Processed POI: {'depth': 7, 'func_name': 'fuzzer::RunOneTest', 'line': 327, 'signature': 'fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)', 'src_file': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327', 'type': 'source'}
+2024-07-12 07:38:49,142 - INFO - Processed POI: {'depth': 8, 'func_name': 'fuzzer::FuzzerDriver', 'line': 862, 'signature': 'fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long))', 'src_file': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862', 'type': 'source'}
+2024-07-12 07:38:49,143 - INFO - Processed POI: {'depth': 9, 'func_name': 'main', 'line': 20, 'signature': 'main', 'src_file': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20', 'type': 'source'}
+2024-07-12 07:38:49,144 - INFO - Processed POI: {'binary': '../../lib/x86_64-linux-gnu/libc.so.6', 'build_id': '0702430aef5fa3dda43986563e9ffcc47efbd75e', 'depth': 10, 'func_name': '__libc_start_main', 'offset': 147586, 'signature': '__libc_start_main', 'type': 'binary'}
+2024-07-12 07:38:49,145 - INFO - Processed call trace: {'depth': 0, 'func_name': '__sanitizer::internal_strlen', 'line': 176, 'signature': '__sanitizer::internal_strlen(char const*)', 'src_file': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_libc.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_libc.cpp:176', 'type': 'source'}
+2024-07-12 07:38:49,146 - INFO - Processed call trace: {'depth': 1, 'func_name': 'printf_common', 'line': 561, 'signature': 'printf_common(void*, char const*, __va_list_tag*)', 'src_file': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors_format.inc', 'src_loc': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors_format.inc:561', 'type': 'source'}
+2024-07-12 07:38:49,147 - INFO - Processed call trace: {'depth': 2, 'func_name': 'vprintf', 'line': 1641, 'signature': 'vprintf', 'src_file': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc', 'src_loc': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:1641', 'type': 'source'}
+2024-07-12 07:38:49,148 - INFO - Processed call trace: {'depth': 3, 'func_name': 'printf', 'line': 1699, 'signature': 'printf', 'src_file': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc', 'src_loc': 'llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:1699', 'type': 'source'}
+2024-07-12 07:38:49,149 - INFO - Processed call trace: {'depth': 4, 'func_name': 'func_b', 'line': 27, 'signature': 'func_b', 'src_file': 'samples/mock_vp.c', 'src_loc': 'samples/mock_vp.c:27', 'type': 'source'}
+2024-07-12 07:38:49,150 - INFO - Processed call trace: {'depth': 5, 'func_name': 'LLVMFuzzerTestOneInput', 'line': 55, 'signature': 'LLVMFuzzerTestOneInput', 'src_file': 'test/filein_harness.c', 'src_loc': 'test/filein_harness.c:55', 'type': 'source'}
+2024-07-12 07:38:49,151 - INFO - Processed call trace: {'depth': 6, 'func_name': 'fuzzer::Fuzzer::ExecuteCallback', 'line': 614, 'signature': 'fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)', 'src_file': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614', 'type': 'source'}
+2024-07-12 07:38:49,152 - INFO - Processed call trace: {'depth': 7, 'func_name': 'fuzzer::RunOneTest', 'line': 327, 'signature': 'fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)', 'src_file': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327', 'type': 'source'}
+2024-07-12 07:38:49,153 - INFO - Processed call trace: {'depth': 8, 'func_name': 'fuzzer::FuzzerDriver', 'line': 862, 'signature': 'fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long))', 'src_file': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862', 'type': 'source'}
+2024-07-12 07:38:49,154 - INFO - Processed call trace: {'depth': 9, 'func_name': 'main', 'line': 20, 'signature': 'main', 'src_file': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp', 'src_loc': 'llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20', 'type': 'source'}
+2024-07-12 07:38:49,155 - INFO - Processed call trace: {'binary': '../../lib/x86_64-linux-gnu/libc.so.6', 'build_id': '0702430aef5fa3dda43986563e9ffcc47efbd75e', 'depth': 10, 'func_name': '__libc_start_main', 'offset': 147586, 'signature': '__libc_start_main', 'type': 'binary'}
+2024-07-12 07:38:49,175 - INFO - Compiled JSON with schema
+2024-07-12 07:38:49,224 - INFO - POI report saved to /tmp/pois//poi-report-1-1720769929.1754146.yaml
+2024-07-12 07:38:49,224 - INFO - ASAN POIs dumped
++ mv /tmp/pois/poi-report-1-1720769929.1754146.yaml /tmp/pydatatask-runner-output-poi_report-c27047267322dcff09ff44dfc06e5538-jfjndgwj
++ RETCODE=0
++ ANY_UPLOADS_FAILED=0
++ UPLOAD_JOB=c27047267322dcff09ff44dfc06e5538
++ URL=http://172.17.0.1:28087/data/poiguy_asan/poi_report/c27047267322dcff09ff44dfc06e5538
++ FILENAME=/tmp/pydatatask-runner-output-poi_report-c27047267322dcff09ff44dfc06e5538-jfjndgwj
++ mktemp
++ ERR_FILENAME=/tmp/tmp.rU5bbXu1vT
++ ANY_UPLOADS_FAILED=0
++ [ -e /tmp/pydatatask-runner-output-poi_report-c27047267322dcff09ff44dfc06e5538-jfjndgwj ]
++ [ -f /tmp/pydatatask-runner-output-poi_report-c27047267322dcff09ff44dfc06e5538-jfjndgwj ]
++ seq 1 3
++ wget -v -O- http://172.17.0.1:28087/data/poiguy_asan/poi_report/c27047267322dcff09ff44dfc06e5538 --header Cookie: secret=13370017268961452007602334939904450627588 --post-file /tmp/pydatatask-runner-output-poi_report-c27047267322dcff09ff44dfc06e5538-jfjndgwj
++ CUR_UPLOAD_FAILED=0
++ [ 0 -eq 0 ]
++ break
++ [ 0 -ne 0 ]
++ rm /tmp/tmp.rU5bbXu1vT
++ shutdown_func
++ touch /tmp/pydatatask-runner-shutting_down-rodktpop
++ echo Shutting down now
++ set +e
+Shutting down now
++ . /tmp/pydatatask-runner-shutdown_script-yxkpmoww
++ export IN_SHUTDOWN_SCRIPT=1
++ [ 0 -ne 0 ]
++ exit 0

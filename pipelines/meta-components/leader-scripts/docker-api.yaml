@@ -1,0 +1,140 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: docker-api-0
+  labels:
+    shellphish-app: docker-api
+spec:
+  containers:
+  - image: ghcr.io/aixcc-sc/asc-crs-shellphish/aixcc-dind
+    name: docker-api
+    ports:
+    - containerPort: 2375
+      hostPort: 7523
+      protocol: TCP
+    - containerPort: 7677
+      hostPort: 7677
+      protocol: TCP
+    - containerPort: 873
+      hostPort: 873
+      protocol: TCP
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /shared
+      name: host-shared
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "256Mi"
+      limits:
+        cpu: xxx
+        memory: xxx
+  restartPolicy: Always
+  serviceAccountName: crs
+  volumes:
+  - name: host-shared
+    hostPath:
+      path: /shared
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              shellphish-app: docker-api
+          topologyKey: "kubernetes.io/hostname"
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: docker-api-1
+  labels:
+    shellphish-app: docker-api
+spec:
+  containers:
+  - image: ghcr.io/aixcc-sc/asc-crs-shellphish/aixcc-dind
+    name: docker-api
+    ports:
+    - containerPort: 2375
+      hostPort: 7523
+      protocol: TCP
+    - containerPort: 7677
+      hostPort: 7677
+      protocol: TCP
+    - containerPort: 873
+      hostPort: 873
+      protocol: TCP
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /shared
+      name: host-shared
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "256Mi"
+      limits:
+        cpu: xxx
+        memory: xxx
+  restartPolicy: Always
+  serviceAccountName: crs
+  volumes:
+  - name: host-shared
+    hostPath:
+      path: /shared
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              shellphish-app: docker-api
+          topologyKey: "kubernetes.io/hostname"
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: docker-api-2
+  labels:
+    shellphish-app: docker-api
+spec:
+  containers:
+  - image: ghcr.io/aixcc-sc/asc-crs-shellphish/aixcc-dind
+    name: docker-api
+    ports:
+    - containerPort: 2375
+      hostPort: 7523
+      protocol: TCP
+    - containerPort: 7677
+      hostPort: 7677
+      protocol: TCP
+    - containerPort: 873
+      hostPort: 873
+      protocol: TCP
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /shared
+      name: host-shared
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "256Mi"
+      limits:
+        cpu: xxx
+        memory: xxx
+  restartPolicy: Always
+  serviceAccountName: crs
+  volumes:
+  - name: host-shared
+    hostPath:
+      path: /shared
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              shellphish-app: docker-api
+          topologyKey: "kubernetes.io/hostname"

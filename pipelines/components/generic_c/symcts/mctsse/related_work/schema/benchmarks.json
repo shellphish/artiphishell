@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string",
+  "enum": [
+    "FuzzBench",
+    "LAVA-M",
+    "MAGMA",
+    "OSS-Fuzz",
+    "UniBench",
+    "UniFuzz",
+    "Fuzzer Test Suite (FTS)",
+    "CGC"
+  ]
+}

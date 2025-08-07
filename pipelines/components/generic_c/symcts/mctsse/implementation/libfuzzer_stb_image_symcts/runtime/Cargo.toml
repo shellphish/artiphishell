@@ -1,0 +1,29 @@
+[package]
+name = "example_runtime"
+version = "0.7.1"
+edition = "2021"
+authors = ["Julius Hohnerlein <julihoh@users.noreply.github.com>"]
+
+[lib]
+# the runtime needs to be a shared object -> cdylib
+crate-type   = ["cdylib", "staticlib"]
+# this is necessary for SymCC to find the runtime.
+name = "SymRuntime"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+debug = true
+# this is somewhat important to ensure the runtime does not unwind into the target program.
+panic = "abort"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+z3 = { git = "https://github.com/Lukas-Dresel/z3.rs", branch = "feat/z3_information_extraction" }
+libafl = { path = "../../../repos/LibAFL/libafl" }
+libafl_bolts = { path = "../../../repos/LibAFL/libafl_bolts" }
+concolic_trace_interpretation = { path = "../../concolic_trace_interpretation" }
+lazy_static = "1.4.0"
+symcc_runtime = { path = "../../../repos/LibAFL/libafl_concolic/symcc_runtime" }

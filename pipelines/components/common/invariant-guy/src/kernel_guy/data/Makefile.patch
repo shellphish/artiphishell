@@ -1,0 +1,6 @@
+
+# Which options should be changed:
+# OLD_OPTION -> NEW_OPTION
+
+KBUILD_CFLAGS += -O2 -> KBUILD_CFLAGS += -O1
+KBUILD_RUSTFLAGS += -Copt-level=2 -> KBUILD_RUSTFLAGS += -Copt-level=1

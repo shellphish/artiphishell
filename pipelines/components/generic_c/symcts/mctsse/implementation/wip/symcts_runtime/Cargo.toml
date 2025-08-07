@@ -1,0 +1,20 @@
+[package]
+name = "symcts_runtime"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+panic = "abort"
+[profile.dev]
+panic = "abort"
+
+[lib]
+crate-type   = ["cdylib"]
+name = "SyMCTSRuntime"
+
+[dependencies]
+symcc_runtime = "*"
+z3-sys = { version = "*", path = "../dependencies/z3.rs/z3-sys"}
+z3 = { version = "*", path = "../dependencies/z3.rs/z3"}

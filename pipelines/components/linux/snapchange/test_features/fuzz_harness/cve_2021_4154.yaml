@@ -1,0 +1,49 @@
+---
+# The cp_name property is a label to identify the Challenge Project (CP).
+cp_name: linux kernel
+
+# The language property denotes the *primary* language of the CP.
+# CP Vulnerabilities (CPVs) that are eligible for points are found in the given
+# language. Valid values for the AIxCC ASC are: 'c' and 'java'.
+language: c
+
+# The cp_sources property denotes the source repository addresses, as well
+# as the local path that the repository resides starting from `./src`.
+# The "ref" element is optional. It indicates the git repository
+# tag or commit that should be checked out. If not specified, it will default
+# to checking out the "main" branch of the specified repo from "address".
+cp_sources:
+    linux_kernel:
+        address: git@github.com:aixcc-sc/challenge-001-linux-source.git
+        ref: v2.0.0
+
+# The docker_image property denotes the address to pull the pre-built Docker
+# image for the CP.
+docker_image: ghcr.io/aixcc-sc/challenge-001-linux-cp:v2.0.0
+
+# The sanitizers property denotes which sanitizers are available for scoring for
+# the CP. When specifying a sanitizer ID to the scoring server, use the *key*
+# value, e.g. use "id_1", not "sanitizer string 1".
+#
+# Note, these key-value mappings are unique for each CP.
+sanitizers:
+    id_1: "KASAN: slab-out-of-bounds"
+
+# The harnesses property denotes which AIxCC harnesses are available to use for
+# triggering sanitizers for the CP. When specifying a harness ID  to the
+# scoring server, use the *key* value, e.g. "id_1", not the values under
+# 'name', 'source', or 'binary'.
+#
+# The 'source' and 'binary' properties point the to the appropriate file for
+# the harness source code and executable binary (if they exists). The 'name'
+# string must be provided in the argument list when invoking
+# `run.sh run_pov <args>`.
+harnesses:
+    id_1:
+        name: linux_test_harness
+        source: src/test_harnesses/linux_test_harness.c
+        binary: out/linux_test_harness
+shellphish:
+  known_sources:
+    linux_kernel:
+      - relative_path: src/linux_kernel

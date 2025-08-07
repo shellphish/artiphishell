@@ -1,0 +1,4 @@
+*.tar.gz
+pipeline.lock
+**/__pycache__
+test_features/resources/nginx/nginx_dyva

@@ -1,0 +1,14 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} 
+
+COPY ./shellphish /shellphish/
+RUN cd /shellphish/wrap-lib && make
+RUN mv /usr/bin/ld /usr/bin/ld.real
+RUN cp /shellphish/wrap-lib/fucked_up_ld /usr/bin/ld
+
+# COPY ./afl /afl
+# ENV AFL_PATH="/afl/"
+# ENV AFL_DEBUG=1
+# ENV AFL_DEBUG_CHILD=1
+# ENV LD_LIBRARY_PATH="/shellphish/libfreedom/bin/:${LD_LIBRARY_PATH}"
+# ENV PATH="/shellphish/libfreedom/bin/:${PATH}"

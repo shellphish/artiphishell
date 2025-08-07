@@ -1,0 +1,111 @@
+repo_classes:
+  cp_image_ready: MetadataRepository
+  targets_with_sources: FilesystemRepository
+  debug_built_targets_with_sources: FilesystemRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  crash_run_pov_result_metadatas: MetadataRepository
+  pov_reports: MetadataRepository
+  pov_report_representative_crashing_inputs: BlobRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+tasks:
+  debug_build:
+    job_quota:
+      max: 0.2
+
+    links:
+      target_id:
+        repo: cp_image_ready
+        kind: InputId
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+
+      debug_built_target_with_sources:
+        repo: debug_built_targets_with_sources
+        kind: OutputFilepath
+    
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+          
+          TEMPDIR=/shared/debug_build/{{target_id}}
+          mkdir -p $TEMPDIR
+          rsync -ra --delete {{target_with_sources}}/ $TEMPDIR/
+          cd $TEMPDIR
+          cp /shellphish/crs-utils/components/povguy/.env.docker ./.env.docker
+          ./run.sh -x build
+
+          rsync -ra --delete $TEMPDIR/ {{debug_built_target_with_sources}}/
+  
+  povguy:
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    max_concurrent_jobs: 16
+    links:
+      crashing_input_id:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputId
+      crashing_input_path:
+        repo: crashing_harness_inputs
+        kind: InputFilepath
+      crashing_input_metadata:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputMetadata
+      crashing_input_metadata_path:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputFilepath
+  
+      target_id:
+        repo: cp_image_ready
+        kind: InputId
+        key: crashing_input_metadata.target_id
+      debug_built_target_with_sources:
+        repo: debug_built_targets_with_sources
+        kind: InputFilepath
+        key: crashing_input_metadata.target_id
+
+      crash_run_pov_result_metadata_path:
+        repo: crash_run_pov_result_metadatas
+        kind: OutputFilepath
+      pov_report_path:
+        repo: pov_reports
+        kind: OutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          representative_crash: pov_report_representative_crashing_inputs
+          representative_crash_metadata: pov_report_representative_crashing_input_metadatas
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+          tmpdir=/shared/debug_build/{{target_id}}/{{crashing_input_id}}
+          mkdir -p $tmpdir
+          TARGETDIR=$(mktemp -d -p $tmpdir)
+          rsync -ra --delete {{ debug_built_target_with_sources }}/ $TARGETDIR/
+          cp /shellphish/crs-utils/components/povguy/.env.docker ./.env.docker
+          
+          python /shellphish/crs-utils/components/povguy/povguy.py \
+            {{crashing_input_metadata_path | shquote}} \
+            {{crash_run_pov_result_metadata_path | shquote}} \
+            {{pov_report_path | shquote}} \
+            {{pov_report_path.cokeyed.representative_crash | shquote}} \
+            {{pov_report_path.cokeyed.representative_crash_metadata | shquote}} \
+            "$TARGETDIR" \
+            {{crashing_input_metadata.cp_harness_name | shquote}} \
+            {{crashing_input_path | shquote}} \
+            {{crashing_input_id}}

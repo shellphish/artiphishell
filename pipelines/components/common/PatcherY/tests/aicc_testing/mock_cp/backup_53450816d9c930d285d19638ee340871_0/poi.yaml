@@ -1,0 +1,366 @@
+additional_information:
+  asan_report_data:
+    consistent_sanitizers: &id001
+    - id_2
+    cp_harness_binary_path: out/filein_harness
+    cp_harness_id: id_1
+    cp_harness_name: filein_harness
+    cp_harness_source_path: src/test/filein_harness.c
+    crash_action:
+      access: READ
+      size: unknown
+    crash_report_id: c27047267322dcff09ff44dfc06e5538
+    crash_type: wild-ptr-deref
+    fuzzer: aflplusplus
+    harness_info_id: 7322a79b2bb151ed30ad171478e527f5
+    inconsistent_sanitizers: &id002 []
+    sanitizer: 'AddressSanitizer: SEGV'
+    sanitizer_history: &id003
+    - - id_2
+    - - id_2
+    - - id_2
+    - - id_2
+    - - id_2
+    stack_traces:
+      main:
+      - depth: 0
+        func_name: __sanitizer::internal_strlen
+        line: 176
+        signature: __sanitizer::internal_strlen(char const*)
+        src_file: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_libc.cpp
+        src_loc: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_libc.cpp:176
+        type: source
+      - depth: 1
+        func_name: printf_common
+        line: 561
+        signature: printf_common(void*, char const*, __va_list_tag*)
+        src_file: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors_format.inc
+        src_loc: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors_format.inc:561
+        type: source
+      - depth: 2
+        func_name: vprintf
+        line: 1641
+        signature: vprintf
+        src_file: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+        src_loc: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:1641
+        type: source
+      - depth: 3
+        func_name: printf
+        line: 1699
+        signature: printf
+        src_file: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+        src_loc: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc:1699
+        type: source
+      - depth: 4
+        func_name: func_b
+        line: 27
+        signature: func_b
+        src_file: samples/mock_vp.c
+        src_loc: samples/mock_vp.c:27
+        type: source
+      - depth: 5
+        func_name: LLVMFuzzerTestOneInput
+        line: 55
+        signature: LLVMFuzzerTestOneInput
+        src_file: test/filein_harness.c
+        src_loc: test/filein_harness.c:55
+        type: source
+      - depth: 6
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 7
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 8
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 9
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 10
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      - binary: (/out/filein_harness+0x3c6fd)
+        depth: 11
+        func_name: _start
+        signature: _start
+        type: entrypoint
+    target_id: 1
+  sanitizer: 'AddressSanitizer: SEGV'
+consistent_sanitizers: *id001
+cp_harness_binary_path: out/filein_harness
+cp_harness_id: id_1
+cp_harness_name: filein_harness
+cp_harness_source_path: src/test/filein_harness.c
+crash_id: c27047267322dcff09ff44dfc06e5538
+crash_reason: wild-ptr-deref
+crash_report_id: c27047267322dcff09ff44dfc06e5538
+detection_strategy: fuzzing
+fuzzer: aflplusplus
+harness_id: id_1
+harness_info_id: 7322a79b2bb151ed30ad171478e527f5
+inconsistent_sanitizers: *id002
+pois:
+- reason: wild-ptr-deref
+  source_location:
+    function_name: __sanitizer::internal_strlen
+    function_signature: __sanitizer::internal_strlen(char const*)
+    key_index: null
+    line_number: 176
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_libc.cpp
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: printf_common
+    function_signature: printf_common(void*, char const*, __va_list_tag*)
+    key_index: null
+    line_number: 561
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors_format.inc
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: vprintf
+    function_signature: vprintf
+    key_index: null
+    line_number: 1641
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: printf
+    function_signature: printf
+    key_index: null
+    line_number: 1699
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: func_b
+    function_signature: void func_b()
+    key_index: samples/mock_vp.c:20:1::void func_b()
+    line_number: 27
+    line_text: '    printf("item %d: %s\n", j, buff);'
+    relative_file_path: samples/mock_vp.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: LLVMFuzzerTestOneInput
+    function_signature: int LLVMFuzzerTestOneInput(const uint8_t *, int)
+    key_index: test/filein_harness.c:50:1::int LLVMFuzzerTestOneInput(const uint8_t
+      *, int)
+    line_number: 55
+    line_text: '  func_b();'
+    relative_file_path: test/filein_harness.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: fuzzer::Fuzzer::ExecuteCallback
+    function_signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+      long)
+    key_index: null
+    line_number: 614
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: fuzzer::RunOneTest
+    function_signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned
+      long)
+    key_index: null
+    line_number: 327
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: fuzzer::FuzzerDriver
+    function_signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char
+      const*, unsigned long))
+    key_index: null
+    line_number: 862
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: main
+    function_signature: main
+    key_index: null
+    line_number: 20
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+    symbol_offset: 0
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: __libc_start_main
+    function_signature: __libc_start_main
+    key_index: null
+    line_number: 0
+    line_text: null
+    relative_file_path: ../../lib/x86_64-linux-gnu/libc.so.6
+    symbol_offset: 147586
+    symbol_size: 0
+- reason: wild-ptr-deref
+  source_location:
+    function_name: _start
+    function_signature: _start
+    key_index: null
+    line_number: 0
+    line_text: null
+    relative_file_path: (/out/filein_harness+0x3c6fd)
+    symbol_offset: 0
+    symbol_size: 0
+sanitizer_history: *id003
+scanner: asan
+stack_traces:
+- call_locations:
+  - function: __sanitizer::internal_strlen(char const*)
+    function_name: __sanitizer::internal_strlen
+    key_index: null
+    line_number: 176
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_libc.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: __sanitizer::internal_strlen(char const*)
+  - function: printf_common(void*, char const*, __va_list_tag*)
+    function_name: printf_common
+    key_index: null
+    line_number: 561
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors_format.inc
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: printf_common(void*, char const*, __va_list_tag*)
+  - function: vprintf
+    function_name: vprintf
+    key_index: null
+    line_number: 1641
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: vprintf
+  - function: printf
+    function_name: printf
+    key_index: null
+    line_number: 1699
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: printf
+  - function: void func_b()
+    function_name: func_b
+    key_index: samples/mock_vp.c:20:1::void func_b()
+    line_number: 27
+    line_text: '    printf("item %d: %s\n", j, buff);'
+    relative_file_path: samples/mock_vp.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: func_b
+  - function: int LLVMFuzzerTestOneInput(const uint8_t *, int)
+    function_name: LLVMFuzzerTestOneInput
+    key_index: test/filein_harness.c:50:1::int LLVMFuzzerTestOneInput(const uint8_t
+      *, int)
+    line_number: 55
+    line_text: '  func_b();'
+    relative_file_path: test/filein_harness.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: LLVMFuzzerTestOneInput
+  - function: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)
+    function_name: fuzzer::Fuzzer::ExecuteCallback
+    key_index: null
+    line_number: 614
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)
+  - function: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+    function_name: fuzzer::RunOneTest
+    key_index: null
+    line_number: 327
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+  - function: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned
+      long))
+    function_name: fuzzer::FuzzerDriver
+    key_index: null
+    line_number: 862
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+      unsigned long))
+  - function: main
+    function_name: main
+    key_index: null
+    line_number: 20
+    line_text: null
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: main
+  - function: __libc_start_main
+    function_name: __libc_start_main
+    key_index: null
+    line_number: 0
+    line_text: null
+    relative_file_path: ../../lib/x86_64-linux-gnu/libc.so.6
+    symbol_offset: 147586
+    symbol_size: 0
+    trace_line: __libc_start_main
+  - function: _start
+    function_name: _start
+    key_index: null
+    line_number: 0
+    line_text: null
+    relative_file_path: (/out/filein_harness+0x3c6fd)
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: _start
+  reason: Not specified
+target_id: '1'

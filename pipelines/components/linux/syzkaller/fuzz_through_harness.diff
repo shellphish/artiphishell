@@ -1,0 +1,113 @@
+diff --git a/executor/common_linux.h b/executor/common_linux.h
+index 93ecef65..f1d13a5d 100644
+--- a/executor/common_linux.h
++++ b/executor/common_linux.h
+@@ -7,6 +7,7 @@
+ #include <sys/syscall.h>
+ #include <sys/types.h>
+ #include <unistd.h>
++#include "harness.h"
+
+ #if SYZ_EXECUTOR
+ const int kExtraCoverSize = 256 << 10;
+@@ -5734,3 +5735,12 @@ static long syz_pidfd_open(volatile long pid, volatile long flags)
+ }
+
+ #endif
++
++#if SYZ_EXECUTOR || __NR_syz_harness
++
++static long syz_harness(volatile long blob, volatile long blob_size)
++{
++    harness(blob, blob_size);
++}
++
++#endif
+diff --git a/executor/executor.cc b/executor/executor.cc
+index c5bd43f7..f37491d0 100644
+--- a/executor/executor.cc
++++ b/executor/executor.cc
+@@ -56,8 +56,8 @@ typedef unsigned char uint8;
+ // malloc will cause unspecified number of additional mmap's at unspecified locations.
+ // For small objects prefer stack allocations, for larger -- either global objects (this may have
+ // issues with concurrency), or controlled mmaps, or make the fuzzer allocate memory.
+-#define malloc do_not_use_malloc
+-#define calloc do_not_use_calloc
++//#define malloc do_not_use_malloc
++//#define calloc do_not_use_calloc
+
+ // Note: zircon max fd is 256.
+ // Some common_OS.h files know about this constant for RLIMIT_NOFILE.
+diff --git a/pkg/host/syscalls_linux.go b/pkg/host/syscalls_linux.go
+index b690f1de..1c7748f4 100644
+--- a/pkg/host/syscalls_linux.go
++++ b/pkg/host/syscalls_linux.go
+@@ -324,6 +324,7 @@ var syzkallSupport = map[string]func(*prog.Syscall, *prog.Target, string) (bool,
+ 	"syz_pkey_set":                isSyzPkeySetSupported,
+ 	"syz_socket_connect_nvme_tcp": isSyzSocketConnectNvmeTCPSupported,
+ 	"syz_pidfd_open":              alwaysSupported,
++	"syz_harness":                 alwaysSupported,
+ }
+
+ func isSupportedSyzkall(c *prog.Syscall, target *prog.Target, sandbox string) (bool, string) {
+diff --git a/prog/mutation.go b/prog/mutation.go
+index 8547be3c..0371eb81 100644
+--- a/prog/mutation.go
++++ b/prog/mutation.go
+@@ -34,9 +34,9 @@ var DefaultMutateOpts = MutateOpts{
+
+ 	SquashWeight:     50,
+ 	SpliceWeight:     200,
+-	InsertWeight:     100,
++	InsertWeight:     0,
+ 	MutateArgWeight:  100,
+-	RemoveCallWeight: 10,
++	RemoveCallWeight: 0,
+ }
+
+ type MutateOpts struct {
+diff --git a/prog/rand.go b/prog/rand.go
+index 6c58f764..b07f6743 100644
+--- a/prog/rand.go
++++ b/prog/rand.go
+@@ -17,7 +17,7 @@ import (
+
+ const (
+ 	// "Recommended" number of calls in programs that we try to aim at during fuzzing.
+-	RecommendedCalls = 30
++    RecommendedCalls = 1
+ 	// "Recommended" max number of calls in programs.
+ 	// If we receive longer programs from hub/corpus we discard them.
+ 	MaxCalls = 40
+diff --git a/sys/targets/targets.go b/sys/targets/targets.go
+index 02a26028..83f15802 100644
+--- a/sys/targets/targets.go
++++ b/sys/targets/targets.go
+@@ -586,16 +586,17 @@ var (
+ 	commonCFlags = []string{
+ 		"-O2",
+ 		"-pthread",
+-		"-Wall",
+-		"-Werror",
+-		"-Wparentheses",
+-		"-Wunused-const-variable",
+-		"-Wframe-larger-than=16384", // executor uses stacks of limited size, so no jumbo frames
+-		"-Wno-stringop-overflow",
+-		"-Wno-array-bounds",
+-		"-Wno-format-overflow",
+-		"-Wno-unused-but-set-variable",
+-		"-Wno-unused-command-line-argument",
++        "-fpermissive",
++		//"-Wall",
++		//"-Werror",
++		//"-Wparentheses",
++		//"-Wunused-const-variable",
++		//"-Wframe-larger-than=16384", // executor uses stacks of limited size, so no jumbo frames
++		//"-Wno-stringop-overflow",
++		//"-Wno-array-bounds",
++		//"-Wno-format-overflow",
++		//"-Wno-unused-but-set-variable",
++		//"-Wno-unused-command-line-argument",
+ 	}
+ 	optionalCFlags = map[string]bool{
+ 		"-static":                           true, // some distributions don't have static libraries

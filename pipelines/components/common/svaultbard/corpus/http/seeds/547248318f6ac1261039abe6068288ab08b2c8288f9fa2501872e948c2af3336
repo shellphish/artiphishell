@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/3.5 051\ns\n6\ns\ns\n5=\n5+\n5\n~s\ns\ns\n5\n\n"

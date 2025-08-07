@@ -1,0 +1,5 @@
+target_id: '004'
+cp_harness_id: 'id_1'
+cp_harness_name: 'JenkinsTwo'
+cp_harness_source_path: 'src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java'
+cp_harness_binary_path: 'out/harnesses/two/aixcc-harness.jar'

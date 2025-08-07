@@ -1,0 +1,2 @@
+request: "F / HTTP/1.5\nHost::X-Powered-ByTE\n"
+reply: ""

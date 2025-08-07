@@ -1,0 +1,2 @@
+request: "HEAD /$PL HTTP/1.0\nUpgrade\n\n"
+reply: "HTTP/1.0 101\n\n"

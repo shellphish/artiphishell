@@ -1,0 +1,141 @@
+gef➤  r < input.txt
+Starting program: /home/saastha/aicc/UniversalDBG/tests/c/crashing_progs/tcache/prog < input.txt
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter size of the new chunk: Chunk 0 allocated with size 20 bytes.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter size of the new chunk: Chunk 1 allocated with size 20 bytes.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter size of the new chunk: Chunk 2 allocated with size 20 bytes.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter index of chunk to free (0-15): Chunk 2 freed.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter index of chunk to free (0-15): Chunk 1 freed.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter index of chunk to free (0-15): Chunk 0 freed.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter index of chunk to write to (0-15): Enter data to write to chunk: Data written to chunk 1.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter size of the new chunk: Chunk 3 allocated with size 20 bytes.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+Enter your choice: Enter size of the new chunk: Chunk 4 allocated with size 20 bytes.
+
+--- Menu ---
+1. Allocate Chunk
+2. Write to Chunk
+3. Free Chunk
+4. List Chunks
+5. Exit
+
+Program received signal SIGSEGV, Segmentation fault.
+tcache_get (tc_idx=<optimized out>) at malloc.c:2937
+2937	malloc.c: No such file or directory.
+
+[ Legend: Modified register | Code | Heap | Stack | String ]
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x0000555555559010  →  0x0000000000000001
+$rbx   : 0x0               
+$rcx   : 0x0000555555559010  →  0x0000000000000001
+$rdx   : 0x0               
+$rsp   : 0x00007fffffffe110  →  0x0000555555555850  →  <__libc_csu_init+0> endbr64 
+$rbp   : 0x14              
+$rsi   : 0x0               
+$rdi   : 0x14              
+$rip   : 0x00007ffff7e641fe  →  <malloc+286> mov rsi, QWORD PTR [r8]
+$r8    : 0x4f57204f4c4c4548 ("HELLO WO"?)
+$r9    : 0x0               
+$r10   : 0x00007ffff7f65ac0  →  0x0000000100000000
+$r11   : 0x00007ffff7f663c0  →  0x0002000200020002
+$r12   : 0xffffffffffffffb0
+$r13   : 0x00007fffffffe280  →  0x0000000000000001
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x33 $ss: 0x2b $ds: 0x00 $es: 0x00 $fs: 0x00 $gs: 0x00 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffe110│+0x0000: 0x0000555555555850  →  <__libc_csu_init+0> endbr64 	 ← $rsp
+0x00007fffffffe118│+0x0008: 0x00007fffffffe150  →  0x00007fffffffe180  →  0x00007fffffffe190  →  0x0000000000000000
+0x00007fffffffe120│+0x0010: 0x00005555555551a0  →  <_start+0> endbr64 
+0x00007fffffffe128│+0x0018: 0x0000555555555334  →  <allocate_chunk+171> mov rcx, rax
+0x00007fffffffe130│+0x0020: 0x0000555555555850  →  <__libc_csu_init+0> endbr64 
+0x00007fffffffe138│+0x0028: 0x0000000500000005
+0x00007fffffffe140│+0x0030: 0x0000000000000014
+0x00007fffffffe148│+0x0038: 0x86bd174d36bc7a00
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7e641f0 <malloc+272>     lea    rax, [rax+rbx*8]
+   0x7ffff7e641f4 <malloc+276>     sub    edx, 0x1
+   0x7ffff7e641f7 <malloc+279>     mov    r8, QWORD PTR [rax+0x80]
+ → 0x7ffff7e641fe <malloc+286>     mov    rsi, QWORD PTR [r8]
+   0x7ffff7e64201 <malloc+289>     mov    QWORD PTR [rax+0x80], rsi
+   0x7ffff7e64208 <malloc+296>     mov    WORD PTR [rcx], dx
+   0x7ffff7e6420b <malloc+299>     mov    QWORD PTR [r8+0x8], 0x0
+   0x7ffff7e64213 <malloc+307>     jmp    0x7ffff7e64186 <__GI___libc_malloc+166>
+   0x7ffff7e64218 <malloc+312>     nop    DWORD PTR [rax+rax*1+0x0]
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ────
+[#0] Id 1, Name: "prog", stopped 0x7ffff7e641fe in tcache_get (), reason: SIGSEGV
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────
+[#0] 0x7ffff7e641fe → tcache_get(tc_idx=<optimized out>)
+[#1] 0x7ffff7e641fe → __GI___libc_malloc(bytes=0x14)
+[#2] 0x555555555334 → allocate_chunk()
+[#3] 0x555555555729 → menu()
+[#4] 0x55555555583c → main()
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+gef➤  backtrace
+#0  tcache_get (tc_idx=<optimized out>) at malloc.c:2937
+#1  __GI___libc_malloc (bytes=0x14) at malloc.c:3051
+#2  0x0000555555555334 in allocate_chunk () at prog.c:29
+#3  0x0000555555555729 in menu () at prog.c:89
+#4  0x000055555555583c in main () at prog.c:120

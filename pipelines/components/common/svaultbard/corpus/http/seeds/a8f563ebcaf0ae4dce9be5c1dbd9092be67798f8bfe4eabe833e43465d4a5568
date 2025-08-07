@@ -1,0 +1,2 @@
+request: "H / HTTP/1.0\n\n"
+reply: "HTTP/1.0 001\ny\nK\ny\nh\ny\nx\nh\nK\ny\ny\ny\nK\ny\nh\ny\nx\nh\nK\ny\ny\nK\nK\ny\nK\ny\nh\ny\nx\nx\nh\nK\ny\nh\ny\nx\nx\nh\nK\ny\nx\nh\nK\ny\nx\nx\nh\nK\ny\nh\ny\nx\nx\nh\nK\ny\nx\nh\nK\ny\ny\nK\nK\ny\nK\ny\nh\ny\nx\n1\ny\nK\ny\nh\nK\ny\nx\nh\ny\nK\nK\ny\nK\ny\nh\ny\nx\n1\ny\nK\ny\nh\nK\ny\nx\nh\nK\ny\ny\nK\nK\ny\nK\ny\nh\ny\nx\n1\ny\nK\ny\nh\ny\nx\nh\nK\ny\ny\ny\nK\ny\nh\ny\nx\nh\ny\nK\ny\nh\nK\ny\nI\ny\nh\nK\n\n"

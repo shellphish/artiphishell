@@ -1,0 +1,2 @@
+request: "T / HTTP/1.0\n\n"
+reply: "HTTP/1.0 000\ny\nK\ny\nh\nh\nh\nK\nK\ny\nK\ny\nh\ny\nx\nh\ny\nh\ny\nx\nh\ny\nK\ny\ny\ny\nx\nh\ny\ny\nI\ny\nh\nK\n\n"

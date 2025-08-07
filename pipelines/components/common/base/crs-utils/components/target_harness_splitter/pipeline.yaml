@@ -1,0 +1,46 @@
+repo_classes:
+  ################################### INPUTS ##########################################
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  ################################### OUTPUTS #########################################
+  # 1 - N relationship with targets_with_sources (1 per harness, linked with target_harness_info.target_id
+  target_harness_infos: MetadataRepository
+
+tasks:
+  harness_splitter:
+    require_success: true
+    job_quota:
+      cpu: 1
+      mem: 8Gi
+    links:
+      target_id:
+        repo: targets_with_sources
+        kind: InputId
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      target_harness_infos:
+        repo: target_harness_infos
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        template: |
+          set -ex
+          export TARGET_ID={{target_id}}
+          export TARGET_DIR={{target_with_sources | shquote}}
+          export HARNESS_INFOS_DIR={{target_harness_infos.main_dir | shquote}}
+          export HARNESS_INFOS_LOCK_DIR={{target_harness_infos.lock_dir | shquote}}
+
+          python /shellphish/crs-utils/components/target_harness_splitter/split_harnesses.py \
+                  --target-id $TARGET_ID \
+                  --target-dir $TARGET_DIR \
+                  --harness-infos-dir $HARNESS_INFOS_DIR \
+                  --harness-infos-lock-dir $HARNESS_INFOS_LOCK_DIR
+
+          sleep 10

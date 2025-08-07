@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/11.3 405\nLocation:\320PRP\n\n"

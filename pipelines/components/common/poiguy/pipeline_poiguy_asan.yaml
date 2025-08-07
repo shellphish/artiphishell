@@ -1,0 +1,54 @@
+repo_classes:
+
+  ################### INPUTS ###################
+  parsed_asan_reports: MetadataRepository
+  full_functions_index_csvs: BlobRepository
+
+  ################### OUTPUTS ###################
+  points_of_interest: MetadataRepository
+
+tasks:
+  poiguy_asan:
+    failure_ok: true
+    job_quota:
+      cpu: 1
+      mem: "2Gi"
+    priority: 10000
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the ASAN results.
+
+    links:
+      asan_report_meta:
+        repo: parsed_asan_reports
+        kind: InputMetadata
+      asan_report_path:
+        repo: parsed_asan_reports
+        kind: InputFilepath
+      full_functions_index_csv_path:
+        repo: full_functions_index_csvs
+        kind: InputFilepath
+        key: asan_report_meta.target_id
+      poi_report:
+        repo: points_of_interest
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-poi-guy'
+        template: |
+          set -x
+          mkdir -p /tmp/pois
+
+          python /app/poiguyrun.py \
+          --target {{ asan_report_meta.target_id | shquote }} \
+          --harness-info-id {{ asan_report_meta.harness_info_id | shquote }} \
+          --scanner "asan" \
+          --scan_report_dir {{ asan_report_path | shquote }} \
+          --index_csv_path {{ full_functions_index_csv_path | shquote }} \
+          --poi_normalized_dir /tmp/pois/
+
+          mv /tmp/pois/poi-report-*.yaml {{ poi_report | shquote }}

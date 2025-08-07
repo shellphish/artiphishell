@@ -1,0 +1,4 @@
+filename: 904e16ab18c8b901d9419dcdaa7a4c1e7dbf657a-18
+sha256: 5561830c9c819e2c02af56c1edd3cf9110649ed2e008e36198e273aad29db5c7
+source: https://github.com/dvyukov/go-fuzz-corpus/
+source_relative_path: httpreq/corpus/904e16ab18c8b901d9419dcdaa7a4c1e7dbf657a-18

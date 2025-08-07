@@ -1,0 +1,493 @@
+additional_information:
+  asan_report_data:
+    consistent_sanitizers: &id001
+    - id_1
+    cp_harness_binary_path: out/fuzz_die_cu_print
+    cp_harness_id: id_1
+    cp_harness_name: fuzz_die_cu_print
+    cp_harness_source_path: src/libdwarf/fuzz/fuzz_set_frame_all.c
+    crash_action:
+      access: read
+      size: 4
+    crash_report_id: 68adbc1cec180ccee42de8b6d1a0d453
+    crash_type: heap-buffer-overflow
+    fuzzer: aflplusplus
+    harness_info_id: d029f6bce51dc650f701dbdabf4555c2
+    inconsistent_sanitizers: &id002 []
+    sanitizer: 'AddressSanitizer: heap-buffer-overflow'
+    sanitizer_history: &id003
+    - - id_1
+    - - id_1
+    - - id_1
+    - - id_1
+    - - id_1
+    - - id_1
+    - - id_1
+    - - id_1
+    - - id_1
+    - - id_1
+    stack_traces:
+      allocate:
+      - depth: 0
+        func_name: malloc
+        line: 69
+        signature: malloc
+        src_file: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp
+        src_loc: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:69
+        type: source
+      - depth: 1
+        func_name: elf_load_nolibelf_section
+        line: 239
+        signature: elf_load_nolibelf_section
+        src_file: libdwarf/src/lib/libdwarf/dwarf_elfread.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_elfread.c:239
+        type: source
+      - depth: 2
+        func_name: _dwarf_load_section
+        line: 1999
+        signature: _dwarf_load_section
+        src_file: libdwarf/src/lib/libdwarf/dwarf_init_finish.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_init_finish.c:1999
+        type: source
+      - depth: 3
+        func_name: _dwarf_extract_string_offset_via_str_offsets
+        line: 1720
+        signature: _dwarf_extract_string_offset_via_str_offsets
+        src_file: libdwarf/src/lib/libdwarf/dwarf_form.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_form.c:1720
+        type: source
+      - depth: 4
+        func_name: dwarf_formstring
+        line: 2022
+        signature: dwarf_formstring
+        src_file: libdwarf/src/lib/libdwarf/dwarf_form.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_form.c:2022
+        type: source
+      - depth: 5
+        func_name: find_cu_die_base_fields
+        line: 1341
+        signature: find_cu_die_base_fields
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1341
+        type: source
+      - depth: 6
+        func_name: finish_cu_context_via_cudie_inner
+        line: 598
+        signature: finish_cu_context_via_cudie_inner
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:598
+        type: source
+      - depth: 7
+        func_name: finish_up_cu_context_from_cudie
+        line: 1473
+        signature: finish_up_cu_context_from_cudie
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1473
+        type: source
+      - depth: 8
+        func_name: _dwarf_create_a_new_cu_context_record_on_list
+        line: 1612
+        signature: _dwarf_create_a_new_cu_context_record_on_list
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1612
+        type: source
+      - depth: 9
+        func_name: _dwarf_next_cu_header_internal
+        line: 1848
+        signature: _dwarf_next_cu_header_internal
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1848
+        type: source
+      - depth: 10
+        func_name: dwarf_next_cu_header_d
+        line: 995
+        signature: dwarf_next_cu_header_d
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:995
+        type: source
+      - depth: 11
+        func_name: LLVMFuzzerTestOneInput
+        line: 77
+        signature: LLVMFuzzerTestOneInput
+        src_file: libdwarf/fuzz/fuzz_die_cu_print.c
+        src_loc: libdwarf/fuzz/fuzz_die_cu_print.c:77
+        type: source
+      - depth: 12
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 13
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 14
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 15
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 16
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      main:
+      - depth: 0
+        func_name: __asan_memcpy
+        line: 63
+        signature: __asan_memcpy
+        src_file: llvm-project/compiler-rt/lib/asan/asan_interceptors_memintrinsics.cpp
+        src_loc: llvm-project/compiler-rt/lib/asan/asan_interceptors_memintrinsics.cpp:63
+        type: source
+      - depth: 1
+        func_name: _dwarf_memcpy_noswap_bytes
+        line: 49
+        signature: _dwarf_memcpy_noswap_bytes
+        src_file: libdwarf/src/lib/libdwarf/dwarf_memcpy_swap.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_memcpy_swap.c:49
+        type: source
+      - depth: 2
+        func_name: _dwarf_extract_string_offset_via_str_offsets
+        line: 1814
+        signature: _dwarf_extract_string_offset_via_str_offsets
+        src_file: libdwarf/src/lib/libdwarf/dwarf_form.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_form.c:1814
+        type: source
+      - depth: 3
+        func_name: dwarf_formstring
+        line: 2022
+        signature: dwarf_formstring
+        src_file: libdwarf/src/lib/libdwarf/dwarf_form.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_form.c:2022
+        type: source
+      - depth: 4
+        func_name: find_cu_die_base_fields
+        line: 1341
+        signature: find_cu_die_base_fields
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1341
+        type: source
+      - depth: 5
+        func_name: finish_cu_context_via_cudie_inner
+        line: 598
+        signature: finish_cu_context_via_cudie_inner
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:598
+        type: source
+      - depth: 6
+        func_name: finish_up_cu_context_from_cudie
+        line: 1473
+        signature: finish_up_cu_context_from_cudie
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1473
+        type: source
+      - depth: 7
+        func_name: _dwarf_create_a_new_cu_context_record_on_list
+        line: 1612
+        signature: _dwarf_create_a_new_cu_context_record_on_list
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1612
+        type: source
+      - depth: 8
+        func_name: _dwarf_next_cu_header_internal
+        line: 1848
+        signature: _dwarf_next_cu_header_internal
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1848
+        type: source
+      - depth: 9
+        func_name: dwarf_next_cu_header_d
+        line: 995
+        signature: dwarf_next_cu_header_d
+        src_file: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+        src_loc: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:995
+        type: source
+      - depth: 10
+        func_name: LLVMFuzzerTestOneInput
+        line: 77
+        signature: LLVMFuzzerTestOneInput
+        src_file: libdwarf/fuzz/fuzz_die_cu_print.c
+        src_loc: libdwarf/fuzz/fuzz_die_cu_print.c:77
+        type: source
+      - depth: 11
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 12
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 13
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 14
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 15
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      - binary: (/out/fuzz_die_cu_print+0xa270d)
+        depth: 16
+        func_name: _start
+        signature: _start
+        type: entrypoint
+    target_id: 1
+  sanitizer: 'AddressSanitizer: heap-buffer-overflow'
+consistent_sanitizers: *id001
+cp_harness_binary_path: out/fuzz_die_cu_print
+cp_harness_id: id_1
+cp_harness_name: fuzz_die_cu_print
+cp_harness_source_path: src/libdwarf/fuzz/fuzz_set_frame_all.c
+crash_id: 68adbc1cec180ccee42de8b6d1a0d453
+crash_reason: heap-buffer-overflow
+crash_report_id: 68adbc1cec180ccee42de8b6d1a0d453
+detection_strategy: fuzzing
+fuzzer: aflplusplus
+harness_id: id_1
+harness_info_id: d029f6bce51dc650f701dbdabf4555c2
+inconsistent_sanitizers: *id002
+pois:
+- reason: heap-buffer-overflow
+  source_location:
+    function_name: _dwarf_memcpy_noswap_bytes
+    function_signature: void _dwarf_memcpy_noswap_bytes(void *, const void *, unsigned
+      long)
+    key_index: libdwarf/src/lib/libdwarf/dwarf_memcpy_swap.c:44:1::void _dwarf_memcpy_noswap_bytes(void
+      *, const void *, unsigned long)
+    line_number: 49
+    line_text: '    memcpy(s1,s2,(size_t)len);'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_memcpy_swap.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-buffer-overflow
+  source_location:
+    function_name: find_cu_die_base_fields
+    function_signature: int find_cu_die_base_fields(Dwarf_Debug, Dwarf_CU_Context,
+      Dwarf_Die, Dwarf_Error *)
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1080:1::int find_cu_die_base_fields(Dwarf_Debug,
+      Dwarf_CU_Context, Dwarf_Die, Dwarf_Error *)
+    line_number: 1341
+    line_text: '                dnres = dwarf_formstring(attr,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-buffer-overflow
+  source_location:
+    function_name: finish_cu_context_via_cudie_inner
+    function_signature: int finish_cu_context_via_cudie_inner(Dwarf_Debug, Dwarf_CU_Context,
+      Dwarf_Error *)
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:573:1::int finish_cu_context_via_cudie_inner(Dwarf_Debug,
+      Dwarf_CU_Context, Dwarf_Error *)
+    line_number: 598
+    line_text: '        resdwob = find_cu_die_base_fields(dbg,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-buffer-overflow
+  source_location:
+    function_name: finish_up_cu_context_from_cudie
+    function_signature: int finish_up_cu_context_from_cudie(Dwarf_Debug, Dwarf_Unsigned,
+      Dwarf_CU_Context, Dwarf_Error *)
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1432:1::int finish_up_cu_context_from_cudie(Dwarf_Debug,
+      Dwarf_Unsigned, Dwarf_CU_Context, Dwarf_Error *)
+    line_number: 1473
+    line_text: '        res = finish_cu_context_via_cudie_inner(dbg,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-buffer-overflow
+  source_location:
+    function_name: _dwarf_create_a_new_cu_context_record_on_list
+    function_signature: int _dwarf_create_a_new_cu_context_record_on_list(Dwarf_Debug,
+      Dwarf_Debug_InfoTypes, Dwarf_Bool, Dwarf_Unsigned, Dwarf_Unsigned, Dwarf_CU_Context
+      *, Dwarf_Error *)
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1585:1::int _dwarf_create_a_new_cu_context_record_on_list(Dwarf_Debug,
+      Dwarf_Debug_InfoTypes, Dwarf_Bool, Dwarf_Unsigned, Dwarf_Unsigned, Dwarf_CU_Context
+      *, Dwarf_Error *)
+    line_number: 1612
+    line_text: '    res = finish_up_cu_context_from_cudie(dbg,new_cu_offset,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-buffer-overflow
+  source_location:
+    function_name: _dwarf_next_cu_header_internal
+    function_signature: int _dwarf_next_cu_header_internal(Dwarf_Debug, Dwarf_Bool,
+      Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Half *,
+      Dwarf_Half *, Dwarf_Sig8 *, Dwarf_Bool *, Dwarf_Unsigned *, Dwarf_Unsigned *,
+      Dwarf_Half *, Dwarf_Error *)
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1693:1::int _dwarf_next_cu_header_internal(Dwarf_Debug,
+      Dwarf_Bool, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Unsigned *, Dwarf_Half *,
+      Dwarf_Half *, Dwarf_Half *, Dwarf_Sig8 *, Dwarf_Bool *, Dwarf_Unsigned *, Dwarf_Unsigned
+      *, Dwarf_Half *, Dwarf_Error *)
+    line_number: 1848
+    line_text: '        res = _dwarf_create_a_new_cu_context_record_on_list('
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-buffer-overflow
+  source_location:
+    function_name: dwarf_next_cu_header_d
+    function_signature: int dwarf_next_cu_header_d(Dwarf_Debug, Dwarf_Bool, Dwarf_Unsigned
+      *, Dwarf_Half *, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Half *, Dwarf_Half *,
+      Dwarf_Sig8 *, Dwarf_Unsigned *, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Error
+      *)
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:977:1::int dwarf_next_cu_header_d(Dwarf_Debug,
+      Dwarf_Bool, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Unsigned *, Dwarf_Half *,
+      Dwarf_Half *, Dwarf_Half *, Dwarf_Sig8 *, Dwarf_Unsigned *, Dwarf_Unsigned *,
+      Dwarf_Half *, Dwarf_Error *)
+    line_number: 995
+    line_text: '    res = _dwarf_next_cu_header_internal(dbg,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+- reason: heap-buffer-overflow
+  source_location:
+    function_name: LLVMFuzzerTestOneInput
+    function_signature: int LLVMFuzzerTestOneInput(const uint8_t *, int)
+    key_index: libdwarf/fuzz/fuzz_die_cu_print.c:31:1::int LLVMFuzzerTestOneInput(const
+      uint8_t *, int)
+    line_number: 77
+    line_text: '      res = dwarf_next_cu_header_d('
+    relative_file_path: libdwarf/fuzz/fuzz_die_cu_print.c
+    symbol_offset: 0
+    symbol_size: 0
+sanitizer_history: *id003
+scanner: asan
+stack_traces:
+- call_locations:
+  - function: void _dwarf_memcpy_noswap_bytes(void *, const void *, unsigned long)
+    function_name: _dwarf_memcpy_noswap_bytes
+    key_index: libdwarf/src/lib/libdwarf/dwarf_memcpy_swap.c:44:1::void _dwarf_memcpy_noswap_bytes(void
+      *, const void *, unsigned long)
+    line_number: 49
+    line_text: '    memcpy(s1,s2,(size_t)len);'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_memcpy_swap.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: _dwarf_memcpy_noswap_bytes
+  - function: int find_cu_die_base_fields(Dwarf_Debug, Dwarf_CU_Context, Dwarf_Die,
+      Dwarf_Error *)
+    function_name: find_cu_die_base_fields
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1080:1::int find_cu_die_base_fields(Dwarf_Debug,
+      Dwarf_CU_Context, Dwarf_Die, Dwarf_Error *)
+    line_number: 1341
+    line_text: '                dnres = dwarf_formstring(attr,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: find_cu_die_base_fields
+  - function: int finish_cu_context_via_cudie_inner(Dwarf_Debug, Dwarf_CU_Context,
+      Dwarf_Error *)
+    function_name: finish_cu_context_via_cudie_inner
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:573:1::int finish_cu_context_via_cudie_inner(Dwarf_Debug,
+      Dwarf_CU_Context, Dwarf_Error *)
+    line_number: 598
+    line_text: '        resdwob = find_cu_die_base_fields(dbg,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: finish_cu_context_via_cudie_inner
+  - function: int finish_up_cu_context_from_cudie(Dwarf_Debug, Dwarf_Unsigned, Dwarf_CU_Context,
+      Dwarf_Error *)
+    function_name: finish_up_cu_context_from_cudie
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1432:1::int finish_up_cu_context_from_cudie(Dwarf_Debug,
+      Dwarf_Unsigned, Dwarf_CU_Context, Dwarf_Error *)
+    line_number: 1473
+    line_text: '        res = finish_cu_context_via_cudie_inner(dbg,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: finish_up_cu_context_from_cudie
+  - function: int _dwarf_create_a_new_cu_context_record_on_list(Dwarf_Debug, Dwarf_Debug_InfoTypes,
+      Dwarf_Bool, Dwarf_Unsigned, Dwarf_Unsigned, Dwarf_CU_Context *, Dwarf_Error
+      *)
+    function_name: _dwarf_create_a_new_cu_context_record_on_list
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1585:1::int _dwarf_create_a_new_cu_context_record_on_list(Dwarf_Debug,
+      Dwarf_Debug_InfoTypes, Dwarf_Bool, Dwarf_Unsigned, Dwarf_Unsigned, Dwarf_CU_Context
+      *, Dwarf_Error *)
+    line_number: 1612
+    line_text: '    res = finish_up_cu_context_from_cudie(dbg,new_cu_offset,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: _dwarf_create_a_new_cu_context_record_on_list
+  - function: int _dwarf_next_cu_header_internal(Dwarf_Debug, Dwarf_Bool, Dwarf_Unsigned
+      *, Dwarf_Half *, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Half *, Dwarf_Half *,
+      Dwarf_Sig8 *, Dwarf_Bool *, Dwarf_Unsigned *, Dwarf_Unsigned *, Dwarf_Half *,
+      Dwarf_Error *)
+    function_name: _dwarf_next_cu_header_internal
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:1693:1::int _dwarf_next_cu_header_internal(Dwarf_Debug,
+      Dwarf_Bool, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Unsigned *, Dwarf_Half *,
+      Dwarf_Half *, Dwarf_Half *, Dwarf_Sig8 *, Dwarf_Bool *, Dwarf_Unsigned *, Dwarf_Unsigned
+      *, Dwarf_Half *, Dwarf_Error *)
+    line_number: 1848
+    line_text: '        res = _dwarf_create_a_new_cu_context_record_on_list('
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: _dwarf_next_cu_header_internal
+  - function: int dwarf_next_cu_header_d(Dwarf_Debug, Dwarf_Bool, Dwarf_Unsigned *,
+      Dwarf_Half *, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Half *, Dwarf_Half *, Dwarf_Sig8
+      *, Dwarf_Unsigned *, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Error *)
+    function_name: dwarf_next_cu_header_d
+    key_index: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c:977:1::int dwarf_next_cu_header_d(Dwarf_Debug,
+      Dwarf_Bool, Dwarf_Unsigned *, Dwarf_Half *, Dwarf_Unsigned *, Dwarf_Half *,
+      Dwarf_Half *, Dwarf_Half *, Dwarf_Sig8 *, Dwarf_Unsigned *, Dwarf_Unsigned *,
+      Dwarf_Half *, Dwarf_Error *)
+    line_number: 995
+    line_text: '    res = _dwarf_next_cu_header_internal(dbg,'
+    relative_file_path: libdwarf/src/lib/libdwarf/dwarf_die_deliv.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: dwarf_next_cu_header_d
+  - function: int LLVMFuzzerTestOneInput(const uint8_t *, int)
+    function_name: LLVMFuzzerTestOneInput
+    key_index: libdwarf/fuzz/fuzz_die_cu_print.c:31:1::int LLVMFuzzerTestOneInput(const
+      uint8_t *, int)
+    line_number: 77
+    line_text: '      res = dwarf_next_cu_header_d('
+    relative_file_path: libdwarf/fuzz/fuzz_die_cu_print.c
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: LLVMFuzzerTestOneInput
+  reason: Not specified
+target_id: '1'

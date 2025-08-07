@@ -1,0 +1,195 @@
+From e7b6ed9e72d9bc456a0ea45a3ef0f30574c8d90c Mon Sep 17 00:00:00 2001
+From: Suraj K Suresh <kssuraj15@gmail.com>
+Date: Fri, 28 Jun 2024 09:08:52 -0700
+Subject: [PATCH] Write symbolized coverage to file for corpus and crashes
+
+---
+ snapchange/src/commands/fuzz.rs | 13 ++++----
+ snapchange/src/lib.rs           | 54 +++++++++++++++++++++++++++++++++
+ snapchange/src/utils.rs         | 39 ++++++++++++++++++++++++
+ 3 files changed, 100 insertions(+), 6 deletions(-)
+
+diff --git a/snapchange/src/commands/fuzz.rs b/snapchange/src/commands/fuzz.rs
+index 21c38bb..58cbde0 100644
+--- a/snapchange/src/commands/fuzz.rs
++++ b/snapchange/src/commands/fuzz.rs
+@@ -17,7 +17,7 @@ use core_affinity::CoreId;
+ use kvm_bindings::CpuId;
+ use kvm_ioctls::VmFd;
+ 
+-use crate::cmdline;
++use crate::{cmdline, write_crash_input_cov};
+ use crate::cmdline::ProjectCoverage;
+ 
+ use crate::config::Config;
+@@ -29,7 +29,7 @@ use crate::fuzzvm::FuzzVm;
+ use crate::rng::Rng;
+ use crate::stats::{self, PerfMark};
+ use crate::try_u64;
+-use crate::utils::{save_input_in_dir};
++use crate::utils::{save_input_in_dir,save_input_in_dir_cov};
+ use crate::{block_sigalrm, kick_cores, Stats, FINISHED};
+ 
+ use crate::{fuzzvm, unblock_sigalrm, write_crash_input, THREAD_IDS};
+@@ -758,7 +758,7 @@ fn start_core<FUZZER: Fuzzer>(
+     )?;
+ 
+     let mut coverage = prev_coverage;
+-
++    let mut kcov: Vec<u64> = Vec::new();
+     #[cfg(feature = "redqueen")]
+     let mut redqueen_coverage = prev_redqueen_coverage;
+ 
+@@ -1050,6 +1050,7 @@ fn start_core<FUZZER: Fuzzer>(
+                 Ok(foo) => foo,
+                 Err(_) => Vec::<u64>::new()
+             };
++            kcov = kcov_addrs.clone();
+             // log::info!("Total kcov addrs: {}", kcov_addrs.len());
+ 
+             match filter_flag {
+@@ -1189,7 +1190,7 @@ fn start_core<FUZZER: Fuzzer>(
+ 
+             // Attempt to write the crashing input and pass to fuzzer if it is a new input
+             if let Some(crash_file) =
+-                write_crash_input(&crash_dir, &path, &input_bytes, &fuzzvm.console_output)?
++            write_crash_input_cov(&crash_dir, &path, &input_bytes, &fuzzvm.console_output,&kcov,&symbols)?
+             {
+                 if SINGLE_STEP && SINGLE_STEP_DEBUG.load(Ordering::SeqCst) {
+                     std::fs::write(crash_file.with_extension("single_step"), instrs.join("\n"))?;
+@@ -1269,8 +1270,8 @@ fn start_core<FUZZER: Fuzzer>(
+             std::fs::write(filepath, serde_json::to_string(&mutation_metadata)?)?;
+ 
+             // Save this input in the corpus dir
+-            save_input_in_dir(&input, &corpus_dir)?;
+-
++            //save_input_in_dir(&input, &corpus_dir)?;
++            save_input_in_dir_cov(&input, &corpus_dir,&kcov,symbols)?;
+             // Add the input to the corpus
+             corpus.push(input);
+         }
+diff --git a/snapchange/src/lib.rs b/snapchange/src/lib.rs
+index 1ea00aa..397b048 100644
+--- a/snapchange/src/lib.rs
++++ b/snapchange/src/lib.rs
+@@ -119,6 +119,7 @@ use anyhow::{ensure, Context, Result};
+ use clap::Parser;
+ 
+ use nix::sys::signal::{pthread_sigmask, SigSet, SigmaskHow, Signal};
++use utils::get_kcov_string;
+ use vmm_sys_util::fam::FamStructWrapper;
+ 
+ extern crate bitflags;
+@@ -348,6 +349,59 @@ fn write_crash_input(
+     Ok(None)
+ }
+ 
++/// Write the given `input` into `crash_dir`/`path`, allowing the given [`Fuzzer`] to
++/// handle the crash as well.
++///
++/// # Returns
++///
++/// * Path to input file written
++fn write_crash_input_cov(
++    crash_dir: &Path,
++    path: &str,
++    input: &[u8],
++    console_output: &[u8],
++    kcov: &Vec<u64>,
++    symbols:&Option<VecDeque<Symbol>>
++) -> Result<Option<PathBuf>> {
++    // let crash_dir = crash_dir.join(path);
++
++    if path.contains("Oops") {
++        return Ok(None);
++    }
++
++    if !crash_dir.exists() {
++        let _ = std::fs::create_dir_all(&crash_dir);
++    }
++
++    if crash_dir.read_dir()?.count() < MAX_CRASHES {
++        // Create the filename for this input
++        let h = crate::utils::hexdigest(&input);
++        // Write the input
++        let filename = format!("{}_{}", path, h);
++        let filepath = crash_dir.join(filename);
++        if !filepath.exists() {
++            let _ = std::fs::write(&filepath, input);
++        }
++        // If there is console_output, write it as well
++        let kcov_syms = get_kcov_string(kcov,symbols);
++        let filename_kcov = format!("{}_kcov",crate::utils::hexdigest(&input));
++        let kcov_filepath = crash_dir.join(filename_kcov);
++        if !kcov_filepath.exists() {
++            let _ = std::fs::write(kcov_filepath, kcov_syms);
++        }
++        //let kcov_filepath = filepath.with_extension("kcov");
++        //let _ = std::fs::write(kcov_filepath, kcov_syms);
++        if !console_output.is_empty() {
++            let output_file = filepath.with_extension("console_output");
++            let _ = std::fs::write(output_file, console_output);
++        }
++
++        return Ok(Some(filepath));
++    }
++
++    Ok(None)
++}
++
+ /// Handle the given [`FuzzVmExit`]
+ fn handle_vmexit<FUZZER: Fuzzer>(
+     vmexit: &FuzzVmExit,
+diff --git a/snapchange/src/utils.rs b/snapchange/src/utils.rs
+index b414e28..b20595f 100644
+--- a/snapchange/src/utils.rs
++++ b/snapchange/src/utils.rs
+@@ -131,6 +131,45 @@ pub fn save_input_in_dir(input: &impl FuzzInput, dir: &Path) -> Result<usize> {
+     Ok(length)
+ }
+ 
++/// Write the input and kcov to the directory    
++pub fn save_input_in_dir_cov(input: &impl FuzzInput, dir: &Path, kcov: &Vec<u64>,symbols:&Option<VecDeque<Symbol>>) -> Result<usize> {
++    let mut input_bytes: Vec<u8> = vec![];
++    input.to_bytes(&mut input_bytes)?;
++    let length = input_bytes.len();
++
++    // Create the filename for this input
++    let filename = hexdigest(&input);
++
++    // Write the input
++    let filepath = dir.join(filename.clone());
++    if !filepath.exists() {
++        std::fs::write(filepath, input_bytes)?;
++    }
++    
++    // Write the kcov to the file with name hexdigest + kcov
++    let kcov_filename = format!("{}.kcov", hexdigest(&input));
++    let kcov_filepath = dir.join(kcov_filename);
++    if !kcov_filepath.exists() {
++        let all_symbols_str = get_kcov_string(kcov,symbols); 
++        std::fs::write(kcov_filepath, all_symbols_str)?;
++    }
++
++    Ok(length)
++}
++
++/// Write the input and kcov to the directory
++pub fn get_kcov_string(kcov: &Vec<u64>,symbols:&Option<VecDeque<Symbol>>) -> String {
++    let mut symbol_strings = Vec::new();
++    for addr in kcov {
++        if let Some(ref sym_data) = symbols {
++            let curr_symbol = crate::symbols::get_symbol(*addr, sym_data)
++                    .unwrap_or_else(|| "UnknownSym".to_string());
++        symbol_strings.push(curr_symbol);
++        } 
++    }
++    return symbol_strings.join("\n");
++}
++
+ /// Errors that can be triggered during `project` subcommand
+ #[derive(Error, Debug)]
+ pub enum Error {
+-- 
+2.34.1
+

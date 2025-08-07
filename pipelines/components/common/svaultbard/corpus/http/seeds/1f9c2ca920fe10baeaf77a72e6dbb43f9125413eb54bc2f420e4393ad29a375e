@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.22 000\nTranSfer-Encoding:chunked\n\n0 2VAgeCCCCCCCCCCCCCCCCCCCCC\262\262\262\262\017\000\t\262\262\270\262\262\262H\n=Cly:  \"\n\r\007"

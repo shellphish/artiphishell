@@ -1,0 +1,7 @@
+cp_harness_id: id_1
+cp_harness_binary_path: out/even_neil_can_hack_this
+cp_harness_name: even_neil_can_hack_this
+cp_harness_source_path: src/harnesses/even_neil_can_hack_this.c
+fuzzer: snapchange
+harness_info_id: 5fbea12c024ff26e952c3f056938b75d
+target_id: 1

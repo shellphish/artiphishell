@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/4.3 841\ne\nExpires\nExpires\nExpires\nExpires\nExpires\n"

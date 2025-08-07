@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/3.8 004\nConnection:C/C0c/c/c,c/c0c/c?c,c9c/c/c;9c/c/c1c\n"

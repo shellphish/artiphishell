@@ -1,0 +1,2 @@
+request: "F / HTTP/1.0\nConnection\nConnection:/1.0:/1.0\nConnection\nC\nConnection\nConnection:hy\n\n"
+reply: ""

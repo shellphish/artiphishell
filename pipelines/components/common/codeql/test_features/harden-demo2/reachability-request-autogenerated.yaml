@@ -1,0 +1,12 @@
+target_id: "1"
+name: 'harden-demo2-diff'
+
+target_functions:
+  - readlink_copy
+  - __do_sys_gethostname
+  - __do_sys_mincore
+  - memdup_user_nul
+  - get_fd_set
+  - io_register_rsrc
+  - get_user_cpu_mask
+  - vmemdup

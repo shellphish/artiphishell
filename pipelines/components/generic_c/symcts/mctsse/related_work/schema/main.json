@@ -1,0 +1,159 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Research Paper Metadata",
+    "type": "object",
+    "properties": {
+        "TITLE": {
+            "type": "string"
+        },
+        "PUBLISHED_AT": {
+            "type": "string"
+        },
+        "PUBLICATION_TYPE": {
+            "type": "string",
+            "enum": [
+                "Conference",
+                "Workshop",
+                "Journal"
+            ]
+        },
+        "YEAR": {
+            "type": "integer"
+        },
+        "DATE": {
+            "type": "string"
+        },
+        "AUTHORS": {
+            "type": "array",
+            "items": {
+                "$ref": "authors.json"
+            }
+        },
+        "BIBTEX": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "TOOL_NAME": {
+            "$ref": "tools.json"
+        },
+        "TOOL_ARTIFACTS": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "TYPE": {
+                        "type": "string",
+                        "enum": [
+                            "github"
+                        ]
+                    },
+                    "URL": {
+                        "type": "string",
+                        "format": "uri",
+                        "pattern": "^https://github.com/.*$"
+                    },
+                    "STATE": {
+                        "type": "string",
+                        "enum": [
+                            "PRESENT"
+                        ]
+                    },
+                    "MIRRORED_URL": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "required": [
+                    "TYPE",
+                    "URL",
+                    "STATE"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "BENCHMARKS": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "Name": {
+                        "$ref": "benchmarks.json"
+                    }
+                },
+                "required": [
+                    "Name"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "COMPARES_AGAINST": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "tool": {
+                        "$ref": "tools.json"
+                    },
+                    "Paper": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "tool"
+                ]
+            }
+        },
+        "PDF": {
+            "type": "string"
+        },
+        "LINKS": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "URL": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "TYPE": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "URL",
+                    "TYPE"
+                ]
+            }
+        },
+        "ABSTRACT": {
+            "type": "string"
+        },
+        "NOTES": {
+            "type": "object",
+            "properties": {
+                "SYMCTS": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "additionalProperties": true
+        }
+    },
+    "required": [
+        "TITLE",
+        "PUBLISHED_AT",
+        "PUBLICATION_TYPE",
+        "YEAR",
+        "AUTHORS",
+        "TOOL_NAME",
+        "COMPARES_AGAINST",
+        "PDF",
+        "LINKS",
+        "ABSTRACT"
+    ],
+    "additionalProperties": false
+}

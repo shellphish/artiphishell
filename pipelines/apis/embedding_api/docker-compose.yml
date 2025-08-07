@@ -1,0 +1,8 @@
+version: '3'
+services:
+  webapp:
+    build: .
+    image: aixcc-embedding-api
+    container_name: aixcc-embedding-api
+    ports:
+      - "49152:49152"

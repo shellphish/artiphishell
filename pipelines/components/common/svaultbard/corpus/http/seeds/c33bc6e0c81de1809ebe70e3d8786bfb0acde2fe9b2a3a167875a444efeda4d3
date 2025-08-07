@@ -1,0 +1,2 @@
+request: "H / HTTP/1.0\nContent-Length:8\n\nrequest: \"H / HTTP/1.0\\nContentx-Length:8\\n\\nx\"\nreply: \"H / HTTP/1.0\\nContent-Length:8\\n\\nx\"\n"
+reply: "GIT /\n"

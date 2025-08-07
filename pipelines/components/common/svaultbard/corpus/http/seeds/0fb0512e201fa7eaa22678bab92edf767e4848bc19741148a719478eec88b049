@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/8.7 596\nTranSfer-Encoding:cHunkeD\n\n7FffeDFFFFF08FFF"

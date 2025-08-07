@@ -1,0 +1,1 @@
+from Syzkaller.syzkaller import dump_syzkaller_poi

@@ -1,0 +1,6 @@
+FROM scratch
+LABEL org.opencontainers.image.source=https://github.com/aixcc-sc/asc-crs-shellphish
+
+COPY knowledge-base-jenkins-data /knowledge-base-jenkins-data
+COPY knowledge-base-kernel-data /knowledge-base-kernel-data
+COPY knowledge-base-generic-c-data /knowledge-base-generic-c-data

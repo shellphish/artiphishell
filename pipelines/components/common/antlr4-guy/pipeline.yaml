@@ -1,0 +1,88 @@
+repo_classes:
+  targets_with_sources:
+    cls: FilesystemRepository
+    required: true
+  target_metadatas:
+    cls: MetadataRepository
+    required: true
+  commit_output_dir_java: FilesystemRepository
+  full_output_dir_java: FilesystemRepository
+
+  # diff_ranker_outputs: BlobRepository
+
+
+tasks:
+  antlr4_commit_java_parser:
+    priority: 10000
+    job_quota:
+      max: 0.8
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse java
+    executable:
+      cls: Container
+      args:
+        image: aixcc-antlr4-parser
+        template: |
+          set -e
+          set -x
+
+          chown -R root:root {{ java_target_with_sources | shquote }}
+          python /app/run-java.py --mode commit --target_source {{ java_target_with_sources | shquote }} --output_dir {{ output_dir_java | shquote }}
+    links:
+      java_target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      output_dir_java:
+        repo: commit_output_dir_java
+        kind: OutputFilepath
+
+  antlr4_full_java_parser:
+    job_quota:
+      max: 0.45
+
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse java
+    executable:
+      cls: Container
+      args:
+        image: aixcc-antlr4-parser
+        template: |
+          set -e
+          set -x
+          python /app/run-java.py --mode full --target_source {{ java_target_with_sources | shquote }} --output_dir {{ output_dir_java | shquote }}
+    links:
+      java_target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      output_dir_java:
+        repo: full_output_dir_java
+        kind: OutputFilepath
+
+  # diff_ranker_antlr:
+    # links:
+      # target_with_source:
+        # repo: targets_with_sources
+        # kind: InputFilepath
+      # by_commit_json_dirs:
+        # repo: commit_output_dir_java
+        # kind: InputFilepath
+      # diff_ranker_output_dir:
+        # repo: diff_ranker_outputs
+        # kind: OutputFilepath
+# 
+    # executable:
+      # cls: Container
+      # args:
+        # image: aixcc-antlr4-parser
+        # template: |
+          # set -e
+          # set -x
+          # python /app/diff_ranker.py -i {{ by_commit_json_dirs | shquote }} -d {{ target_with_source | shquote }} -o {{ diff_ranker_output_dir | shquote }}

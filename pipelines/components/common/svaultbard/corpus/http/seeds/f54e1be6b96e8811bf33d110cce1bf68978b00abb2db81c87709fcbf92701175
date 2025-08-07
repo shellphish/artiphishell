@@ -1,0 +1,2 @@
+request: "H / HTTP/1.0\n\n"
+reply: "HTTP/1.0 301\nCoNtent-Length:9223372032483567948\n\n"

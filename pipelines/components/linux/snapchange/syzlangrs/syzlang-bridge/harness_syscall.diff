@@ -1,0 +1,25 @@
+diff --git a/executor/common_linux.h b/executor/common_linux.h
+index 93ecef654..f2a606999 100644
+--- a/executor/common_linux.h
++++ b/executor/common_linux.h
+@@ -5734,3 +5734,8 @@ static long syz_pidfd_open(volatile long pid, volatile long flags)
+ }
+ 
+ #endif
++
++// placeholder to let the grammar compile
++#if SYZ_EXECUTOR || __NR_syz_harness
++int syz_harness(volatile long blob, volatile long blob_size) { return 0; }
++#endif
+diff --git a/pkg/host/syscalls_linux.go b/pkg/host/syscalls_linux.go
+index b690f1de7..1c7748f4a 100644
+--- a/pkg/host/syscalls_linux.go
++++ b/pkg/host/syscalls_linux.go
+@@ -324,6 +324,7 @@ var syzkallSupport = map[string]func(*prog.Syscall, *prog.Target, string) (bool,
+ 	"syz_pkey_set":                isSyzPkeySetSupported,
+ 	"syz_socket_connect_nvme_tcp": isSyzSocketConnectNvmeTCPSupported,
+ 	"syz_pidfd_open":              alwaysSupported,
++	"syz_harness":                 alwaysSupported,
+ }
+ 
+ func isSupportedSyzkall(c *prog.Syscall, target *prog.Target, sandbox string) (bool, string) {

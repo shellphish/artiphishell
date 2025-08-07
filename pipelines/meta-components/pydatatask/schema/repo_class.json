@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "anyOf": [
+    {
+      "type": "string",
+      "enum": [
+        "BlobRepository",
+        "MetadataRepository",
+        "FilesystemRepository"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "cls": {
+          "$ref": "#/anyOf/0"
+        },
+        "compress_backend": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to compress the data should be compressed in the repo"
+        },
+        "compress_backup": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to compress the data in the backup"
+        }
+      },
+      "required": [
+        "cls"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

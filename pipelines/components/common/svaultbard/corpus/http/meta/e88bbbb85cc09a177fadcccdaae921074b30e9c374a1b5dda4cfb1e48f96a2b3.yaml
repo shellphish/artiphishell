@@ -1,0 +1,4 @@
+filename: corpus-h2_huffman-3
+sha256: e88bbbb85cc09a177fadcccdaae921074b30e9c374a1b5dda4cfb1e48f96a2b3
+source: https://github.com/lpereira/lwan
+source_relative_path: fuzz/corpus/corpus-h2_huffman-3

@@ -1,0 +1,35 @@
+{
+  "cp_name": "nginx",
+  "language": "c",
+  "cp_sources": {
+    "nginx": {
+      "address": "https://github.com/shellphish-support-syndicate/aixcc-sc-challenge-004-nginx-source.git",
+      "ref": "v1.0.0",
+      "artifacts": [
+        "src/nginx/objs/nginx"
+      ]
+    }
+  },
+  "docker_image": "ghcr.io/aixcc-sc/challenge-004-nginx-cp:v1.0.0",
+  "sanitizers": {
+    "id_1": "AddressSanitizer: heap-buffer-overflow"
+  },
+  "harnesses": {
+    "id_1": {
+      "name": "pov_harness",
+      "source": "src/harnesses/pov_harness.cc",
+      "binary": "out/pov_harness"
+    }
+  },
+  "shellphish": {
+    "known_sources": {},
+    "files_by_language": {
+      "cpp": 2,
+      "xml": 2,
+      "html": 2,
+      "perl": 2,
+      "shell": 4,
+      "c": 391
+    }
+  }
+}

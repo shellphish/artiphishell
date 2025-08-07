@@ -1,0 +1,9 @@
+
+# Ignore everything
+*
+
+# Add folders back in 
+!src/
+!target_building/
+!tools/
+!pyproject.toml

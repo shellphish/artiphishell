@@ -1,0 +1,63 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: AIxCC Tests
+
+on:
+  push:
+    branches: 
+      - main
+  pull_request:
+    branches: [ main ]
+  #allow to run CI manually in action
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.11"
+      - name: Update Git Deploy Tokens
+        run: |
+          git config --global credential.helper 'store --file ~/.git-credentials'
+          echo "https://git:${{ secrets.CI_DEPLOY_TOKEN }}@github.com" > ~/.git-credentials
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Configure Env
+        run: |
+          git config --global user.email "example@example.com"
+          git config --global user.name "Example Name"
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y git unzip tar
+          docker build . -f ./tests/Dockerfile -t aixcc-patchery-tests
+          pip install --upgrade pip
+          git clone https://github.com/shellphish-support-syndicate/agentlib.git /tmp/agentlib && \
+            pip install -e /tmp/agentlib
+          pip install -e .[test]
+      - name: Pytest
+        run: |
+          export ON_CI=true
+          export LITELLM_KEY=no
+          export AIXCC_LITELLM_HOSTNAME=no
+          pytest ./tests/test_aicc.py
+      - name: Ping cause CI failure
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: |
+            🤡 <@819684919427989565>, <@593280144962224138>, & <@405072293782487045> join 🎪 because `${{ github.event.repository.name }}`'s internal CI tests are broken.
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        if: failure() && github.ref == 'refs/heads/main'
+      

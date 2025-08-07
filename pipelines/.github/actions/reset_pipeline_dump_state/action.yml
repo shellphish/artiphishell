@@ -1,0 +1,21 @@
+# This is a basic workflow to help you get started with Actions
+
+name: ResetPipelineState
+description: "Cleans up the output directory for the current pipeline run"
+inputs:
+  pipeline:
+    description: 'Pipeline to reset'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Clean up the output directory
+      shell: bash
+      run: |
+        rm -rf /tmp/latest_pipeline_ci_run/${{ runner.name }}/${{ inputs.pipeline }}/
+
+
+
+

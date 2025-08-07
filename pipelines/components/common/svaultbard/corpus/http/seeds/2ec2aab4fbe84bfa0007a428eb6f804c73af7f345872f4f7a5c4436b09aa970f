@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/3.9 403\nContent-Length:8191\n\n"

@@ -1,0 +1,38 @@
+# http://www.graphviz.org/content/cluster
+
+digraph G {
+
+	subgraph cluster_0 {
+		style = filled;
+		color = lightgrey;
+		node [style=filled,color=white];
+		"search tree" -> "scheduler";
+		label = "MCTS";
+	}
+
+	subgraph cluster_1 {
+		style = filled;
+		color = lightgrey;
+		node [style=filled,color=white];
+		"solve queue"; "symbolic queue"; "coverage queue";
+		label = "Rabbit MQ";
+	}
+    subgraph cluster_2 {
+        style = filled;
+		color = lightgrey;
+		node [style=filled,color=white];
+		"coverage tracer"; "solver"; "symbolic tracer";
+		label = "Components";
+    }
+
+	"scheduler" -> "symbolic queue" [label="inputs to trace",color=orange,fontcolor=orange];
+	"symbolic queue" -> "symbolic tracer";
+
+	"symbolic tracer" -> "solve queue" [label=constraints,color=blue,fontcolor=blue];
+	"solve queue" -> "solver";
+
+	"solver" -> "coverage queue" [label="inputs",color=red,fontcolor=red];
+
+	"coverage queue" -> "coverage tracer";
+	"coverage tracer" -> "search tree" [label="hit coverage",color=green,fontcolor=green];
+}

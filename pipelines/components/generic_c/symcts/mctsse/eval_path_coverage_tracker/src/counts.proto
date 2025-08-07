@@ -1,0 +1,11 @@
+syntax = "proto3";
+package path_coverage_tracker.counts;
+
+message PathCounts {
+    map<int64,int64> counts = 2;
+}
+
+message PerBranch_PathCounts {
+    string ident = 1;
+    map<int64,PathCounts> counts_for_branch = 2;
+}

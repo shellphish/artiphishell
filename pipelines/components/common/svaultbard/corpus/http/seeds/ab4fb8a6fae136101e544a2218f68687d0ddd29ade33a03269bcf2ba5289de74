@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/1.0 000\nhTTi/1i/1\n+TTi/\nHTTA/0\nhT/i/1\n++++/2iIf-Range/1i\nhTTi/1Co\n+TTi/\nHTTA/0\nhTTi/i/1\n++++/1i/1\nhTTi/\nHTTA/*HT/\nHTTi/\nH/1i/1\nhT1i/1\n++++/1\n++++/1i/1\nhTTi/\nHTTA/0\nhTTi/\nHTTA/*HT/\nHTTi/\nH/1i/1\nhT1i/1\n++++/1\n+++i/1\nhTTi/\nHTTA/*HT/\nHTTi/\nH/1i/1\nhT1i/1\n++++/\nH"

@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/2.5 502\ns502\ns\n6\ns\ns\ns\ns\ns\n6\ns\ns&5\r\n+5\n5\n~5\ns\ns\ns\n>6\ns\ns\n~5-\ns\n6\n6\ns\ns\ns\ns\ns\n6\ns\ns&5=\n+5\n5\n~5\ns\ns\ns\n6\ns\ns\n~5-\ns\n6\n~5\ns\ns\n5\n\n"

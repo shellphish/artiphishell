@@ -1,0 +1,60 @@
+{
+  "CommandInjection": {
+    "#select": {
+      "columns": [
+        { "kind": "Entity", "name": "prevcall" },
+        { "kind": "Entity", "name": "inbetween" },
+        { "kind": "String" },
+        { "kind": "Integer" },
+        { "kind": "String" },
+        { "kind": "Integer" },
+        { "kind": "String" },
+        { "kind": "Integer" },
+        { "kind": "String" },
+        { "kind": "Entity" }
+      ],
+      "tuples": []
+    }
+  },
+  "java-string-literals": {
+    "#select": {
+      "columns": [
+        { "kind": "String" }
+      ],
+      "tuples": []
+    }
+  },
+  "java_harness_to_changedfunc": {
+    "#select": {
+      "columns": [
+        { "kind": "String" }
+      ],
+      "tuples": []
+    }
+  },
+  "java_reaching_files": {
+    "#select": {
+      "columns": [
+        { "kind": "String" }
+      ],
+      "tuples": []
+    }
+  },
+  "java_reaching_funcs": {
+    "#select": {
+      "columns": [
+        { "kind": "String" }
+      ],
+      "tuples": []
+    }
+  },
+  "java_reaching_remotesource": {
+    "#select": {
+      "columns": [
+        { "kind": "Entity" },
+        { "kind": "Entity" }
+      ],
+      "tuples": []
+    }
+  }
+}

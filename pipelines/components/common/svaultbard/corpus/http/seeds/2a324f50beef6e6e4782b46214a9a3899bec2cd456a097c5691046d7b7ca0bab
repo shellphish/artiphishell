@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/9.0 404\nLast-Modified:H\n"

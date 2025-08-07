@@ -1,0 +1,2 @@
+request: "GET /\n"
+reply: "HTTP/4.5 682\nContent-Length:95\n\n&"

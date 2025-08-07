@@ -1,0 +1,348 @@
+repos:
+  java_targets_built_with_instrumentation:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: targets_built_with_instrumentation
+      filter_source: target_metadata
+      filter_query: '.language == "java"'
+  c_targets_built_with_instrumentation:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: targets_built_with_instrumentation
+      filter_source: target_metadata
+      filter_query: '.language == "c"'
+  kernel_targets_built_with_instrumentation:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: c_targets_built_with_instrumentation
+      filter_source: target_metadata
+      filter_query: '(.shellphish.known_sources | has("linux_kernel")) and (.shellphish.known_sources.linux_kernel | length > 0)'
+  non_kernel_c_targets_built_with_instrumentation:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: c_targets_built_with_instrumentation
+      filter_source: target_metadata
+      filter_query: '(.shellphish.known_sources | has("linux_kernel") | not) or (.shellphish.known_sources.linux_kernel | length == 0)'
+
+repo_classes:
+
+  ############################# INPUTS ⬇️ ##############################
+  # IMPORTANT: WE DEPEND ON CODEQL TO GIVE IT PRIORITY
+  full_functions_indices: BlobRepository
+  ##################
+
+  targets_with_sources: FilesystemRepository
+  cp_image_ready: MetadataRepository
+  target_metadata: MetadataRepository
+
+  # [EVERYTHING ELSE STUFF]
+  representative_crashing_harness_inputs: BlobRepository # these are c files that crash the kernel
+  similar_harness_inputs_dirs: FilesystemRepository # benign inputs to pass to the program
+  
+  vds_records: MetadataRepository
+  crashing_commits: MetadataRepository
+  poi_reports: MetadataRepository
+  function_by_file_indices: BlobRepository
+
+  ############################# OUTPUTS ⬆️ #############################
+  invariant_reports: MetadataRepository
+
+  ############################# INTERMEDIATES ⬇️ #############################
+
+  targets_built_with_instrumentation: # this is the built target directory 
+    cls: FilesystemRepository
+    required: false
+
+tasks:
+
+  invariant_build:
+    job_quota:
+      max: 0.45
+    links:
+      # IMPORTANT: we depend on codeql to give it priority
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputId
+      ####################################################
+      target_id:
+        repo: cp_image_ready
+        kind: InputId
+      target_metadata:
+        repo: target_metadata
+        kind: InputFilepath
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      target_built_with_instrumentation:
+        repo: targets_built_with_instrumentation
+        kind: OutputFilepath
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - degrigis
+        - ruaronicola
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-invariantguy"
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          
+          # docker login ghcr.io -u player-c3f09220 -p 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
+
+          # invguy-build.py will do the necessary step to build the target in order to be instrumented
+          # by btrace/perf.
+          mkdir -p /shared/invguy/
+          TMPDIR=$(mktemp -d -p /shared/invguy/)
+          cp -ra {{ target_with_sources | shquote }} $TMPDIR/cp-folder
+
+          python3 /src/invguy-build.py \
+            --target-metadata {{ target_metadata | shquote }} \
+            --target-dir $TMPDIR/cp-folder \
+            --target-id {{ target_id | shquote }} \
+            --target-built {{ target_built_with_instrumentation | shquote }}
+          rm -rf $TMPDIR
+
+  invariant_find_c:
+    # perf probes are inserted in parallel (but should be fast), everything else is sequential
+    job_quota:
+     cpu: "2"
+     mem: "4Gi"
+    links:
+      vds_record:
+        repo: vds_records
+        kind: InputMetadata
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: vds_record.crashing_commit_id
+      poi_report:
+        repo: poi_reports
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      poi_report_meta:
+        repo: poi_reports
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+      functions_by_file_index:
+        repo: function_by_file_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      representative_crashing_harness_input:
+        repo: representative_crashing_harness_inputs
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      similar_harness_inputs_dir:
+        repo: similar_harness_inputs_dirs
+        kind: InputFilepath
+      target_metadata:
+        repo: target_metadata
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      non_kernel_c_target_built_with_instrumentation:
+        repo: non_kernel_c_targets_built_with_instrumentation
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      invariant_report:
+        repo: invariant_reports
+        kind: OutputFilepath
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ruaronicola
+        - degrigis
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-invariantguy"
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+
+          # this is our invguy dispatcher, it will figure out which target we are looking at, and do the necessary steps.
+          # NOTE: copy the "cached" built target dir so that we don't pollute the dir with the darpa stderr/stdout bullshit
+          # create tmpdir in /shared
+          mkdir -p /shared/invguy/
+          TMPDIR=$(mktemp -d -p /shared/invguy/)
+          cp -ra {{ non_kernel_c_target_built_with_instrumentation | shquote }} $TMPDIR/cp-folder
+
+          python3 /src/invguy.py \
+            --target-dir "$TMPDIR/cp-folder" \
+            --target-metadata {{ target_metadata | shquote }} \
+            --benign-inputs {{ similar_harness_inputs_dir | shquote }} \
+            --crash-input {{ representative_crashing_harness_input | shquote }} \
+            --crash-commit {{ crashing_commit.crashing_commit | shquote }} \
+            --poiguy-report {{ poi_report | shquote }} \
+            --functions_by_file_index {{ functions_by_file_index | shquote }} \
+            --output-report-at {{ invariant_report | shquote }} \
+            --num-benign-min 1
+
+          rm -rf $TMPDIR
+
+  invariant_find_java:
+    # everything is sequential
+    job_quota:
+     cpu: "1"
+     mem: "5Gi"
+    links:
+      vds_record:
+        repo: vds_records
+        kind: InputMetadata
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: vds_record.crashing_commit_id
+      poi_report:
+        repo: poi_reports
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      poi_report_meta:
+        repo: poi_reports
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+      functions_by_file_index:
+        repo: function_by_file_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      representative_crashing_harness_input:
+        repo: representative_crashing_harness_inputs
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      similar_harness_inputs_dir:
+        repo: similar_harness_inputs_dirs
+        kind: InputFilepath
+      target_metadata:
+        repo: target_metadata
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      java_target_built_with_instrumentation:
+        repo: java_targets_built_with_instrumentation
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      invariant_report:
+        repo: invariant_reports
+        kind: OutputFilepath
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ruaronicola
+        - degrigis
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-invariantguy"
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+
+          # this is our invguy dispatcher, it will figure out which target we are looking at, and do the necessary steps.
+          # NOTE: copy the "cached" built target dir so that we don't pollute the dir with the darpa stderr/stdout bullshit
+          # create tmpdir in /shared
+          mkdir -p /shared/invguy/
+          TMPDIR=$(mktemp -d -p /shared/invguy/)
+          cp -ra {{ java_target_built_with_instrumentation | shquote }} $TMPDIR/cp-folder
+
+          python3 /src/invguy.py \
+            --target-dir "$TMPDIR/cp-folder" \
+            --target-metadata {{ target_metadata | shquote }} \
+            --benign-inputs {{ similar_harness_inputs_dir | shquote }} \
+            --crash-input {{ representative_crashing_harness_input | shquote }} \
+            --crash-commit {{ crashing_commit.crashing_commit | shquote }} \
+            --poiguy-report {{ poi_report | shquote }} \
+            --functions_by_file_index {{ functions_by_file_index | shquote }} \
+            --output-report-at {{ invariant_report | shquote }} \
+            --num-benign-min 1
+
+          rm -rf $TMPDIR
+
+  invariant_find_kernel:
+    job_quota:
+     cpu: "8"
+     mem: "16Gi"
+    links:
+      vds_record:
+        repo: vds_records
+        kind: InputMetadata
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: vds_record.crashing_commit_id
+      poi_report:
+        repo: poi_reports
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      poi_report_meta:
+        repo: poi_reports
+        kind: InputMetadata
+        key: crashing_commit.crash_report_id
+      functions_by_file_index:
+        repo: function_by_file_indices
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      representative_crashing_harness_input:
+        repo: representative_crashing_harness_inputs
+        kind: InputFilepath
+        key: crashing_commit.crash_report_id
+      similar_harness_inputs_dir:
+        repo: similar_harness_inputs_dirs
+        kind: InputFilepath
+      target_metadata:
+        repo: target_metadata
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      kernel_target_built_with_instrumentation:
+        repo: kernel_targets_built_with_instrumentation
+        kind: InputFilepath
+        key: poi_report_meta.target_id
+      invariant_report:
+        repo: invariant_reports
+        kind: OutputFilepath
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ruaronicola
+        - degrigis
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-invariantguy"
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+
+          # this is our invguy dispatcher, it will figure out which target we are looking at, and do the necessary steps.
+          # NOTE: copy the "cached" built target dir so that we don't pollute the dir with the darpa stderr/stdout bullshit
+          # create tmpdir in /shared
+          mkdir -p /shared/invguy/
+          TMPDIR=$(mktemp -d -p /shared/invguy/)
+          cp -ra {{ kernel_target_built_with_instrumentation | shquote }} $TMPDIR/cp-folder
+
+          python3 /src/invguy.py \
+            --target-dir "$TMPDIR/cp-folder" \
+            --target-metadata {{ target_metadata | shquote }} \
+            --benign-inputs {{ similar_harness_inputs_dir | shquote }} \
+            --crash-input {{ representative_crashing_harness_input | shquote }} \
+            --crash-commit {{ crashing_commit.crashing_commit | shquote }} \
+            --poiguy-report {{ poi_report | shquote }} \
+            --functions_by_file_index {{ functions_by_file_index | shquote }} \
+            --output-report-at {{ invariant_report | shquote }} \
+            --num-benign-min 1
+
+          rm -rf $TMPDIR

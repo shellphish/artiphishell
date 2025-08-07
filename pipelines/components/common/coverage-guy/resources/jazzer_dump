@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Variables initialization
+cp_part=""
+blob_file=""
+
+# Loop through the command line arguments
+while (( "$#" )); do
+  case "$1" in
+    --cp=*)
+      cp_part="${1#--cp=}"
+      shift # Shift past the '--cp' argument and its value
+      ;;
+    --runs=*|--agent_path=*|"--target_class=${FULL_CLASS_NAME}"|"--instrumentation_excludes=org.apache.logging.**:com.fasterxml.**:org.apache.commons.**"|"--disabled_hooks=com.code_intelligence.jazzer.sanitizers.IntegerOverflow"|"--jvm_args=-Djdk.attach.allowAttachSelf=true:-XX\:+StartAttachListener")
+      shift # Ignore known flags and their arguments
+      ;;
+    *)
+      # If we get here, assume it's the BLOB_FILE or another unrecognized argument
+      blob_file="$1"
+      shift
+      ;;
+  esac
+done
+
+# Check if cp_part is empty; exit if it is
+if [ -z "$cp_part" ]; then
+  #echo "Classpath component '--cp' is missing."
+  echo "R.I.P. Classpath component '--cp' is missing."
+  exit 1
+fi
+
+# shit
+#echo "$blob_file"
+#echo "-----------------------------"
+echo "$cp_part"
+
+exit 0

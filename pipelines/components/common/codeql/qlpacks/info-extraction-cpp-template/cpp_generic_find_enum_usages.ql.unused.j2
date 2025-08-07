@@ -1,0 +1,19 @@
+/**
+ * @id cpp/find_enum_usages
+ * @name Find enum usages
+ * @kind problem
+ * @severity information
+ * This query finds all the usages of an enum type in the codebase.
+ */
+
+ import cpp
+
+
+predicate is_target_function(Function f) {
+{% for i, name in enumerate(target_functions) %}
+    {% if i > 0 %}or {% endif %}f.hasGlobalName({{ json.dumps(name) }})
+{% endfor %}
+}
+ from VariableAccess acc, Assignment a, EnumConstantAccess e
+ where a.getRValue() = e and a.getLValue().(VariableAccess).getTarget() = acc.getTarget() and is_target_function(acc.getEnclosingFunction())
+ select acc.getEnclosingFunction(), "Enum constant used in function"

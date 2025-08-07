@@ -1,0 +1,7 @@
+openai
+python-dotenv
+streamlit
+bs4
+requests
+tiktoken
+PyPDF2
