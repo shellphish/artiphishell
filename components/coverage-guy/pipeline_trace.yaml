@@ -1,0 +1,188 @@
+repo_classes:
+  ############################# INPUTS ⬇ ##############################
+  crs_tasks: MetadataRepository
+  project_metadatas:          MetadataRepository
+  project_harness_infos:      MetadataRepository
+  full_functions_indices:     BlobRepository
+  crs_tasks_oss_fuzz_repos:   { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  crs_tasks_cancelled: MetadataRepository
+  coverage_build_artifacts:   { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  full_functions_jsons_dirs:  { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+
+  target_split_metadatas: MetadataRepository
+
+  benign_harness_inputs:              BlobRepository # streaming
+  benign_harness_inputs_metadatas:    MetadataRepository # streaming
+  crashing_harness_inputs:            BlobRepository # streaming
+  crashing_harness_inputs_metadatas:  MetadataRepository # streaming
+
+tasks:
+  coverage_trace:
+    require_success: true
+    job_quota:
+      cpu: "4"
+      mem: "4Gi"
+    resource_limits:
+      cpu: "4"
+      mem: "12Gi"
+    long_running: true
+    cache_dir: /pdt-per-node-cache
+
+    # We limit how many total jobs for this task can be running at once
+    # It will scale up the node pool until it reaches this number
+
+    # replicable: true
+    max_concurrent_jobs: 50
+    # max_replicas: 4
+
+
+    #scale_replicas: true
+
+    # Limit this job to only run on nodes which allow coverage tasks
+    node_labels:
+      support.shellphish.net/allow-coverage: "true"
+    # It can also run on the coverage only nodes (normally tainted)
+    node_taints:
+      support.shellphish.net/only-coverage: "true"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-coverage: "true"
+
+    priority_addend: 1
+
+    links:
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: harness_info_meta.project_id
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info_meta:
+        repo: project_harness_infos
+        kind: InputMetadata
+      harness_info:
+        repo: project_harness_infos
+        kind: InputFilepath
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: harness_info_meta.project_id
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: harness_info_meta.project_id
+        template_cache_key: "coverage_build_artifacts-{{ harness_info_meta.project_id }}"
+        use_cache_symlink: true
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: harness_info_meta.project_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: harness_info_meta.project_id
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: harness_info_meta.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: harness_info_meta.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: harness_info_meta.project_id
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: harness_info_meta.project_id
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: harness_info_meta.project_id
+      benign_harness_inputs_metadata_filtering_scope:
+        repo: benign_harness_inputs_metadatas
+        kind: null
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingInputFilepath
+        key: benign_harness_inputs_metadata_filtering_scope.harness_info_id
+      benign_harness_inputs_metadata:
+        repo: benign_harness_inputs_metadatas
+        kind: StreamingInputFilepath
+        key: benign_harness_inputs_metadata_filtering_scope.harness_info_id
+
+      crashing_harness_inputs_metadata_filtering_scope:
+        repo: crashing_harness_inputs_metadatas
+        kind: null
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingInputFilepath
+        key: crashing_harness_inputs_metadata_filtering_scope.harness_info_id
+      crashing_harness_inputs_metadata:
+        repo: crashing_harness_inputs_metadatas
+        kind: StreamingInputFilepath
+        key: crashing_harness_inputs_metadata_filtering_scope.harness_info_id
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - degrigis
+        - ruaronicola
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "aixcc-coverageguy"
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export LANGUAGE={{ project_metadata.language }}
+          export PROJECT_NAME={{ project_metadata.shellphish_project_name }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export FUNCTIONS_INDEX_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export HARNESS_INFO_PATH={{ harness_info | shquote}}
+          export HARNESS_INFO_ID={{ harness_info_id | shquote }}
+
+          export BENIGN_HARNESS_INPUTS_MAIN_DIR={{ benign_harness_inputs.main_dir | shquote }}
+          export BENIGN_HARNESS_INPUTS_LOCK_DIR={{ benign_harness_inputs.lock_dir | shquote }}
+
+          export CRASHING_HARNESS_INPUTS_MAIN_DIR={{ crashing_harness_inputs.main_dir | shquote }}
+          export CRASHING_HARNESS_INPUTS_LOCK_DIR={{ crashing_harness_inputs.lock_dir | shquote }}
+
+          #######################################################################
+
+          export ARTIPHISHELL_PROJECT_NAME=$PROJECT_NAME
+          export ARTIPHISHELL_PROJECT_ID=$PROJECT_ID
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info_meta.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID=$HARNESS_INFO_ID
+          export TARGET_SPLIT_METADATA_PATH={{ target_split_metadata | shquote }}
+          # Skip the main task if this is not the first harness_info_key for the current harness name
+          
+          (
+            set +e
+            python /shellphish/coverageguy/error_if_not_first_in_sorted_harness_info_keys.py
+            EXIT_STATUS=$?
+            set -e
+            if [ $EXIT_STATUS -ne 0 ]; then
+              echo "Skipping this coverage trace. This is OK!"
+            else
+               /shellphish/coverageguy/run.sh
+            fi
+          )

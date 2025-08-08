@@ -1,0 +1,134 @@
+repo_classes:
+  # ==================
+  # 📥 TestGuy Inputs
+  # ==================
+  crs_tasks: MetadataRepository
+  java_crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  project_metadatas: MetadataRepository
+  coverage_build_artifacts: FilesystemRepository
+  crs_tasks_analysis_sources: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  project_compile_commands: BlobRepository
+
+  # ==================
+  # 📤 TestGuy Outputs
+  # ==================
+  testguy_reports: MetadataRepository
+
+tasks:
+  testguy-c:
+    job_quota:
+      cpu: 2
+      mem: "8Gi"
+    links:
+      # ==========
+      # 📥 Inputs
+      # ==========
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+      project_compile_command:
+        repo: project_compile_commands
+        kind: InputFilepath
+      
+      # ==========
+      # 📤 Outputs
+      # ==========
+      output_testguy_report_path:
+        repo: testguy_reports
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-testguy
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          export LOCAL_RUN=0
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifacts | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export PROJECT_COMPILE_COMMAND={{ project_compile_command | shquote }}
+          export OUTPUT_TESTGUY_REPORT_PATH={{ output_testguy_report_path | shquote }}
+
+          /shellphish/testguy/src/run-testguy.sh
+
+          sleep 10
+
+  testguy-java:
+    job_quota:
+      cpu: 2
+      mem: "8Gi"
+    links:
+      # ==========
+      # 📥 Inputs
+      # ==========
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      java_crs_task:
+        repo: java_crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+      
+      # ==========
+      # 📤 Outputs
+      # ==========
+      output_testguy_report_path:
+        repo: testguy_reports
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-testguy
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          export LOCAL_RUN=0
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifacts | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export OUTPUT_TESTGUY_REPORT_PATH={{ output_testguy_report_path | shquote }}
+
+          /shellphish/testguy/src/run-testguy.sh
+
+          sleep 10

@@ -1,0 +1,14 @@
+/build
+/dist
+/build-docs
+*.egg-info
+*.pyc
+.tox
+.kube
+.minikube
+coverage.xml
+.coverage
+*.lock
+parser.out
+.idea
+perf/data

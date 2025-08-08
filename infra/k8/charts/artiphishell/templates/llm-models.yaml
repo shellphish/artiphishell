@@ -1,0 +1,185 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ssd-rwo
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_LRS      # or ZRS / ZoneRedundant etc.
+#reclaimPolicy: Retain       # keep disk after PVC deletion (optional)
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llm-pvc
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 100Gi          # must be ≥ model size
+  storageClassName: ssd-rwo
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-llm-models
+spec:
+  ttlSecondsAfterFinished: 30
+  template:
+    spec:
+      nodeSelector: {}
+      imagePullSecrets:
+        - name: acr-docker-secret
+        - name: ci-acr-pull-secret
+      restartPolicy: OnFailure
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: llm-pvc
+      containers:
+      - name: model-downloader
+        image: {{ .Values.global.deployment_registry.value }}/aixcc-dependencies-base:latest
+        command: ["/bin/sh","-c"]
+        args:
+          - |
+            set -ex
+            # Install git-lfs if not available
+            if ! command -v git-lfs &> /dev/null; then
+              echo "Git LFS not found, installing..."
+              # Try apt-get (Debian/Ubuntu)
+              apt-get update && apt-get install -y git-lfs
+            fi
+            git lfs install
+            MN=best_n_no_rationale_poc_agent_withjava_final_model_agent_h100
+            if [ ! -f /models/$MN/.done ]; then
+              rm -rf /models/$MN;
+              git clone https://huggingface.co/secmlr/$MN /models/$MN;
+              rm -rf /models/$MN/.git;
+              touch /models/$MN/.done;
+            fi
+            echo "done";
+        volumeMounts:
+        - name: models
+          mountPath: /models
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    spec:
+      nodeSelector:
+        "support.shellphish.net/pool": "gpu"
+        "support.shellphish.net/only-gpu": "true"
+      tolerations:
+      - operator: Exists
+      imagePullSecrets:
+        - name: acr-docker-secret
+        - name: ci-acr-pull-secret
+      # Mark this pod as a critical add-on; when enabled, the critical add-on
+      # scheduler reserves resources for critical add-on pods so that they can
+      # be rescheduled after a failure.
+      # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+      priorityClassName: "system-node-critical"
+      containers:
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.0
+        name: nvidia-device-plugin-ctr
+        env:
+          - name: FAIL_ON_INIT_ERROR
+            value: "false"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: device-plugin
+          mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+      - name: device-plugin
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vllm-server
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      name: vllm-server
+  template:
+    metadata:
+      labels:
+        name: vllm-server
+        app.kubernetes.io/name: vllm-server
+        app.kubernetes.io/instance: artiphishell
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    spec:
+      nodeSelector:
+        "support.shellphish.net/pool": "gpu"
+        "support.shellphish.net/only-gpu": "true"
+      tolerations:
+      - operator: Exists
+      imagePullSecrets:
+        - name: acr-docker-secret
+        - name: ci-acr-pull-secret
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: llm-pvc
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 32Gi
+      containers:
+      - name: vllm-server
+        image: {{ .Values.global.deployment_registry.value }}/aixcc-vllm-server:latest
+        command: ["/bin/sh","-c"]
+        args:
+          - |
+            set -ex
+            echo "Starting VLLM server..."
+            cd /app/
+            while true; do
+              /app/server.sh
+              sleep 10
+            done
+        volumeMounts:
+        - name: models
+          mountPath: /models
+        - name: dshm
+          mountPath: /dev/shm
+        resources:
+          limits:
+            nvidia.com/gpu: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-server
+spec:
+  type: ClusterIP
+  internalTrafficPolicy: Local
+  ports:
+    - port: 25002
+      targetPort: 25002
+      protocol: TCP
+      name: vllm
+  selector:
+    app.kubernetes.io/name: vllm-server
+    app.kubernetes.io/instance: artiphishell

@@ -1,0 +1,12 @@
+import java
+import semmle.code.java.dataflow.DataFlow
+
+from Callable fileReader, Call call, Expr src
+where
+  fileReader.getQualifiedName().matches("%.{{ function_name }}") and
+  call.getCallee() = fileReader and
+  DataFlow::localFlow(DataFlow::exprNode(src), DataFlow::exprNode(call.getAnArgument()))
+select 
+src.getLocation() as source_location, 
+call.getEnclosingCallable() as target_name, 
+call.getEnclosingCallable().getDeclaringType().getQualifiedName() as target_class_name

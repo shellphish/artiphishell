@@ -1,0 +1,7 @@
+GET / HTTP/1.1
+Host: localhost:9999
+User-Agent: curl/7.81.0
+Accept: */*
+Black-List: 111.111.111.111;222.222.222.222;333.333.333.333;
+White-List: 111.111.111.111;222.222.222.222;
+

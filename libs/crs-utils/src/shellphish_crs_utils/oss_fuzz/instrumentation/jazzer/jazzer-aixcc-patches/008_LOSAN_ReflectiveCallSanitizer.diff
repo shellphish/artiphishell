@@ -1,0 +1,103 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ReflectiveCall.kt b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ReflectiveCall.kt
+index 91a5fbb0..a23f14a3 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ReflectiveCall.kt
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ReflectiveCall.kt
+@@ -23,6 +23,9 @@ import com.code_intelligence.jazzer.api.MethodHook
+ import com.code_intelligence.jazzer.api.MethodHooks
+ import java.lang.invoke.MethodHandle
+ 
++// LOSAN imports
++import com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical
++
+ /**
+  * Detects unsafe calls that lead to attacker-controlled class loading.
+  *
+@@ -30,6 +33,7 @@ import java.lang.invoke.MethodHandle
+  */
+ @Suppress("unused_parameter", "unused")
+ object ReflectiveCall {
++    private val LoSan = System.getenv("SHELL_SAN");
+     @MethodHooks(
+         MethodHook(
+             type = HookType.BEFORE,
+@@ -64,6 +68,9 @@ object ReflectiveCall {
+         hookId: Int,
+     ) {
+         val className = args[0] as? String ?: return
++        if (LoSan == "true") {
++            losan_crash(className, "loadClassHook")
++        }
+         Jazzer.guideTowardsEquality(className, HONEYPOT_CLASS_NAME, hookId)
+     }
+ 
+@@ -89,6 +96,9 @@ object ReflectiveCall {
+         hookId: Int,
+     ) {
+         val className = args[1] as? String ?: return
++        if (LoSan == "true") {
++            losan_crash(className, "loadClassWithModuleHook")
++        }
+         Jazzer.guideTowardsEquality(className, HONEYPOT_CLASS_NAME, hookId)
+     }
+ 
+@@ -116,6 +126,60 @@ object ReflectiveCall {
+                 FuzzerSecurityIssueHigh("load arbitrary library"),
+             )
+         }
++        if (LoSan == "true") {
++            losan_crash(libraryName, "loadLibrary")
++        }
+         Jazzer.guideTowardsEquality(libraryName, HONEYPOT_LIBRARY_NAME, hookId)
+     }
++
++    fun losan_crash(
++        found_string: String,
++        type: String
++    ){
++        if(name_check(found_string)){
++            if (type == "loadLibrary") {
++                Jazzer.reportFindingFromHook(
++                    FuzzerSecurityIssueCritical(
++                        """[LOSAN] load arbitrary library
++                        We were able to load arbitrary library.SHELLPHISH_FOUND_LOSAN: ${reprString(found_string.toByteArray().map { it.toInt() })} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(HONEYPOT_LIBRARY_NAME.toByteArray().map { it.toInt() })}""",
++                    ),
++                )
++            } else {
++                Jazzer.reportFindingFromHook(
++                    FuzzerSecurityIssueCritical(
++                        """[LOSAN] load arbitrary class
++                        We were able to load arbitrary class.SHELLPHISH_FOUND_LOSAN: ${reprString(found_string.toByteArray().map { it.toInt() })} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(HONEYPOT_CLASS_NAME.toByteArray().map { it.toInt() })}""",
++                    ),
++                )
++            }
++        }
++    }
++
++    fun name_check(input: String): Boolean {
++        return  hasNullBytes(input) ||
++                hasControlCharacters(input) ||
++                hasUnprintableCharacters(input)
++    }
++
++    private fun hasNullBytes(input: String): Boolean {
++        return input.contains('\u0000')
++    }
++
++    private fun hasControlCharacters(input: String): Boolean {
++        return input.any { char ->
++            when {
++                char.code < 32 && char !in setOf('\t', '\n', '\r') -> true
++                char.code == 127 -> true // DEL
++                char.isISOControl() && char !in setOf('\t', '\n', '\r') -> true
++                char.category == CharCategory.CONTROL -> true
++                else -> false
++            }
++        }
++    }
++
++    private fun hasUnprintableCharacters(input: String): Boolean {
++        return input.any { char ->
++            char.code !in 32..126
++        }
++    }
+ }

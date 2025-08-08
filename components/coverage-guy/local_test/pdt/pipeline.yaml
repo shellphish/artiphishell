@@ -1,0 +1,6 @@
+repo_classes: {}
+
+imports:
+  invguy:
+    path: ../../pipeline_trace.yaml
+    repos: {}

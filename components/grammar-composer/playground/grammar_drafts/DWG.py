@@ -1,0 +1,78 @@
+######################################################################
+# Helper Functions
+######################################################################
+
+def artiphishell_base64_encode(data: bytes) -> bytes:
+    import base64
+    return base64.b64encode(data)
+
+def zlib_compress(data: bytes) -> bytes:
+    import zlib
+    return zlib.compress(data)
+
+######################################################################
+# Grammar Rules
+######################################################################
+
+ctx.rule('START', b'{DWG_FILE}')
+ctx.rule('DWG_FILE', b'{DWG_HEADER}{SECTION_LIST}{EOF_PAD}')
+ctx.rule('DWG_HEADER', b'{VERSION}{HEADER_FILL}')
+ctx.literal('VERSION', b'AC1009')
+ctx.literal('VERSION', b'AC1012')
+ctx.literal('VERSION', b'AC1014')
+ctx.literal('VERSION', b'AC1015')
+ctx.literal('VERSION', b'AC1018')
+ctx.literal('VERSION', b'AC1021')
+ctx.literal('VERSION', b'AC1024')
+ctx.literal('VERSION', b'AC1027')
+ctx.literal('VERSION', b'AC1032')
+ctx.bytes('HEADER_FILL', 128)
+ctx.rule('SECTION_LIST', b'{SECTION}{SECTION_LIST}')
+ctx.literal('SECTION_LIST', b'')
+ctx.rule('SECTION', b'{SECTION_HEADER}{SECTION_PAYLOAD}')
+ctx.rule('SECTION_NAME', b'HEADER')
+ctx.rule('SECTION_NAME', b'CLASSES')
+ctx.rule('SECTION_NAME', b'HANDLES')
+ctx.rule('SECTION_NAME', b'OBJECTS')
+ctx.rule('SECTION_NAME', b'OBJECTS_COMPRESSED')
+ctx.rule('SECTION_NAME', b'SECTION_{UPPER8}')
+ctx.regex('UPPER8', '[A-Z]{1,8}')
+ctx.rule('SECTION_HEADER', b'SECTION {SECTION_NAME}\x00{SECTION_META}')
+ctx.bytes('SECTION_META', 8)
+ctx.rule('SECTION_PAYLOAD', b'{RAW_PAYLOAD}')
+ctx.rule('SECTION_PAYLOAD', b'{ENTITY_PAYLOAD}')
+ctx.rule('SECTION_PAYLOAD', b'{COMPRESSED_PAYLOAD}')
+ctx.rule('RAW_PAYLOAD', b'{DATA_BLOCK}{RAW_PAYLOAD}')
+ctx.literal('RAW_PAYLOAD', b'')
+ctx.bytes('DATA_BLOCK', 32)
+ctx.bytes('DATA_BLOCK_SMALL', 16)
+ctx.bytes('DATA_BLOCK_MEDIUM', 64)
+ctx.bytes('DATA_BLOCK_LARGE', 256)
+ctx.rule('DATA_BLOCK', b'{DATA_BLOCK_SMALL}')
+ctx.rule('DATA_BLOCK', b'{DATA_BLOCK_MEDIUM}')
+ctx.rule('DATA_BLOCK', b'{DATA_BLOCK_LARGE}')
+ctx.rule('ENTITY_PAYLOAD', b'{ENTITY}{ENTITY_PAYLOAD}')
+ctx.literal('ENTITY_PAYLOAD', b'')
+ctx.rule('ENTITY', b'AcDbLine {LINE_COORDS}\r\n')
+ctx.rule('ENTITY', b'AcDbCircle {CIRCLE_COORDS}\r\n')
+ctx.rule('ENTITY', b'AcDbText {TEXT_DATA}\r\n')
+ctx.rule('LINE_COORDS', b'{COORD3} {COORD3}')
+ctx.rule('CIRCLE_COORDS', b'{COORD3} {RADIUS}')
+ctx.rule('TEXT_DATA', b'{COORD3} "{STRING}" {HEIGHT}')
+ctx.rule('COORD3', b'{FLOAT} {FLOAT} {FLOAT}')
+ctx.regex('FLOAT', '[-+]?[0-9]{1,3}(\\.[0-9]{0,6})?')
+ctx.literal('FLOAT', b'0')
+ctx.literal('FLOAT', b'-0')
+ctx.literal('FLOAT', b'1e308')
+ctx.literal('FLOAT', b'-1e308')
+ctx.literal('FLOAT', b'NaN')
+ctx.literal('FLOAT', b'INF')
+ctx.literal('FLOAT', b'-INF')
+ctx.rule('RADIUS', b'{FLOAT}')
+ctx.rule('HEIGHT', b'{FLOAT}')
+ctx.rule('STRING', b'{ASCII_STRING}')
+ctx.rule('STRING', b'{UTF16_STRING}')
+ctx.regex('ASCII_STRING', '[A-Za-z0-9 _-]{0,32}')
+ctx.bytes('UTF16_STRING', 16)
+ctx.script('COMPRESSED_PAYLOAD', ['RAW_PAYLOAD'], zlib_compress)
+ctx.bytes('EOF_PAD', 32)

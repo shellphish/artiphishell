@@ -1,0 +1,104 @@
+From 324bf4bc918b84ea153078ea4a8d95d64591f06e Mon Sep 17 00:00:00 2001
+From: Atipriya <batipriya@gmail.com>
+Date: Wed, 18 Jun 2025 23:21:55 +0000
+Subject: [PATCH] reload additional corpus libfuzzer
+
+---
+ compiler-rt/lib/fuzzer/FuzzerDriver.cpp |  4 +++
+ compiler-rt/lib/fuzzer/FuzzerLoop.cpp   | 43 +++++++++++++++++++++++++
+ 2 files changed, 47 insertions(+)
+
+diff --git a/compiler-rt/lib/fuzzer/FuzzerDriver.cpp b/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+index 277bdbf52..e0a5ea20b 100644
+--- a/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
++++ b/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+@@ -44,6 +44,8 @@ extern "C" __attribute__((used)) void __libfuzzer_is_present() {}
+
+ namespace fuzzer {
+
++void SetShellphishAdditionalDirs(const std::vector<std::string>& Dirs);
++
+ // Program arguments.
+ struct FlagDescription {
+   const char *Name;
+@@ -817,6 +819,7 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
+
+       // Threads are only supported by Chrome. Don't use them with emscripten
+       // for now.
++
+ #if !LIBFUZZER_EMSCRIPTEN
+   StartRssThread(F, Flags.rss_limit_mb);
+ #endif // LIBFUZZER_EMSCRIPTEN
+@@ -908,6 +911,7 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
+   }
+
+   auto CorporaFiles = ReadCorpora(*Inputs, ParseSeedInuts(Flags.seed_inputs));
++  SetShellphishAdditionalDirs(*Inputs);
+   F->Loop(CorporaFiles);
+
+   if (Flags.verbosity)
+diff --git a/compiler-rt/lib/fuzzer/FuzzerLoop.cpp b/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+index d5fd0cb46..045d56643 100644
+--- a/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
++++ b/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+@@ -35,7 +35,18 @@
+ #endif
+ #endif
+
++
++
+ namespace fuzzer {
++
++// SHELLPHISH
++static std::vector<std::string> ShellphishAdditionalDirs;
++static std::unordered_map<std::string, long> ShellphishEpochMap;
++
++void SetShellphishAdditionalDirs(const std::vector<std::string>& Dirs) {
++  ShellphishAdditionalDirs = Dirs;
++}
++
+ static const size_t kMaxUnitSizeToPrint = 256;
+
+ thread_local bool Fuzzer::IsMyThread;
+@@ -442,6 +453,38 @@ void Fuzzer::RereadOutputCorpus(size_t MaxSize) {
+   }
+   if (Reloaded)
+     PrintStats("RELOAD");
++
++  // SHELLPHISH
++  // ADD THIS NEW CODE AT THE END:
++  for (const auto& Dir : ShellphishAdditionalDirs) {
++    if (Dir == Options.OutputCorpus) {
++        continue; // Skip if it's the same as OutputCorpus
++     }
++    std::vector<Unit> ShellphishAdditionalCorpus;
++    std::vector<std::string> ShellphishAdditionalCorpusPaths;
++
++    ReadDirToVectorOfUnits(
++        Dir.c_str(), &ShellphishAdditionalCorpus,
++        &ShellphishEpochMap[Dir], MaxSize,
++        /*ExitOnError*/ false,
++        (Options.Verbosity >= 2 ? &ShellphishAdditionalCorpusPaths : nullptr));
++    Printf("Shellphish: additional corpus: %s has %zu seeds\n", Dir.c_str(), ShellphishAdditionalCorpus.size());
++    bool ShellphishExtraReloaded = false;
++    for (size_t i = 0; i != ShellphishAdditionalCorpus.size(); ++i) {
++      auto &U = ShellphishAdditionalCorpus[i];
++      if (U.size() > MaxSize) U.resize(MaxSize);
++      if (!Corpus.HasUnit(U)) {
++        if (RunOne(U.data(), U.size())) {
++          CheckExitOnSrcPosOrItem();
++          ShellphishExtraReloaded = true;
++          if (Options.Verbosity >= 2)
++            Printf("Shellphish additional corpus reloaded %s\n", ShellphishAdditionalCorpusPaths[i].c_str());
++        }
++      }
++    }
++    if (ShellphishExtraReloaded && Options.Verbosity >= 2)
++      Printf("Shellphish: reloaded from %s\n", Dir.c_str());
++  }
+ }
+
+ void Fuzzer::PrintPulseAndReportSlowInput(const uint8_t *Data, size_t Size) {
+--
+2.34.1
+

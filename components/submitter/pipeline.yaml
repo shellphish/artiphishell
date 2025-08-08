@@ -1,0 +1,261 @@
+repo_classes:
+
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crashing_inputs: BlobRepository
+  crashing_inputs_metadata: MetadataRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+
+  patch_diffs: BlobRepository
+  patch_metadatas: MetadataRepository
+
+  sarif_metadatas: MetadataRepository
+  sarif_retry_metadatas: MetadataRepository
+
+  vulnerability_submissions: MetadataRepository
+  patch_submissions: MetadataRepository
+  sarif_submissions: MetadataRepository
+
+  submissions: { cls: BlobRepository, required: False }
+  submission_results_success: { cls: BlobRepository, required: False }
+  submission_results_failed: { cls: BlobRepository, required: False }
+
+  emperors_crash_submission_edicts: BlobRepository
+  emperors_patch_submission_edicts: BlobRepository
+
+  crashing_inputs_sanctioned_for_submission: { cls: BlobRepository, required: false }
+  patch_diffs_sanctioned_for_submission: { cls: BlobRepository, required: false }
+
+tasks:
+  allow_crash_submission:
+    # This will call a function to determine what pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    require_success: true
+    priority: 10000
+
+    # Run this in the critical node pool
+    node_labels:
+      support.shellphish.net/pool: "critical-task"
+    node_taints:
+      support.shellphish.net/only-critical: "true"
+
+    links:
+      it_is_permitted:
+        repo: emperors_crash_submission_edicts # keyed on crash id
+        kind: InputId
+      crashing_input:
+        repo: crashing_inputs
+        kind: InputFilepath
+      crashing_input_metadata:
+        repo: crashing_inputs_metadata
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: crashing_input_metadata.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: crashing_input_metadata.project_id
+      crs_task_metadata:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: crashing_input_metadata.project_id
+
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: crashing_input_metadata.project_id
+
+      crashing_input_sanctioned_for_submission:
+        repo: crashing_inputs_sanctioned_for_submission
+        kind: OutputFilepath
+
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-dependencies-base"
+        template: |
+          export CRS_TASK_NUM={{ crs_task_metadata.concurrent_target_num | default('1') }}
+          cp {{ crashing_input | shquote }} {{ crashing_input_sanctioned_for_submission | shquote }}
+
+  allow_patch_submission:
+    # This will call a function to determine what pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    require_success: true
+    priority: 10000
+
+    # Run this in the critical node pool
+    node_labels:
+      support.shellphish.net/pool: "critical-task"
+    node_taints:
+      support.shellphish.net/only-critical: "true"
+      
+    links:
+      it_is_permitted:
+        repo: emperors_patch_submission_edicts # keyed on crash id
+        kind: InputId
+      patch_diff:
+        repo: patch_diffs
+        kind: InputFilepath
+      patch_metadata:
+        repo: patch_metadatas
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: patch_metadata.pdt_project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: patch_metadata.pdt_project_id
+      crs_task_metadata:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: patch_metadata.pdt_project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: patch_metadata.pdt_project_id
+
+      patch_diff_sanctioned_for_submission:
+        repo: patch_diffs_sanctioned_for_submission
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-dependencies-base"
+        template: |
+          export CRS_TASK_NUM={{ crs_task_metadata.concurrent_target_num | default('1') }}
+          cp {{ patch_diff | shquote }} {{ patch_diff_sanctioned_for_submission | shquote }}
+
+  submitter:
+    require_success: true
+
+    # Try to pack pods into as few nodes as possible
+    pod_labels:
+      support.shellphish.net/packing-group: "critical"
+    node_affinity:
+      pod/support.shellphish.net/packing-group: "critical"
+
+
+    # This will call a function to determine what pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Run this in the critical node pool
+    node_labels:
+      support.shellphish.net/pool: "critical-task"
+    node_taints:
+      support.shellphish.net/only-critical: "true"
+
+    job_quota:
+      cpu: 1
+      mem: "4Gi"
+
+    annotations:
+      authors:
+        - clasm
+      maturity: fullyIntegrated
+      require_success: true
+      # long_running: true
+      # timeout:
+        # minutes: 240
+      doc: |
+        This task will create a vulnerability description
+    links:
+      crs_task:
+        repo: crs_tasks
+        kind: InputFilepath
+      crs_task_metadata:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crashing_input_path:
+        repo: crashing_inputs_sanctioned_for_submission
+        kind: StreamingInputFilepath
+      crashing_input_metadata_path:
+        repo: crashing_inputs_metadata
+        kind: StreamingInputFilepath
+
+      dedup_pov_report_representative_metadata_path:
+        repo: dedup_pov_report_representative_metadatas
+        kind: StreamingInputFilepath
+      patch_diff:
+        repo: patch_diffs_sanctioned_for_submission
+        kind: StreamingInputFilepath
+      patch_diff_meta:
+        repo: patch_metadatas
+        kind: StreamingInputFilepath
+      sarif_metadata:
+        repo: sarif_metadatas
+        kind: StreamingInputFilepath
+      sarif_retry_metadata:
+        repo: sarif_retry_metadatas
+        kind: StreamingInputFilepath
+
+      vulnerability_submission:
+        repo: vulnerability_submissions
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+      patch_submission:
+        repo: patch_submissions
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+      sarif_submission:
+        repo: sarif_submissions
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+
+      submissions:
+        repo: submissions
+        kind: StreamingOutputFilepath
+      submission_results_success:
+        repo: submission_results_success
+        kind: StreamingOutputFilepath
+      submission_results_failed:
+        repo: submission_results_failed
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-submitter
+        host_mounts:
+          "/crs_scratch/": "/crs_scratch/"
+
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task_metadata.concurrent_target_num | default('1') }}
+
+          export SAVED_RESULTS=/crs_scratch/submission/
+          export CRS_TASK={{ crs_task | shquote }}
+          export VULN_DIR={{ dedup_pov_report_representative_metadata_path | shquote }}
+          export VULN_METADATA_DIR={{ crashing_input_metadata_path | shquote }}
+          export PATCH_DIR={{ patch_diff | shquote }}
+          export PATCH_METADATA_DIR={{ patch_diff_meta | shquote }}
+          export SARIF_DIR={{ sarif_metadata | shquote }}
+          export SARIF_RETRY_DIR={{ sarif_retry_metadata | shquote }}
+          export CRASH_DIR={{ crashing_input_path | shquote }}
+          export SUBMITTED_VULNS={{ vulnerability_submission | shquote }}
+          export SUBMITTED_PATCHES={{ patch_submission | shquote }}
+          export SUBMITTED_SARIFS={{ sarif_submission | shquote }}
+          export SUBMISSIONS={{ submissions | shquote }}
+          export SUBMISSION_RESULTS_SUCCESS={{ submission_results_success | shquote }}
+          export SUBMISSION_RESULTS_FAILED={{ submission_results_failed | shquote }}
+
+          /app/run_submitter.sh

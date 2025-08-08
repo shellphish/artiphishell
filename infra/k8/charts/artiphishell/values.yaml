@@ -1,0 +1,113 @@
+global:
+  acr:
+    server: ""  # Will be populated from Terraform output (e.g. artiphishellcixxxxxxxx.azurecr.io)
+    username: ""  # Will be populated from Terraform output
+    password: ""  # Will be populated from Terraform output
+  ci_acr:
+    server: ""  # Will be populated from Terraform output (e.g. artiphishellcixxxxxxxx.azurecr.io)
+    username: ""  # Will be populated from Terraform output
+    password: ""  # Will be populated from Terraform output
+  cache_registry:
+    server: ""  # Will be populated from Terraform output (e.g. artiphishellcixxxxxxxx.azurecr.io)
+    username: ""  # Will be populated from Terraform output
+    password: ""  # Will be populated from Terraform output
+  github:
+    token: ""  # Will be populated from shell environment
+  include_ci_pods:
+    # Will be populated from shell environment
+    value: true
+  include_node_viz:
+    # Will be populated from shell environment
+    value: true
+  # Add default pull secrets to the default service account
+  defaultServiceAccount:
+    imagePullSecrets:
+      - name: acr-docker-secret
+      - name: ci-acr-pull-secret
+  # Secret configuration
+  agentSecret:
+    # Will be populated from shell environment
+    value: ""
+  ci_worker_token:
+    # Will be populated from shell environment
+    value: ""
+  otel_exporter_otlp_endpoint:
+    # Will be populated from shell environment
+    value: ""
+  api_components_use_dummy_data:
+    # Will be populated from shell environment
+    value: ""
+  deployment_name:
+    # Will be populated from shell environment
+    value: ""
+  deployment_registry:
+    # Will be populated from shell environment
+    value: ""
+  api_dns_name:
+    # Will be populated from Terraform output
+    value: ""
+  enable_public_ip:
+    # Will be populated from shell environment
+    value: true
+  aixcc_litellm_hostname:
+    # Will be populated from shell environment
+    value: ""
+  max_fuzzer_nodes:
+    # Will be populated from shell environment
+    value: 100
+  azure_storage:
+    storage_account_name:
+      # Will be populated from shell environment
+      value: ""
+    storage_container_name:
+      # Will be populated from shell environment
+      value: ""
+    sts_token:
+      # Will be populated from shell environment
+      value: ""
+    connection_string:
+      # Will be populated from shell environment
+      value: ""
+  artiphishell_global_env_json:
+    # Will be populated from shell environment
+    value: ""
+  num_concurrent_tasks:
+    # Will be populated from shell environment
+    value: 1
+
+builder:
+  enabled: true
+
+agent:
+  enabled: true
+
+api:
+  enabled: true
+  ingress:
+    enabled: true
+    hosts:
+      - host: api.artiphishell.local
+        paths:
+          - path: /
+            pathType: Prefix
+  imagePullSecrets:
+    - name: acr-docker-secret
+    - name: ci-acr-pull-secret
+
+monitor:
+  enabled: true
+
+codeql:
+  enabled: true
+
+analysisgraph:
+  enabled: true
+
+functionresolver:
+  enabled: true
+
+permanence:
+  enabled: true
+
+litellm:
+  enabled: true

@@ -1,0 +1,77 @@
+[
+    {
+        "Vulnerability Class": "File System Traversal",
+	    "Sink Method or Class": ["FileWriter", "FileWriter", "Files", "write", "read", "newBufferedWriter", "newBufferedReader", "readString", "readAllBytes", "readSymbolicLink", "newInputStream", "newOutputStream", "open", "copy", "move"],
+        "Magic String": "jazzer-traversal"
+    },
+    {
+        "Vulnerability Class": "Command Injection",
+	    "Sink Method or Class": ["Runtime.exec", "ProcessBuiler.start"],
+        "Magic String": "jazze"
+    },
+    {
+        "Vulnerability Class": "File Read Write",
+	    "Sink Method or Class":  ["FileWriter", "Files", "write", "read", "newBufferedWriter", "newBufferedReader", "readString", "readAllBytes", "readSymbolicLink", "newInputStream", "newOutputStream", "open", "copy", "move"],
+        "Magic String": "jazzer"
+    },
+    {
+        "Vulnerability Class": "Server Side Request Forgery",
+	    "Sink Method or Class": ["Socket", "SocksSocketImp", "socketChannel", "SocketImpl", "SocketAdaptor", "connect", "PlainHttpConnection"],
+        "Magic String": "jazzer.example.com"
+    },
+    {
+        "Vulnerability Class": "Expression Language Injection",
+        "Sink Method or Class": ["ExpressionFactory", "createValueExpression", "createMethodExpression", "ConstraintValidatorContext", "buildConstraintViolationWithTemplate"]
+    },
+    {
+        "Vulnerability Class": "Ldap Injection",
+        "Sink Method or Class": ["DirContext", "search", "InitialDirContext"]
+    },
+    {
+        "Vulnerability Class": "Naming Context Lookup",
+        "Sink Method or Class": ["Context", "loopup", "lookupLink"]
+    },
+    {
+        "Vulnerability Class": "Reflection Call Injection for CLASS loading",
+        "Sink Method or Class": ["forName", "loadClass", "load", "loadLibrary", "ClassLoader", "mapLibraryName", "findLibrary"],
+        "Magic String": "jaz.Zer"
+    },
+    {
+        "Vulnerability Class": "Reflection Call Injection for LIBRARY loading",
+        "Sink Method or Class": ["forName", "loadClass", "load", "loadLibrary", "ClassLoader", "mapLibraryName", "findLibrary"],
+        "Magic String": "jazzer_honeypot"
+    },
+    {
+        "Vulnerability Class": "Deserialization",
+        "Sink Method or Class": ["ObjectInputStream"],
+        "Magic String": "aced0005737200076a617a2e5a6572000000000000002a02000142000973616e6974697a6572787000"
+    },
+    {
+        "Vulnerability Class": "SQL Injection",
+        "Sink Method or Class": ["execute", "executeQuery", "executeUpdate", "executeBatch", "executeLargeBatch", "createNativeQuery"],
+        "Magic String": "'\"\b\n\r\t\\%_"
+    },
+    {
+        "Vulnerability Class": "Regex Injection with CANON_EQ flag",
+        "Sink Method or Class": ["Pattern", "compile", "matches"],
+        "Magic String": "\u0300\u0300\u0300"
+    },
+    {
+        "Vulnerability Class": "Regex Injection",
+        "Sink Method or Class": ["Pattern", "compile", "matches"],
+        "Magic String": "\\E]\\E]]]]]]"
+    },
+    {
+        "Vulnerability Class": "Script Engine Injection",
+        "Sink Method or Class": ["ScriptEngine", "eval"],
+        "Magic String": "\"jaz\"+\"zer\""
+    },
+    {
+        "Vulnerability Class": "XPath Injection",
+        "Sink Method or Class": ["XPath", "compile", "evaluate", "evaluateExpression"]
+    },
+    {
+        "Vulnerability Class": "XML External Entity Injection",
+        "Sink Method or Class": ["DocumentBuilder.parse", "SAXParser.parse", "XMLReader.parse", "Transformer.transform"]
+    }
+]

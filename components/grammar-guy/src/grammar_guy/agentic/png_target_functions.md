@@ -1,0 +1,8 @@
+- png_do_read_intrapixel
+- png_do_read_transformations
+- png_read_filter_row
+- png_combine_row
+- png_read_finish_row
+- png_do_read_interlace
+- png_inflate
+- png_decompress_chunk (only reachable from zTxT and iTxT and iCcP headers i think)

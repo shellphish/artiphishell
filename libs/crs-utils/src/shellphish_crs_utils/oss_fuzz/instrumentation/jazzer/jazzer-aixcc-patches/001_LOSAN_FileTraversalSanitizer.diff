@@ -1,0 +1,189 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+index 01fc1c37..f7e5bde5 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+@@ -12,7 +12,8 @@ java_library(
+ java_library(
+     name = "file_path_traversal",
+     srcs = ["FilePathTraversal.java"],
+-    deps = ["//src/main/java/com/code_intelligence/jazzer/api:hooks"],
++    deps = ["//src/main/java/com/code_intelligence/jazzer/api:hooks",
++            "shell_utils_lib",],
+ )
+ 
+ java_library(
+@@ -101,3 +102,9 @@ write_file(
+ )
+ 
+ ktlint()
++
++kt_jvm_library(
++    name = "shell_utils_lib",
++    srcs = ["ShellUtils.kt"],
++    visibility = ["//sanitizers:__pkg__"],
++)
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/FilePathTraversal.java b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/FilePathTraversal.java
+index 44ae2bfb..8cdeb999 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/FilePathTraversal.java
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/FilePathTraversal.java
+@@ -27,6 +27,11 @@ import java.nio.file.Paths;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ 
++// LOSAN imports
++import java.util.List;
++import com.code_intelligence.jazzer.sanitizers.ShellUtils;
++import java.nio.charset.StandardCharsets;
++
+ /**
+  * This tests for a file read or write of a specific file path whether relative or absolute.
+  *
+@@ -42,7 +47,7 @@ import java.util.logging.Logger;
+ public class FilePathTraversal {
+   public static final String FILE_PATH_TARGET_KEY = "jazzer.file_path_traversal_target";
+   public static final String DEFAULT_TARGET_STRING = "../jazzer-traversal";
+-
++  public static String LoSan = System.getenv("SHELL_SAN");
+   private static final Logger LOG = Logger.getLogger(FilePathTraversal.class.getName());
+ 
+   private static Path RELATIVE_TARGET;
+@@ -341,9 +346,105 @@ public class FilePathTraversal {
+     if (IS_DISABLED) {
+       return;
+     }
+-
+-    if (p.toAbsolutePath().normalize().equals(ABSOLUTE_TARGET)) {
++    if(LoSan != null){
++      losan_check(p);
++    }
++    if (unrolledEquals(p.toAbsolutePath().normalize().toString(),ABSOLUTE_TARGET.toString())) {
+       Jazzer.reportFindingFromHook(new FuzzerSecurityIssueCritical("File path traversal: " + p));
+     }
+   }
++  private static boolean containsUnprintableOrUtf8(String input) {
++    byte[] byteArray = input.getBytes(StandardCharsets.UTF_8);
++    for (byte b : byteArray) {
++        int c = b & 0xFF; // Convert signed byte to unsigned
++        if (c < 32 || c > 126) { // Check if it's outside the printable ASCII range (32-126)
++            return true;
++        }
++    }
++    return false;
++  }
++  public static boolean unrolledEquals(String s1, String s2) {
++    int len1 = s1.length();
++    int len2 = s2.length();
++
++    if (len1 != len2) {
++        return false;
++    }
++
++    // Compare the first 32 characters with nested ifs (control instead of data dependency for better coverage feedback)
++    // Although the loop is only partially unrolled, sanitizer strings (SENTINELS) are usually very short
++    if (len1 >= 1)  { if (s1.charAt(0) != s2.charAt(0)) return false; }
++    if (len1 >= 2)  { if (s1.charAt(1) != s2.charAt(1)) return false; }
++    if (len1 >= 3)  { if (s1.charAt(2) != s2.charAt(2)) return false; }
++    if (len1 >= 4)  { if (s1.charAt(3) != s2.charAt(3)) return false; }
++    if (len1 >= 5)  { if (s1.charAt(4) != s2.charAt(4)) return false; }
++    if (len1 >= 6)  { if (s1.charAt(5) != s2.charAt(5)) return false; }
++    if (len1 >= 7)  { if (s1.charAt(6) != s2.charAt(6)) return false; }
++    if (len1 >= 8)  { if (s1.charAt(7) != s2.charAt(7)) return false; }
++    if (len1 >= 9)  { if (s1.charAt(8) != s2.charAt(8)) return false; }
++    if (len1 >= 10) { if (s1.charAt(9) != s2.charAt(9)) return false; }
++    if (len1 >= 11) { if (s1.charAt(10) != s2.charAt(10)) return false; }
++    if (len1 >= 12) { if (s1.charAt(11) != s2.charAt(11)) return false; }
++    if (len1 >= 13) { if (s1.charAt(12) != s2.charAt(12)) return false; }
++    if (len1 >= 14) { if (s1.charAt(13) != s2.charAt(13)) return false; }
++    if (len1 >= 15) { if (s1.charAt(14) != s2.charAt(14)) return false; }
++    if (len1 >= 16) { if (s1.charAt(15) != s2.charAt(15)) return false; }
++    if (len1 >= 17) { if (s1.charAt(16) != s2.charAt(16)) return false; }
++    if (len1 >= 18) { if (s1.charAt(17) != s2.charAt(17)) return false; }
++    if (len1 >= 19) { if (s1.charAt(18) != s2.charAt(18)) return false; }
++    if (len1 >= 20) { if (s1.charAt(19) != s2.charAt(19)) return false; }
++    if (len1 >= 21) { if (s1.charAt(20) != s2.charAt(20)) return false; }
++    if (len1 >= 22) { if (s1.charAt(21) != s2.charAt(21)) return false; }
++    if (len1 >= 23) { if (s1.charAt(22) != s2.charAt(22)) return false; }
++    if (len1 >= 24) { if (s1.charAt(23) != s2.charAt(23)) return false; }
++    if (len1 >= 25) { if (s1.charAt(24) != s2.charAt(24)) return false; }
++    if (len1 >= 26) { if (s1.charAt(25) != s2.charAt(25)) return false; }
++    if (len1 >= 27) { if (s1.charAt(26) != s2.charAt(26)) return false; }
++    if (len1 >= 28) { if (s1.charAt(27) != s2.charAt(27)) return false; }
++    if (len1 >= 29) { if (s1.charAt(28) != s2.charAt(28)) return false; }
++    if (len1 >= 30) { if (s1.charAt(29) != s2.charAt(29)) return false; }
++    if (len1 >= 31) { if (s1.charAt(30) != s2.charAt(30)) return false; }
++    if (len1 >= 32) { if (s1.charAt(31) != s2.charAt(31)) return false; }
++
++    // Handle remaining characters
++    for (int i = 32; i < len1; i++) {
++        if (s1.charAt(i) != s2.charAt(i)) {
++            return false;
++        }
++    }
++
++    return true;
++  }
++  private static void losan_check(Path p){
++    if ((p.toString().contains(ABSOLUTE_TARGET.toString()) & !(unrolledEquals(p.toAbsolutePath().normalize().toString(),ABSOLUTE_TARGET.toString()))) || containsUnprintableOrUtf8(p.toString())){
++      List<Integer> found_bytes = ShellUtils.byteArrayToIntList(p.toString().getBytes());
++      List<Integer> expected_bytes = ShellUtils.byteArrayToIntList(ABSOLUTE_TARGET.toString().getBytes());
++      String error_msg = String.format("SHELLPHISH_FOUND_LOSAN: %s and SHELLPHISH_EXPECTED_LOSAN: %s\n",ShellUtils.reprString(found_bytes),ShellUtils.reprString(expected_bytes));
++      Jazzer.reportFindingFromHook(new FuzzerSecurityIssueCritical("[LOSAN] File path traversal: " + p + '\n' + error_msg));
++    }
++  }
++  @MethodHook(
++    type = HookType.BEFORE,
++    targetClassName = "java.io.File",
++    targetMethod = "<init>")
++  public static void fileHook(
++    MethodHandle method, Object thisObject, Object[] arguments, int hookId) {
++    synchronized (LOG) {
++      if (!IS_SET_UP) {
++        setUp();
++        IS_SET_UP = true;
++      }
++    }
++    if (IS_DISABLED) {
++      return;
++    }
++    if(LoSan != null){
++      if (arguments.length > 0) {
++        if (arguments[0] instanceof String) {
++          String path = (String) arguments[0];
++          losan_check(Paths.get(path));
++        }
++      }
++    }
++  }
+ }
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ShellUtils.kt b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ShellUtils.kt
+new file mode 100644
+index 00000000..8a1af35d
+--- /dev/null
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ShellUtils.kt
+@@ -0,0 +1,25 @@
++@file:JvmName("ShellUtils")
++package com.code_intelligence.jazzer.sanitizers;
++
++/**
++ * This function is responsible for converting a list of bytes to a string representation.
++ * This function is designed to be callable from Java code and kotlin code as well.
++ */
++public fun reprString(byteList: List<Int>): String {
++    return buildString {
++        append('"')  // Start with a double quote
++        for (byte in byteList) {
++            append("\\x${(byte.toInt() and 0xFF).toString(16).padStart(2, '0')}")// Non-printable as \xNN
++        }
++        append('"')  // End with a double quote
++    }
++}
++
++/**
++ * Converts a ByteArray to a List<Int> preserving unsigned byte values (0-255)
++ * This function is designed to be callable from Java code
++ */
++@JvmName("byteArrayToIntList")
++public fun byteArrayToIntList(bytes: ByteArray): List<Int> {
++    return bytes.map { it.toInt() and 0xFF }
++}
+\ No newline at end of file

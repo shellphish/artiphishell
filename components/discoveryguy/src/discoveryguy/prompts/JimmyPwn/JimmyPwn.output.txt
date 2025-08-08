@@ -1,0 +1,61 @@
+<report>
+<sink_function_details>
+- Location: file path
+- Signature: function declaration
+- Purpose: functionality description
+- Code: omplete code snippet of the sink function
+</sink_function_details>
+
+<harnesses>
+- File Names:
+  - [file_name]:[line_number] (entry point)
+- Clearly describe each harness entry point.
+</harnesses>
+
+<call_trace>
+- Step-by-step path from harness to sink function
+- Mention explicitly any optimized or omitted intermediate functions
+- Include complete code snippets for each step in the call trace
+- Use analysis tools as needed to clarify uncertain paths
+</call_trace>
+
+<conditions_analysis>
+- Detailed breakdown of relevant control-flow structures (if, switch, loops, etc.)
+- Mention explicitly any necessary conditions
+- Explain condition reachability and necessary states to trigger crash
+</conditions_analysis>
+
+<seed_generation_strategy>
+- Short seed example with explanation for expanding to full seed
+- Python code or pseudocode clearly demonstrating complex seed generation
+- Recommend libraries (e.g., base64, zlib) for accurate and simplified seed generation
+</seed_generation_strategy>
+
+<diff_analysis>
+- Clearly state vulnerabilities introduced by diffs, if applicable:
+  - New vulnerable functions
+  - Modifications making functions vulnerable
+  - Enabling previously unreachable vulnerabilities
+</diff_analysis>
+
+<additional_code>
+- Document clearly additional relevant code from other team analyses
+- Describe their relevance to triggering crashes
+</additional_code>
+
+<previous_feedback>
+- Explicitly incorporate feedback from previous analysis runs
+- Clarify how feedback influenced current report improvements
+</previous_feedback>
+
+<script_example>
+- Python script  clearly illustrating crash seed generation
+- ONLY python code or libraries, don't use code or import libraries in JAVA
+</script_example>
+
+<conclusion>
+Summarize key findings, critical conditions, and confirm steps to reproduce crash reliably.
+</conclusion>
+
+</report>
+

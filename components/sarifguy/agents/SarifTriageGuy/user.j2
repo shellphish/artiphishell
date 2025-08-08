@@ -1,0 +1,24 @@
+
+You are given the following information:
+
+<--- SECURITY WARNING -->
+Project name: {{PROJECT_NAME}}
+Security Rule Triggered: {{RULE_ID}}
+
+{% if HAS_SARIF_MESSAGE %}
+Sarif report extra message:
+{{SARIF_MESSAGE}}
+{%endif%}
+
+Functions in Scope:
+{{LOCS_IN_SCOPE}}
+
+{% if HAS_DATA_FLOWS %}
+Possible Dataflows:
+{{DATA_FLOWS}}
+{% endif %}
+
+<--- SECURITY WARNING -->
+
+
+{{output_format}}

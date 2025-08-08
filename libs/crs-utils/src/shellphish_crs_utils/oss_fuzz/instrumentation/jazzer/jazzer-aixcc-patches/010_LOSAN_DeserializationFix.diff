@@ -1,0 +1,24 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/Deserialization.kt b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/Deserialization.kt
+index 8564d4a9..a1b97236 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/Deserialization.kt
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/Deserialization.kt
+@@ -182,7 +182,8 @@ object Deserialization {
+                 Jazzer.reportFindingFromHook(
+                     FuzzerSecurityIssueCritical(
+                         """
+-                        [LOSAN] Deserialization Sanitizer SHELLPHISH_FOUND_LOSAN: ${reprString(
++                        [LOSAN] Deserialization Sanitizer 
++                        SHELLPHISH_FOUND_LOSAN: ${reprString(
+                             preConsumedInput.map { it.toInt() }
+                         )} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(
+                             SERIALIZED_JAZ_ZER_INSTANCE.map { it.toInt() }
+@@ -196,7 +197,8 @@ object Deserialization {
+                 Jazzer.reportFindingFromHook(
+                     FuzzerSecurityIssueCritical(
+                         """
+-                        [LOSAN] Deserialization Sanitizer SHELLPHISH_FOUND_LOSAN: ${reprString(
++                        [LOSAN] Deserialization Sanitizer 
++                        SHELLPHISH_FOUND_LOSAN: ${reprString(
+                             preConsumedInput.map { it.toInt() }
+                         )} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(
+                             SERIALIZED_JAZ_ZER_INSTANCE.map { it.toInt() }

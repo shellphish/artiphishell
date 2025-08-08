@@ -1,0 +1,72 @@
+{#import cpp#}
+{##}
+{#from Function f, FieldAccess access, VariableAccess va #}
+{#where#}
+{#  access.getEnclosingFunction() = f and#}
+{#  access.getTarget().getName() = "{{ variable_name }}" and#}
+{#  access.getQualifier() = va#}
+{#select f, access.getLocation().getStartLine().toString(), access.getType() //va, va.getType()#}
+
+{#import cpp#}
+{##}
+{#/**#}
+{# * Query to find all functions that access a specific critical variable#}
+{# * This handles both field accesses and direct variable accesses#}
+{# */#}
+{##}
+{#// Define your critical variable name here - only need to change it in one place#}
+{#predicate isCriticalVariable(string name) {#}
+{#  name = "{{ variable_name }}" // Replace this with your actual variable name#}
+{#}#}
+{##}
+{#from Function f, string line, Type accessType#}
+{#where#}
+{#  (#}
+{#    // Case 1: Field accesses (when variables are class/struct members)#}
+{#    exists(FieldAccess access, VariableAccess va |#}
+{#      // Check that this access happens within function f#}
+{#      access.getEnclosingFunction() = f and#}
+{#      // Match against our critical variable name#}
+{#      isCriticalVariable(access.getTarget().getName()) and#}
+{#      // Capture the qualifier (the object being accessed)#}
+{#      access.getQualifier() = va and#}
+{#      // Get the line number as a string to match your format#}
+{#      line = access.getLocation().getStartLine().toString() and#}
+{#      // Get the type of the access#}
+{#      accessType = access.getType()#}
+{#    )#}
+{##}
+{#    or#}
+{##}
+{#    // Case 2: Direct variable accesses (globals, locals, parameters)#}
+{#    exists(VariableAccess access |#}
+{#      // Check that this access happens within function f#}
+{#      access.getEnclosingFunction() = f and#}
+{#      // Match against our critical variable name#}
+{#      isCriticalVariable(access.getTarget().getName()) and#}
+{#      // Get the line number as a string to match your format#}
+{#      line = access.getLocation().getStartLine().toString() and#}
+{#      // Get the type of the access#}
+{#      accessType = access.getType()#}
+{#    )#}
+{#  )#}
+{#// Return results in your requested format#}
+{#select f, line, accessType#}
+
+import cpp
+
+string targetPattern() {
+  // Generic partial match using template parameter
+  result = "{{variable_name}}"
+}
+
+from 
+  Function f,
+  VariableAccess va
+where
+  va.getEnclosingFunction() = f and
+  va.getTarget().getName().matches(targetPattern())
+select
+  f,
+  va.getLocation().getStartLine().toString() as line,
+  va.getType() as accessType

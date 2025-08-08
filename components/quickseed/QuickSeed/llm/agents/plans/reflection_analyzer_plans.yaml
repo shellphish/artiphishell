@@ -1,0 +1,25 @@
+1:
+  name: "summarize_code"
+  description: "Read the code and think step by step to summarize what the code is doing. 
+    Note we provide the code in the order of call chain. If we provide three methods: m1, m2 and m3, this means m1 calls m2 and m2 calls m3."
+
+2:
+  name: "analyze_input_structure"
+  description: "Method fuzzerTestOneInput is the entrypoint of the call chain. 
+    Give a detailed breakdown of the input structure that method fuzzerTestOneInput expects."
+
+3:
+  name: "reflection_analysis"
+  description: "Read the last method we provided, and we believe there is reflection call or other indirect call in it.
+    Please analyze the reflection call and tell us what methods can be reflected in the method."
+
+4:
+  name: "write_python_script"
+  description: "Based on the summarization of the code and the reflection analysis, 
+    please write a python script that will generate the inputs that will invoke the reflection. 
+    This script should generate one or multiple inputs that can trigger as many reflection calls as possible.
+    And in the script please save every generated input to a separate file that ends with '.bin'. If you are generating multiple .bin files, please store them in a directory named `output`.
+    PLEASE USE Python and output the script in the following format. 
+    ```python
+      {script}
+    ```"

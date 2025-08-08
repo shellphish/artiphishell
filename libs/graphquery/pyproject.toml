@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graphquery"
+version = "0.1.0"
+description = "Query Analysis Graph"
+readme = "README.md"
+authors = [
+    {name = "Hulin Wang"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "PyYAML>=6.0",
+    "neo4j",
+    'Jinja2'
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    'ipdb'
+]
+
+[project.scripts]
+graphquery = "graphquery.__main__:main"
+
+[tool.setuptools]
+packages = ["graphquery"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"

@@ -1,0 +1,46 @@
+{
+  "name": "Corpus-Guy Dev Container",
+  "runArgs": ["--privileged"],
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "../"
+  },
+  "containerEnv": {
+    // "LANGSMITH_TRACING": "True",
+    // "LANGSMITH_ENDPOINT": "https://api.smith.langchain.com",
+    // "LANGSMITH_API_KEY": "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",
+    // "LANGSMITH_PROJECT": "debug_gg",
+    "LITELLM_KEY": "sk-artiphishell-da-best!!!",
+    "AIXCC_LITELLM_HOSTNAME": "http://wiseau.seclab.cs.ucsb.edu:4000",
+    // "FUNC_RESOLVER_URL": "http://172.17.0.9:4033",
+    "USE_LLM_API": "true"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder}/,target=/shellphish/corpusguy,type=bind,consistency=cached",
+  "workspaceFolder": "/shellphish/corpusguy",
+  "mounts": [
+    "source=${localWorkspaceFolder}/../../libs/,target=/shellphish/libs/,type=bind,consistency=cached",
+    "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+    "source=/shared/,target=/shared,type=bind,consistency=cached",
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "customizations": {
+    "env": {
+    },
+    "vscode": {
+      "extensions": [
+        "github.copilot",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.vscode-remote-extensionpack",
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ],
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      }
+    }
+  },
+  "forwardPorts": [
+    8050,
+    8080
+  ]
+}

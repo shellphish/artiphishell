@@ -1,0 +1,40 @@
+{
+    "name": "peekaboo Dev Container",
+    "runArgs": ["--privileged"],
+    "build": {
+      "dockerfile": "../Dockerfile",
+      "context": "../"
+    },
+    "workspaceMount": "source=${localWorkspaceFolder},target=/peekaboo,type=bind,consistency=cached",
+    "workspaceFolder": "/peekaboo",
+    "mounts": [
+      "source=${localWorkspaceFolder}/../../libs/,target=/shellphish/libs/,type=bind,consistency=cached",
+      "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+      "source=/shared/,target=/shared,type=bind,consistency=cached",
+      "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+      "source=/tmp,target=/tmp,type=bind,consistency=cached"
+    ],
+    "containerEnv": {
+      "SERVICE_FOLDER_COMMAND": "echo $(dirname $(dirname ${localWorkspaceFolder}))/services"
+    },
+    "customizations": {
+      "env": {
+        "AIXCC_LITELLM_HOSTNAME": "'http://wiseau.seclab.cs.ucsb.edu:666'",
+        "LITELLM_KEY": "sk-artiphishell-da-best!!!"
+      },
+      "vscode": {
+        "extensions": [
+          "github.copilot",
+          "ms-azuretools.vscode-docker",
+          "ms-vscode.vscode-remote-extensionpack",
+          "ms-python.python"
+        ],
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash"
+        }
+      }
+    },
+    "forwardPorts": [
+      8090
+    ]
+  }

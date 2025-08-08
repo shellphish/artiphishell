@@ -1,0 +1,81 @@
+
+{% if HUMAN_MSG %}
+
+{{HUMAN_MSG}}
+
+{% else %}
+Here are the information for you to analysis:
+{% if WITH_SARIF_SUMMARY %}
+SARIF Report Information:
+For additional context, this is a preliminary summary of vulnerability:
+<sarif_summary>
+{{WITH_SARIF_SUMMARY}}
+</sarif_summary>
+{% endif %}
+<project_name>{{PROJECT_NAME}}</project_name>
+<language_expertise>{{LANGUAGE_EXPERTISE}}</language_expertise>
+
+<sink_index>{{FUNCTION_INDEX}}</sink_index>
+<sink_file_name>{{FILE_NAME}}</sink_file_name>
+<sink_function_name>{{FUNCTION_NAME}}</sink_function_name>
+<sink_function_code>
+{{CODE}}
+</sink_function_code>
+{% if WITH_DIFF %}
+<sink_function_diff>
+{{CODE_DIFF}}
+</sink_function_diff>
+{% endif %}
+
+{% if DIFF_SUMMARY %}
+<diff_file_summary>
+{{DIFF_SUMMARY}}
+</diff_file_summary>
+{% endif%}
+
+{% if WITH_PATH %}
+<call_trace>
+{% for item in NODES_OPTIMIZED %}
+<node>
+<function_name>{{item.name}}</function_name>
+<function_code>
+{{item.code}}
+</function_code>
+{% if WITH_DIFF %}
+<function_diff>
+{{item.diff}}
+</function_diff>
+{% endif %}
+</node>
+{% endfor %}
+{% endif %}
+
+<harnesses>
+{% for item in HARNESSES %}
+<harness>
+<harness_name>{{item.bin_name}}</harness_name>
+<harness_code>
+{{item.code}}
+</harness_code>
+</harness>
+{% endfor %}
+</harnesses>
+
+{% if NOTICE %}
+<additional_code>
+{{NOTICE}}
+</additional_code>
+{% endif %}
+
+{% if FEEDBACK %}
+<feedback>
+{{FEEDBACK}}
+</feedback>
+{% endif %}
+
+{% if LAST_CHANCE %}
+BRO, THIS IS YOUR LAST CHANCE, COMMON ON.
+{% endif %}
+
+Now generate the report!
+{% endif %}

@@ -1,0 +1,41 @@
+<task>
+Your task is to generate pydantic models for the given swagger types, so we can use them to ensure compliance with the provided api.
+{% if existing %}
+You will be given the existing state of the pydantic models, which may be outdated from the swagger schema. You must update the existing models to match the swagger schema, using as much of the existing code as possible (fewest changes possible to get it to match the swagger schema). Do not change formatting or spacing of existing code.
+{% endif %}
+<requirements>
+Please follow these guidelines:
+- The base pydantic model is `ShellphishBaseModel`
+- Use Optional instead of `| None`
+- When using optional fields, make sure to set `default=None` in the field definition
+    foobar: Optional[int] = Field(description="...", default=None)
+- Any sort of enum should be defined via the recommended pydantic way of doing an enum type for a property
+- You are free to import other things not currently imported
+- Do not make assumptions about the "format" of a field, for example do not specify base64 unless specifically required by the swagger schema
+- All fields should have a description {% if existing %}if the field was previously described make sure not to change the description unless it is incorrect{% endif %}
+{% if existing %}
+- Since these models are already in use, avoid making superfluous changes to the existing models or enums (ie removing an existing enum in favor of a different existing one)
+{% endif %}
+- IMPORTANT: Required fields will be listed in the `required:` section of each type definition in the swagger schema. Make sure that the pydantic models are updated to reflect this (ie if a field is not in the `required:` section, it should be marked Optional in the pydantic model).
+- IMPORTANT: Before you start writing the updated code, you should spend some time thinking about what actually does not match the swagger schema. Please use <thinking></thinking> tags to think about what needs to be updated for at least 5 paragraphs! Try to be exaustive with all discrepancies with the swagger schema. Inside <thinking> tags, you cannot use ` code blocks, only for the final output code.
+- YOU MUST WRITE ALL MODELS IN THE PROVIDED SCHEMA!!!! IF YOU MISS ANY PRODUCTION SERVERS WILL CRASH AND YOU WILL BE FIRED!!!!
+</requirements>
+</task>
+
+{% if instructions %}
+<additional-user-instructions>
+{{ instructions }}
+</additional-user-instructions>
+{% endif %}
+
+<context>
+This is the schema for the AIxCyberChallenge (a DARPA Challenge) API, which will be implemented by our CyberReasoningSystem (CRS). The goal of this api is to allow DARPA to send tasking to our CRS and for our CRS to respond with the result of this tasking.
+In general tasking takes this form:
+- Some set of tasks we must complete
+- Each task has a set of sources of different types we must analyze.
+- There are two modes of source, full and delta. Full has no change info and delta has a basis source and a changeset
+
+We also have to provide some analytics on the status of our CRS.
+
+We also have to process SARIF reports from other teams CRS as well as sending our own SARIF reports to DARPA and other teams.
+</context>

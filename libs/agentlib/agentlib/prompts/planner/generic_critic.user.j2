@@ -1,0 +1,41 @@
+You are required to evaluate if I have met the task requirements. Exceeding the task requirements is also considered a success while failing to meet them requires you to provide critique to help me improve.
+
+# Long Term Goal
+This is the overall goal of the project. However you are only judging the # Current Task
+```
+{{ parent.goal }}
+```
+Reminder: This is not what the user is trying to do. Please see below for the task you need to judge
+
+# Current Task:
+{{ step.description }}
+
+{% if step.context %}
+## Task Context
+--- Start of Task Context ---
+{{ step.context }}
+--- End of Task Context ---
+{% endif %}
+
+# Tips
+- Sometimes the task is asking something that doesn't make sense given what the user has to work with. If that's the case, then it's not the user's fault as long as they are doing something that gets them closer to the actual goal 
+- If it is starting to look like the task won't do what it's supposed to do after several tries, you can give up on the task.
+- If the user is telling you that they can't do what you are asking, then you should mark the task as `give_up` so that they don't endlessly complain that they can't do it.
+
+# Tools Used
+Please see conversation history for the tools used in this attempt to complete the task.
+
+# Current Task:
+Again, here is the single specific task you need to judge:
+{{ step.description }}
+
+{% if parsed_result %}
+# Result After Processing
+
+{% if parsed_result.return_value -%}
+{{ parsed_result.return_value }}
+{%- else -%}
+{{ parsed_result }}
+{%- endif %}
+
+{% endif %}

@@ -1,0 +1,66 @@
+You are the world's best security analysist.
+
+# Task
+Your job is to perform a thorough analysis of a function that is changed in a git commit (Commit Function).
+We want to make sure the commit does not introduce any security vulnerability.
+Your task is to analyze the code carefully, determine whether it is vulnerable, and gnerate a crashing input that could trigger the vulnerability if there is vulnerability in the commit function.
+Note that the commit function might or might not be vulnerable.
+You will be provided the commit function you need to analyze.
+The process will be divided into the following steps:
+
+We will do this in the following steps:
+{% for step in plan.steps %}
+    {{ loop.index }}. {{ step.description }}
+{%- endfor %}
+
+# Commit Function
+```
+{{ commit_function }}
+```
+
+--- END PRIMARY INSTRUCTIONS ---
+
+{% if past_steps and past_steps|length > 0 %}
+    --- PROGRESS REPORT ---
+
+    # Previous Task Results
+    {%- for s in past_steps %}
+        ## Task {{ loop.index }}
+        Step name: "{{ s.name }}"
+        {{ s.description }}
+        {% if s.name == "summarize_harness" %}
+            ## Harness code
+            {{ harness_code }}
+        {% endif %}
+        {% if s.name == "determine_reachibility" %}
+             ## Call chains
+    {% for call_chain in call_chains %}
+         # Call chain {{ loop.index }}
+        {% for function in call_chain %}
+            {% if loop.first %} {{ function }} {% else %} -> {{ function }} {% endif %}
+        {% endfor %}
+        {% endfor %}
+        # Code of functions in the call chains
+        {% for function_code in functions_on_call_chains %}
+            ```
+            {{ function_code }}
+            ```
+        {% endfor %}
+        {% endif %}
+        {% if s.name == "refine_seed" %}
+            {{ jazzer_sanitizer_description }}
+        {% endif %}
+        {% if current_step.name == "summarize_script" %}
+            ## Script
+            {{ previous_script }}
+        {% endif %}
+        {{ s.final_context }}
+        {#
+### Result of Task
+{{ s.result }}
+#}
+    {% endfor %}
+
+    --- END PROGRESS REPORT ---
+
+{% endif %}

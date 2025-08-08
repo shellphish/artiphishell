@@ -1,0 +1,107 @@
+<!-- I love ChatGPT -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Target Function Coverage</title>
+    <style>
+        table {
+            width: 50%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+    </style>
+    <script>
+        function createTable(data) {
+            if (data.length == 0) {
+                const p = document.createElement('p');
+                p.innerText = "No data yet";
+                return p;
+            }
+            
+            // Get all keys (columns) for the transposed table
+            const keys = Object.keys(data[0]["functions"]);
+            
+            // Create the table elements
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // Create the header row (keys as column headers)
+            const headerRow = document.createElement('tr');
+            headerRow.appendChild(document.createElement('th'));
+            for (let i = 0; i < data.length; i++) {
+                const th = document.createElement('th');
+                const a = document.createElement('a');
+                a.innerText = i;
+                a.href = data[i]["grammar_file"];
+                th.appendChild(a);
+                headerRow.appendChild(th);
+            }
+            thead.appendChild(headerRow);
+
+            // Create rows for each key by flipping rows/columns
+            keys.forEach((key) => {
+                const row = document.createElement('tr');
+                
+                // Add a header cell for each row (the original column name)
+                const headerCell = document.createElement('th');
+                headerCell.innerText = key;
+                row.appendChild(headerCell);
+
+                // Add data cells for each row
+                data.forEach(item => {
+                    const td = document.createElement('td');
+                    td.innerText = item["functions"][key].toFixed(3);
+                    if (item["functions"][key] > 0.0) {
+                        td.style.backgroundColor = 'lightGreen';
+                    }
+                    row.appendChild(td);
+                });
+
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            return table;
+        }
+
+        function updateContent() {
+            fetch("/events_dir/grammars/target_func_cov.json")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const contentDiv = document.getElementById('content');
+                    contentDiv.innerHTML = ''; // Clear previous content
+                    const table = createTable(data);
+                    contentDiv.appendChild(table);
+                })
+                .catch(error => {
+                    document.getElementById('content').innerText = `Error: ${error.message}`;
+                });
+        }
+
+        window.onload = function () {
+            updateContent();
+            setInterval(updateContent, 1000);
+        };
+    </script>
+</head>
+
+<body>
+    <p id="content">Loading...</p>
+</body>
+
+</html>

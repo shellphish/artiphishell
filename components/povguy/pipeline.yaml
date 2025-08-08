@@ -1,0 +1,206 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  full_mode_tasks: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  debug_build_artifacts: FilesystemRepository
+  crs_tasks_base_sources: FilesystemRepository
+  full_functions_indices: BlobRepository
+  project_harness_infos: MetadataRepository
+  project_build_configurations: MetadataRepository
+  
+  jazzer_build_shellphish_dir: FilesystemRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  # losan specific repositories
+  losan_crashing_harness_inputs: BlobRepository
+  losan_crashing_harness_inputs_metadatas: MetadataRepository
+
+  per_crash_full_pov_reports: BlobRepository
+  dedup_pov_reports: BlobRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+  dedup_pov_report_representative_crashing_inputs: BlobRepository
+  dedup_pov_report_representative_full_reports: BlobRepository
+
+  # Intermediate repos
+  losan_dedup_pov_reports: { cls: MetadataRepository, required: false }
+  losan_dedup_pov_report_representative_metadatas: { cls: MetadataRepository, required: false }
+  losan_dedup_pov_report_representative_crashing_inputs: { cls: BlobRepository, required: false }
+  losan_dedup_pov_report_representative_full_reports: { cls: BlobRepository, required: false }
+  debug_build_base_artifacts: { cls: FilesystemRepository, required: false }
+
+  base_run_success: { cls: MetadataRepository, required: false }
+  build_check_success: { cls: MetadataRepository, required: false }
+
+
+imports:
+  pipeline_full:
+    path: ./pipeline_full.yaml
+    repos:
+      crs_tasks: crs_tasks
+      full_mode_tasks: full_mode_tasks
+      delta_mode_tasks: delta_mode_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      debug_build_artifacts: debug_build_artifacts
+      crs_tasks_base_sources: crs_tasks_base_sources
+      full_functions_indices: full_functions_indices
+      project_harness_infos: project_harness_infos
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      per_crash_full_pov_reports: per_crash_full_pov_reports
+      dedup_pov_reports: dedup_pov_reports
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      losan_dedup_pov_reports: losan_dedup_pov_reports
+      losan_dedup_pov_report_representative_metadatas: losan_dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_crashing_inputs: losan_dedup_pov_report_representative_crashing_inputs
+      losan_dedup_pov_report_representative_full_reports: losan_dedup_pov_report_representative_full_reports
+      debug_build_base_artifacts: debug_build_base_artifacts
+
+  pipeline_delta:
+    path: ./pipeline_delta.yaml
+    repos:
+      crs_tasks: crs_tasks
+      full_mode_tasks: full_mode_tasks
+      delta_mode_tasks: delta_mode_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      debug_build_artifacts: debug_build_artifacts
+      crs_tasks_base_sources: crs_tasks_base_sources
+      full_functions_indices: full_functions_indices
+      project_harness_infos: project_harness_infos
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      per_crash_full_pov_reports: per_crash_full_pov_reports
+      dedup_pov_reports: dedup_pov_reports
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      losan_dedup_pov_reports: losan_dedup_pov_reports
+      losan_dedup_pov_report_representative_metadatas: losan_dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_crashing_inputs: losan_dedup_pov_report_representative_crashing_inputs
+      losan_dedup_pov_report_representative_full_reports: losan_dedup_pov_report_representative_full_reports
+      debug_build_base_artifacts: debug_build_base_artifacts
+      base_run_success: base_run_success
+
+  pipeline_full_losan:
+    path: ./pipeline_full_losan.yaml
+    repos:
+      crs_tasks: crs_tasks
+      full_mode_tasks: full_mode_tasks
+      delta_mode_tasks: delta_mode_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      debug_build_artifacts: debug_build_artifacts
+      crs_tasks_base_sources: crs_tasks_base_sources
+      full_functions_indices: full_functions_indices
+      project_harness_infos: project_harness_infos
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+      crashing_harness_inputs: losan_crashing_harness_inputs
+      crashing_harness_inputs_metadatas: losan_crashing_harness_inputs_metadatas
+      per_crash_full_pov_reports: per_crash_full_pov_reports
+      dedup_pov_reports: dedup_pov_reports
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      losan_dedup_pov_reports: losan_dedup_pov_reports
+      losan_dedup_pov_report_representative_metadatas: losan_dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_crashing_inputs: losan_dedup_pov_report_representative_crashing_inputs
+      losan_dedup_pov_report_representative_full_reports: losan_dedup_pov_report_representative_full_reports
+      debug_build_base_artifacts: debug_build_base_artifacts
+
+
+  pipeline_delta_losan:
+    path: ./pipeline_delta_losan.yaml
+    repos:
+      crs_tasks: crs_tasks
+      full_mode_tasks: full_mode_tasks
+      delta_mode_tasks: delta_mode_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      debug_build_artifacts: debug_build_artifacts
+      crs_tasks_base_sources: crs_tasks_base_sources
+      full_functions_indices: full_functions_indices
+      project_harness_infos: project_harness_infos
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+      crashing_harness_inputs: losan_crashing_harness_inputs
+      crashing_harness_inputs_metadatas: losan_crashing_harness_inputs_metadatas
+      per_crash_full_pov_reports: per_crash_full_pov_reports
+      dedup_pov_reports: dedup_pov_reports
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      losan_dedup_pov_reports: losan_dedup_pov_reports
+      losan_dedup_pov_report_representative_metadatas: losan_dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_crashing_inputs: losan_dedup_pov_report_representative_crashing_inputs
+      losan_dedup_pov_report_representative_full_reports: losan_dedup_pov_report_representative_full_reports
+      debug_build_base_artifacts: debug_build_base_artifacts
+
+tasks:
+  verify_build_check_works:
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    failure_ok: true
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+      build_configuration_id:
+        repo: project_build_configurations
+        kind: InputId
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      crs_task_metadata:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      debug_build_artifacts_path:
+        repo: debug_build_artifacts
+        kind: InputFilepath
+
+      # OUTPUTS
+      build_check_success:
+        repo: build_check_success
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-povguy
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+
+          export CRS_TASK_NUM={{ crs_task_metadata.concurrent_target_num | default('1') }}
+
+
+          export RUN_SUCCESS_PATH={{ build_check_success | shquote }}
+          export SANITIZER={{ build_configuration.sanitizer | shquote }}
+          export DEBUG_BUILD_ARTIFACTS_PATH={{ debug_build_artifacts_path | shquote }}
+
+          tmpdir=/shared/debug_build/$TASK_NAME/$PROJECT_ID/{{ build_configuration_id }}
+          export TARGET_TMP_DIR=$tmpdir
+          mkdir -p $tmpdir
+          TARGET_DIR=$(mktemp -d -p $tmpdir)
+
+          rsync -ra --delete $DEBUG_BUILD_ARTIFACTS_PATH/ $TARGET_DIR/
+
+          echo "runs: false" > $RUN_SUCCESS_PATH
+
+          /shellphish/povguy/verify_build_check.py \
+            --sanitizer $SANITIZER \
+            --artifacts-path $TARGET_DIR \
+            --output $RUN_SUCCESS_PATH || true
+
+          rm -rf TARGET_DIR || true

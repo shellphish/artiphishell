@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  permanence-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    image: aixcc-permanence-server:latest
+    ports:
+      - "31337:31337"
+    volumes:
+      - ./data:/data
+      - ./:/app
+    environment:
+      - PERMANENCE_STORAGE_ROOT=/data/permanence_storage
+      - PERMANENCE_DB_PATH=/data/permanence.db
+      - PERMANENCE_API_SECRET=!!artiphishell!!
+      # set discord_webhook_url from compose environment variable
+      # to avoid hardcoding it in the codebase
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+
+# Uncomment the section below if you want to add a simple UI to monitor the service
+# ui:
+#   image: nginx:alpine
+#   ports:
+#     - "8080:80"
+#   volumes:
+#     - ./ui:/usr/share/nginx/html
+#     - ./nginx.conf:/etc/nginx/conf.d/default.conf
+#   depends_on:
+#     - permanence-service

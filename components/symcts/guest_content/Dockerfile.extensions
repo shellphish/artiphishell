@@ -1,0 +1,23 @@
+RUN apt-get update && \
+    apt-get install -y curl build-essential vim tmux htop git z3 python3 python3-pip lsb-release wget software-properties-common gnupg cmake ninja-build
+
+# Install LLVM 15
+RUN wget https://apt.llvm.org/llvm.sh && \
+    chmod +x llvm.sh && \
+    ./llvm.sh 15
+
+COPY --from=aixcc-symcts /inst_libs/symcts_aflpp_upstream /inst_libs/symcts_aflpp_upstream
+COPY --from=aixcc-symcts /inst_libs/symcts_aflpp /inst_libs/symcts_aflpp
+COPY --from=aixcc-symcts /inst_libs/symcts_symcc /inst_libs/symcts_symcc
+
+COPY --from=aixcc-symcts /inst/AFLplusplus_upstream /inst/AFLplusplus_upstream
+COPY --from=aixcc-symcts /inst/AFLplusplus /inst/AFLplusplus
+COPY --from=aixcc-symcts /inst/symcc /inst/symcc
+
+COPY --from=aixcc-symcts /mctsse /mctsse
+
+ENV SYMCC_RUNTIME_DIR=/mctsse/implementation/libfuzzer_stb_image_symcts/runtime/target/release
+ENV SYM_RUNTIME_DIR=/mctsse/implementation/libfuzzer_stb_image_symcts/runtime/target/release
+ENV SYMCC_NO_SYMBOLIC_INPUT=1
+ENV SYMCC_RUNTIME_DIR=$SYMCC_RUNTIME_DIR
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SYMCC_RUNTIME_DIR

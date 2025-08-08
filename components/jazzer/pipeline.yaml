@@ -1,0 +1,1313 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  project_metadatas: MetadataRepository
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  fuzzers_started: BlobRepository
+
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  losan_crashing_harness_inputs: BlobRepository
+  losan_crashing_harness_inputs_metadatas: MetadataRepository
+  full_functions_indices: BlobRepository
+  codeql_db_ready: MetadataRepository
+
+  jazzer_build_artifacts:
+    cls: FilesystemRepository
+    required: false
+    compress_backend: true
+    compress_backup: true
+  jazzer_build_shellphish_dir:
+    cls: FilesystemRepository
+    required: false
+    compress_backend: true
+    compress_backup: true
+
+tasks:
+  jazzer_build:
+    require_success: true
+    timeout:
+      minutes: 180
+
+    priority: 150
+    job_quota:
+      cpu: 0.5
+      mem: "2Gi"
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - itszn
+        - honululu
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+      # OUTPUTS
+      jazzer_build_artifacts:
+        repo: jazzer_build_artifacts
+        kind: OutputFilepath
+
+      jazzer_build_shellphish_dir:
+        repo: jazzer_build_shellphish_dir
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-shellphish-jazzer
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          if [ ! -z "${CI_TEST:-}" ]; then
+            SHARED_DIR=/shared/jazzer/{{ crs_task.pdt_task_id | shquote }}/jazzer-build
+            OSS_FUZZ_PROJECT_DIR=$SHARED_DIR/projects/{{ crs_task.project_name | shquote }}/
+            OSS_FUZZ_PROJECT_SRC_DIR=$SHARED_DIR/project_src/
+
+            mkdir -p $SHARED_DIR
+            cp -r {{ project_oss_fuzz_repo | shquote }}/* $SHARED_DIR
+          fi
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation shellphish_jazzer $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          $BUILD_IMAGE_COMMAND | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log
+          $BUILD_IMAGE_COMMAND --build-runner-image | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log
+          BUILDER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the crs_tasks_analysis_sources so we don't
+          # need to do anything with those here
+          if [ -z "${CI_TEST:-}" ]; then
+            oss-fuzz-build \
+              --use-task-service \
+              --project-id {{ project_id | shquote }} \
+              --architecture {{build_configuration.architecture}} \
+              --sanitizer {{build_configuration.sanitizer}} \
+              --instrumentation shellphish_jazzer \
+              --priority 100 \
+              --cpu ${INITIAL_BUILD_CPU:-6} \
+              --mem ${INITIAL_BUILD_MEM:-26Gi} \
+              --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+              --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+              "$OSS_FUZZ_PROJECT_DIR"
+          else
+            oss-fuzz-build \
+              --project-id {{ project_id | shquote }} \
+              --architecture {{build_configuration.architecture}} \
+              --sanitizer {{build_configuration.sanitizer}} \
+              --instrumentation shellphish_jazzer \
+              --project-source "$OSS_FUZZ_PROJECT_SRC_DIR" \
+              --priority 100 \
+              "$OSS_FUZZ_PROJECT_DIR"
+          fi
+
+          ls -la "$OSS_FUZZ_PROJECT_DIR"/artifacts/ 
+          # Check if artifacts directory is empty and exit with error if so
+          if [ -z "$(ls -A "$OSS_FUZZ_PROJECT_DIR"/artifacts/)" ]; then
+            echo "Error: artifacts directory is empty??????"
+            exit 1
+          fi
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          # rsync nautilus grammars
+          mkdir -p "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/grammars/reference
+          rsync -ra /shellphish/libs/nautilus/grammars/reference/ "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/grammars/reference/
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/artifacts/ {{jazzer_build_artifacts | shquote}}/
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{jazzer_build_shellphish_dir | shquote}}/
+
+          touch /tmp/.nginx_upload
+
+
+  wait_for_fuzzers_to_start_jazzer:
+    long_running: false
+    job_quota:
+      cpu: "1"
+      mem: "1Gi"
+
+    priority: 1000
+
+    require_success: true
+    failure_ok: true
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      # Wait until we have afl artifacts before we schedule this task
+      jazzer_build_artifacts_dir:
+        repo: jazzer_build_artifacts
+        kind: InputId
+        key: harness_info.build_configuration_id
+      
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      fuzzers_started:
+        repo: fuzzers_started
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-shellphish-jazzer
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          sleep 120
+
+          echo "fuzzers_started: true" > {{fuzzers_started}}
+
+  jazzer_fuzz:
+    long_running: true
+    cache_dir: /pdt-per-node-cache
+    replicable: true
+    scale_replicas: true
+
+    # We limit how many total jobs for this task can be running at once
+    # It will scale up the node pool until it reaches this number
+
+    # TODO(FINALDEPLOY): increase this to a very large number!!!
+    max_concurrent_jobs: 3000
+
+    # TODO tune these based on resource needs of this task
+    starting_replicas: 10
+    replicas_per_minute: 20
+
+    priority_addend: '{{ 3 * target_split_metadata.num_harness_infos }}'
+
+    max_spawn_jobs: 100
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    # To enable us to use the cheaper spot nodes
+    # But we only allow replicas because they may be evicted
+    replica_node_taints:
+      kubernetes.azure.com/scalesetpriority: "spot"
+    replica_node_affinity:
+      kubernetes.azure.com/scalesetpriority: "spot"
+    
+    job_quota:
+      template: |
+        cpu: {% if replica == 0 %}100m{% else %}1{% endif %}
+        mem: {% if replica == 0 %}.8Gi{% else %}4Gi{% endif %}
+    timeout:
+      minutes: 3000
+
+    links:
+      # The project_id is provided by the run request
+
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+        template_cache_key: "project_analysis_sources-{{ build_configuration.project_id }}"
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: build_configuration.project_id
+      jazzer_build_artifacts_dir:
+        repo: jazzer_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "jazzer_build_artifacts-{{ harness_info.build_configuration_id }}"
+
+      full_function_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: harness_info.project_id
+        template_cache_key: "full_functions_indices-{{ harness_info.project_id }}"
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--shellphish_jazzer"
+
+        host_mounts:
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          if [ "$REPLICA_ID" = "0" ]; then
+            echo "🙈  We are replica 0, so we will be very careful not to crash!"
+            while true; do
+              sleep 10
+              sleep infinity
+            done
+          fi
+
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ jazzer_build_artifacts_dir | shquote }}
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_SHELLPHISH_PROJECT_ID={{ project_id | shquote }}
+
+          export FUZZING_ENGINE="libfuzzer"
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD/out
+          echo "Running fuzzing in $PWD"
+
+          # Fuzzing and seeds dir for Jazzer for each harness
+          export ARTIPHISHELL_FUZZER_BASEDIR=/shared/jazzer/fuzz
+          export JAZZER_INSTANCE_UNIQUE_NAME=${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/
+          export JAZZER_INSTANCE_PATH_FOR_EACH_HARNESS="$ARTIPHISHELL_FUZZER_BASEDIR/$JAZZER_INSTANCE_UNIQUE_NAME"
+
+          # jazzer replicas
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL="${ARTIPHISHELL_SHELLPHISH_PROJECT_ID}-${JOB_ID}-${REPLICA_ID}"
+          export ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR=$JAZZER_INSTANCE_PATH_FOR_EACH_HARNESS/$ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL
+          mkdir -p $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR
+
+          export ARTIPHISHELL_JAZZER_BENIGN_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/queue"
+          export ARTIPHISHELL_JAZZER_CRASHING_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/crashes/"
+          export ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/losan_crashes/"
+          mkdir -p "$ARTIPHISHELL_JAZZER_CRASHING_SEEDS" "$ARTIPHISHELL_JAZZER_BENIGN_SEEDS" "$ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS"
+
+          echo "ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR: $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR"
+          echo "ARTIPHISHELL_JAZZER_CRASHING_SEEDS: $ARTIPHISHELL_JAZZER_CRASHING_SEEDS"
+          echo "ARTIPHISHELL_JAZZER_BENIGN_SEEDS: $ARTIPHISHELL_JAZZER_BENIGN_SEEDS"
+          echo "ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS: $ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS"
+          export CORPUS_DIR=$ARTIPHISHELL_JAZZER_BENIGN_SEEDS
+
+          # FUZZER SYNC DIR to get all mimimized seeds during fuzzing
+          export ARTIPHISHELL_FUZZER_SYNC_PATH="/shared/fuzzer_sync/$JAZZER_INSTANCE_UNIQUE_NAME/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/queue/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/losan_crashes/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-minimized/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-minimized/queue/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/sync-quickseed/queue/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/sync-quickseed/crashes/"
+
+          # original JAZZER
+          export ARTIPHISHELL_JAZZER_BINARY="/out/jazzer_driver.orig"
+          export ARTIPHISHELL_JAZZER_AGENT="/out/jazzer_agent_deploy.jar.orig"
+          
+          # crash reports and fuzzing log for debugging
+          export ARTIPHISHELL_JAZZER_CRASH_REPORTS="${ARTIPHISHELL_FUZZER_SYNC_PATH}/jazzer-debug-info/crash_reproducer"
+          ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR="${ARTIPHISHELL_FUZZER_SYNC_PATH}/jazzer-debug-info/logs/"
+          mkdir -p "$ARTIPHISHELL_JAZZER_CRASH_REPORTS" "$ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR"
+          export ARTIPHISHELL_JAZZER_FUZZING_LOG=$ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR/"${TASK_NAME}_${REPLICA_ID}"
+          # touch ARTIPHISHELL_JAZZER_FUZZING_LOG
+
+          export MODE=fuzz
+          export ARTIPHISHELL_IN_SCOPE_CLASSES=/shellphish/packages_in_scope.json
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+
+          python3 /shellphish/instrumentation_and_strings.py --cp-name {{crs_task.project_name | shquote }} \
+                      --project-id {{ project_id | shquote }} \
+                      --output $ARTIPHISHELL_IN_SCOPE_CLASSES \
+                      --project-metadata $PROJECT_METADATA_PATH
+
+
+          touch /shellphish/dict.txt
+
+          run_fuzzer {{harness_info.cp_harness_name | shquote}}
+
+
+  jazzer_fuzz_shellphish:
+    long_running: true
+    cache_dir: /pdt-per-node-cache
+
+    replicable: true
+    scale_replicas: true
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # We limit how many total jobs for this task can be running at once
+    # TODO this should be templated based on the # of crs tasks
+    max_concurrent_jobs: 2000
+    starting_replicas: 5
+    replicas_per_minute: 20
+    
+    priority_addend: '{{ 3 * target_split_metadata.num_harness_infos }}'
+
+    max_spawn_jobs: 100
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    # To enable us to use the cheaper spot nodes
+    # But we only allow replicas because they may be evicted
+    replica_node_taints:
+      kubernetes.azure.com/scalesetpriority: "spot"
+    replica_node_affinity:
+      kubernetes.azure.com/scalesetpriority: "spot"
+
+    job_quota:
+      template: |
+        cpu: {% if replica == 0 %}100m{% else %}1{% endif %}
+        mem: {% if replica == 0 %}.8Gi{% else %}4Gi{% endif %}
+    timeout:
+      minutes: 3000
+
+    links:
+      # The project_id is provided by the run request
+
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      crs_task_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+        template_cache_key: "project_analysis_sources-{{ build_configuration.project_id }}"
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+      jazzer_build_artifacts_dir:
+        repo: jazzer_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "jazzer_build_artifacts-{{ harness_info.build_configuration_id }}"
+
+      full_function_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: harness_info.project_id
+        template_cache_key: "full_functions_indices-{{ harness_info.project_id }}"
+
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--shellphish_jazzer"
+
+        host_mounts:
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          
+          if [ "$REPLICA_ID" = "0" ]; then
+            echo "🙈  We are replica 0, so we will be very careful not to crash!"
+            while true; do
+              sleep 10
+              sleep infinity
+            done
+          fi
+
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ jazzer_build_artifacts_dir | shquote }}
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_SHELLPHISH_PROJECT_ID={{ project_id | shquote }}
+          export FUZZING_ENGINE="libfuzzer"
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD/out
+          echo "Running fuzzing in $PWD"
+
+          # Fuzzing and seeds dir for Jazzer for each harness
+          export ARTIPHISHELL_FUZZER_BASEDIR=/shared/jazzer/fuzz
+          export JAZZER_INSTANCE_UNIQUE_NAME=${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/
+          export JAZZER_INSTANCE_PATH_FOR_EACH_HARNESS="$ARTIPHISHELL_FUZZER_BASEDIR/$JAZZER_INSTANCE_UNIQUE_NAME"
+
+          # jazzer replicas
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL="${ARTIPHISHELL_SHELLPHISH_PROJECT_ID}-${JOB_ID}-${REPLICA_ID}"
+          export ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR=$JAZZER_INSTANCE_PATH_FOR_EACH_HARNESS/$ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL
+          mkdir -p $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR
+
+          export ARTIPHISHELL_JAZZER_BENIGN_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/queue"
+          export ARTIPHISHELL_JAZZER_CRASHING_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/crashes/"
+                    export ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/losan_crashes/"
+          mkdir -p "$ARTIPHISHELL_JAZZER_CRASHING_SEEDS" "$ARTIPHISHELL_JAZZER_BENIGN_SEEDS" "$ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS"
+
+          echo "ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR: $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR"
+          echo "ARTIPHISHELL_JAZZER_CRASHING_SEEDS: $ARTIPHISHELL_JAZZER_CRASHING_SEEDS"
+          echo "ARTIPHISHELL_JAZZER_BENIGN_SEEDS: $ARTIPHISHELL_JAZZER_BENIGN_SEEDS"
+          echo "ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS: $ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS"
+          export CORPUS_DIR=$ARTIPHISHELL_JAZZER_BENIGN_SEEDS
+
+          # FUZZER SYNC DIR to get all mimimized seeds during fuzzing
+          export ARTIPHISHELL_FUZZER_SYNC_PATH="/shared/fuzzer_sync/$JAZZER_INSTANCE_UNIQUE_NAME/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/queue/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/losan_crashes/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-minimized/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-minimized/queue/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/sync-quickseed/queue/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/sync-quickseed/crashes/"
+
+          # SHELLPHISH JAZZER
+          export ARTIPHISHELL_JAZZER_BINARY="/out/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver"
+          export ARTIPHISHELL_JAZZER_AGENT="/out/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar"
+          touch /shellphish/dict.txt
+
+          export MODE=fuzz
+          # crash reports and fuzzing log for debugging
+          export ARTIPHISHELL_JAZZER_CRASH_REPORTS="${ARTIPHISHELL_FUZZER_SYNC_PATH}/jazzer-debug-info/crash_reproducer"
+          ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR="${ARTIPHISHELL_FUZZER_SYNC_PATH}/jazzer-debug-info/logs/"
+          mkdir -p "$ARTIPHISHELL_JAZZER_CRASH_REPORTS" "$ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR"
+          export ARTIPHISHELL_JAZZER_FUZZING_LOG=$ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR/"${TASK_NAME}_${REPLICA_ID}"
+          # touch ARTIPHISHELL_JAZZER_FUZZING_LOG
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+
+          export ARTIPHISHELL_IN_SCOPE_CLASSES=/shellphish/packages_in_scope.json
+
+          python3 /shellphish/instrumentation_and_strings.py --cp-name {{crs_task.project_name | shquote }} \
+                                --project-id {{ project_id | shquote }} \
+                                --output $ARTIPHISHELL_IN_SCOPE_CLASSES \
+                                --project-metadata $PROJECT_METADATA_PATH 
+
+  
+          run_fuzzer {{harness_info.cp_harness_name | shquote}}
+   
+
+  jazzer_fuzz_shellphish_codeql:
+    long_running: true
+    cache_dir: /pdt-per-node-cache
+    replicable: true
+    scale_replicas: true
+    # TODO this should be templated based on the # of crs tasks
+    max_concurrent_jobs: 2000
+    starting_replicas: 5
+    replicas_per_minute: 8
+    priority_addend: '{{ 3 * target_split_metadata.num_harness_infos }}'
+
+    max_spawn_jobs: 100
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+    
+    # To enable us to use the cheaper spot nodes
+    # But we only allow replicas because they may be evicted
+    replica_node_taints:
+      kubernetes.azure.com/scalesetpriority: "spot"
+    replica_node_affinity:
+      kubernetes.azure.com/scalesetpriority: "spot"
+
+    job_quota:
+      template: |
+        cpu: {% if replica == 0 %}100m{% else %}1{% endif %}
+        mem: {% if replica == 0 %}.8Gi{% else %}4Gi{% endif %}
+    timeout:
+      minutes: 3000
+
+    links:
+      # The project_id is provided by the run request
+
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      crs_task_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+        template_cache_key: "project_analysis_sources-{{ build_configuration.project_id }}"
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+      jazzer_build_artifacts_dir:
+        repo: jazzer_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "jazzer_build_artifacts-{{ harness_info.build_configuration_id }}"
+
+      full_function_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: harness_info.project_id
+        template_cache_key: "full_functions_indices-{{ harness_info.project_id }}"
+
+      codeql_ready:
+        repo: codeql_db_ready
+        kind: InputId
+        key: harness_info.project_id
+
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--shellphish_jazzer"
+
+        host_mounts:
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          if [ "$REPLICA_ID" = "0" ]; then
+            echo "🙈  We are replica 0, so we will be very careful not to crash!"
+            while true; do
+              sleep 10
+              sleep infinity
+            done
+          fi
+
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ jazzer_build_artifacts_dir | shquote }}
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_SHELLPHISH_PROJECT_ID={{ project_id | shquote }}
+          export FUZZING_ENGINE="libfuzzer"
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD/out
+          echo "Running fuzzing in $PWD"
+
+          # Fuzzing and seeds dir for Jazzer for each harness
+          export ARTIPHISHELL_FUZZER_BASEDIR=/shared/jazzer/fuzz
+          export JAZZER_INSTANCE_UNIQUE_NAME=${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/
+          export JAZZER_INSTANCE_PATH_FOR_EACH_HARNESS="$ARTIPHISHELL_FUZZER_BASEDIR/$JAZZER_INSTANCE_UNIQUE_NAME"
+
+          # jazzer replicas
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL="${ARTIPHISHELL_SHELLPHISH_PROJECT_ID}-${JOB_ID}-${REPLICA_ID}"
+          export ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR=$JAZZER_INSTANCE_PATH_FOR_EACH_HARNESS/$ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL
+          mkdir -p $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR
+
+          export ARTIPHISHELL_JAZZER_BENIGN_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/queue"
+          export ARTIPHISHELL_JAZZER_CRASHING_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/crashes/"
+          export ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/losan_crashes/"
+          mkdir -p "$ARTIPHISHELL_JAZZER_CRASHING_SEEDS" "$ARTIPHISHELL_JAZZER_BENIGN_SEEDS" "$ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS"
+
+          echo "ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR: $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR"
+          echo "ARTIPHISHELL_JAZZER_CRASHING_SEEDS: $ARTIPHISHELL_JAZZER_CRASHING_SEEDS"
+          echo "ARTIPHISHELL_JAZZER_BENIGN_SEEDS: $ARTIPHISHELL_JAZZER_BENIGN_SEEDS"
+          echo "ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS: $ARTIPHISHELL_JAZZER_LOSAN_CRASHING_SEEDS"
+          export CORPUS_DIR=$ARTIPHISHELL_JAZZER_BENIGN_SEEDS
+
+          # FUZZER SYNC DIR to get all mimimized seeds during fuzzing
+          export ARTIPHISHELL_FUZZER_SYNC_PATH="/shared/fuzzer_sync/$JAZZER_INSTANCE_UNIQUE_NAME/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/queue/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/losan_crashes/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-minimized/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-minimized/queue/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/sync-quickseed/queue/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/sync-quickseed/crashes/"
+
+          # SHELLPHISH JAZZER
+          export ARTIPHISHELL_JAZZER_BINARY="/out/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver"
+          export ARTIPHISHELL_JAZZER_AGENT="/out/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar"
+
+          # run codeql queries
+          touch /shellphish/dict.txt
+
+          ARTIPHISHELL_IN_SCOPE_CLASSES=/shellphish/in_scope_classes_path.json
+          export TASK_TYPE_FOR_CODEQL_QUERY={{crs_task.type | shquote }}
+          export MODE=fuzz
+          # crash reports and fuzzing log for debugging
+          export ARTIPHISHELL_JAZZER_CRASH_REPORTS="${ARTIPHISHELL_FUZZER_SYNC_PATH}/jazzer-debug-info/crash_reproducer"
+          ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR="${ARTIPHISHELL_FUZZER_SYNC_PATH}/jazzer-debug-info/logs/"
+          mkdir -p "$ARTIPHISHELL_JAZZER_CRASH_REPORTS" "$ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR"
+          export ARTIPHISHELL_JAZZER_FUZZING_LOG=$ARTIPHISHELL_JAZZER_FUZZING_LOG_DIR/"${TASK_NAME}_${REPLICA_ID}"
+          touch ARTIPHISHELL_JAZZER_FUZZING_LOG
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          echo "project metdata... $PROJECT_METADATA_PATH"
+
+          python3 /shellphish/instrumentation_and_strings.py --cp-name {{crs_task.project_name | shquote }} \
+                                          --project-id {{ project_id | shquote }} \
+                                          --query "info-extraction-java/java_strings_for_dict.ql:interesting_strings" \
+                                          --query "info-extraction-java/java_reaching_funcs.ql.j2:java_reaching_classes" \
+                                          --output $ARTIPHISHELL_IN_SCOPE_CLASSES \
+                                          --project-metadata $PROJECT_METADATA_PATH \
+                                          --run-codeql
+
+          ls /shellphish/
+
+          run_fuzzer {{harness_info.cp_harness_name | shquote}}
+
+
+  jazzer_fuzz_same_node_sync:
+    long_running: true
+    require_success: true
+    cache_dir: /pdt-per-node-cache
+
+    job_quota:
+      cpu: 1
+      mem: "1Gi"
+    resource_limits:
+      cpu: 1
+      mem: "8Gi"
+    
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      "support.shellphish.net/allow-fuzzing": "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      "support.shellphish.net/only-fuzzing": "true"
+      "kubernetes.azure.com/scalesetpriority": "spot"
+    # Prioritize launching on these nodes
+    node_affinity:
+      "support.shellphish.net/only-fuzzing": "true"
+
+    timeout:
+      minutes: 3000
+
+    links:
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+        template_cache_key: "project_analysis_sources-{{ build_configuration.project_id }}"
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+      jazzer_build_artifacts_dir:
+        repo: jazzer_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "jazzer_build_artifacts-{{ harness_info.build_configuration_id }}"
+
+    executable:
+      cls: ContainerSet
+      args:
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--shellphish_jazzer"
+
+        host_mounts:
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+          set -x
+          set -e
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ jazzer_build_artifacts_dir | shquote }}
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_SHELLPHISH_PROJECT_ID={{ project_id | shquote }}
+          export ARTIPHISHELL_FUZZER_SYNC_DIR="/shared/fuzzer_sync/${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_DIR"
+
+          export FUZZING_ENGINE="libfuzzer"
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD/out
+          echo "Running fuzzing in $PWD"
+
+          if [ -f /shared/sync-ssh-key ]; then
+            export SSH_KEY=/shared/sync-ssh-key
+          fi
+          ls -al /shellphish/
+
+          # SHELLPHISH JAZZER
+          export ARTIPHISHELL_JAZZER_BINARY="/out/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver"
+          export ARTIPHISHELL_JAZZER_AGENT="/out/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar"
+
+          /shellphish/minimize_corpus_and_same_node_sync.sh
+
+  jazzer_fuzz_cross_node_sync:
+    long_running: true
+    require_success: true
+
+    job_quota:
+      cpu: 500m
+      mem: "1Gi"
+    resource_limits:
+      cpu: 500m
+      mem: "2Gi"
+
+    timeout:
+      minutes: 3000  # ContainerSets must have timeouts!
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+      
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+      kubernetes.azure.com/scalesetpriority: "spot"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      jazzer_build_artifacts_dir:
+        repo: jazzer_build_artifacts
+        kind: InputFilepath
+      
+      target_split_metadata_path:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+
+    executable:
+      cls: ContainerSet
+      args:
+        image: aixcc-shellphish-jazzer
+
+        host_mounts:
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ jazzer_build_artifacts_dir | shquote }}
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_SHELLPHISH_PROJECT_ID={{ project_id | shquote }}
+          cat {{ target_split_metadata_path | shquote }}
+          export TARGET_SPLIT_METADATA={{ target_split_metadata_path | shquote }}
+
+          export SSH_KEY=/shared/sync-ssh-key
+
+          # SHELLPHISH JAZZER
+          export ARTIPHISHELL_JAZZER_BINARY="/out/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver"
+          export ARTIPHISHELL_JAZZER_AGENT="/out/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar"
+          ls -al /shellphish/jazzer/
+          /shellphish/jazzer/cross_node_sync_seeds.sh
+
+  jazzer_fuzz_merge:
+    long_running: true
+    require_success: true
+    cache_dir: /pdt-per-node-cache
+
+    priority: 10000
+    job_quota:
+      cpu: 0.5
+      mem: "1Gi"
+
+    resource_limits:
+      cpu: "1"
+      mem: "4Gi"
+
+    timeout:
+      minutes: 3000
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+
+    links:
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+        template_cache_key: "project_analysis_sources-{{ build_configuration.project_id }}"
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      jazzer_build_artifacts_dir:
+        repo: jazzer_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "jazzer_build_artifacts-{{ harness_info.build_configuration_id }}"
+
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: benign_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_info_id }}"
+          build_configuration_id: "{{ harness_info.build_configuration_id }}"
+          project_harness_metadata_id: "{{ harness_info.project_harness_metadata_id }}"
+          project_id: "{{ harness_info.project_id }}"
+          project_name: "{{ harness_info.project_name }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          architecture: "{{ harness_info.architecture }}"
+          sanitizer: "{{ harness_info.sanitizer }}"
+          fuzzer: jazzer
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_info_id }}"
+          build_configuration_id: "{{ harness_info.build_configuration_id }}"
+          project_harness_metadata_id: "{{ harness_info.project_harness_metadata_id }}"
+          project_id: "{{ harness_info.project_id }}"
+          project_name: "{{ harness_info.project_name }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          architecture: "{{ harness_info.architecture }}"
+          sanitizer: "{{ harness_info.sanitizer }}"
+          fuzzer: jazzer
+      losan_crashing_harness_inputs:
+        repo: losan_crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: losan_crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_info_id }}"
+          build_configuration_id: "{{ harness_info.build_configuration_id }}"
+          project_harness_metadata_id: "{{ harness_info.project_harness_metadata_id }}"
+          project_id: "{{ harness_info.project_id }}"
+          project_name: "{{ harness_info.project_name }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          architecture: "{{ harness_info.architecture }}"
+          sanitizer: "{{ harness_info.sanitizer }}"
+          fuzzer: jazzer
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-shellphish-jazzer
+
+        host_mounts:
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ jazzer_build_artifacts_dir | shquote }}
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_BUILD_CONFIGURATION_ID={{ harness_info.build_configuration_id | shquote }}
+          export ARTIPHISHELL_HARNESS_BINARY_PATH={{ harness_info.cp_harness_binary_path | shquote }}
+
+          export SANITIZER_NAME={{ harness_info.sanitizer | shquote }}
+          export ARCHITECTURE={{ harness_info.architecture | shquote }}
+
+          # Fuzzing and seeds dir for Jazzer for each harness
+          export ARTIPHISHELL_FUZZER_BASEDIR=/shared/jazzer/fuzz
+          export JAZZER_INSTANCE_UNIQUE_NAME=${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/
+          export JAZZER_INSTANCE_PATH_FOR_EACH_HARNESS="$ARTIPHISHELL_FUZZER_BASEDIR/$JAZZER_INSTANCE_UNIQUE_NAME"
+
+          # jazzer replicas
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL="{{project_id}}-${JOB_ID}-${REPLICA_ID}"
+          export ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR=$JAZZER_INSTANCE_PATH_FOR_EACH_HARNESS/$ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL
+          mkdir -p $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR
+
+          # FUZZER SYNC DIR to get all mimimized seeds during fuzzing
+          export ARTIPHISHELL_FUZZER_SYNC_PATH="/shared/fuzzer_sync/$JAZZER_INSTANCE_UNIQUE_NAME/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/queue/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-all/losan_crashes/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-minimized/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/jazzer-minimized/queue/"
+
+          echo "ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR: $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR"
+
+          PDT_SEEDS_DIR={{benign_harness_inputs | shquote}}
+          PDT_CRASHES_DIR={{crashing_harness_inputs | shquote}}
+          PDT_LOSAN_CRASHES_DIR={{losan_crashing_harness_inputs | shquote}}
+          export PDT_SEEDS_DIR PDT_CRASHES_DIR PDT_LOSAN_CRASHES_DIR
+          ls -al /shellphish/jazzer/
+          
+          /shellphish/jazzer/output_to_pdt.sh

@@ -1,0 +1,15 @@
+
+# Ignore everything
+*
+
+# Add folders back in 
+!src/
+!target_building/
+!tools/
+!pyproject.toml
+!ci_tests/
+
+# Add files back in
+!run-gg*.sh
+!*.py
+!*.j2

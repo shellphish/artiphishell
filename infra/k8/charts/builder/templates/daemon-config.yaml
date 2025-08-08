@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "builder.fullname" . }}-daemon-config
+  labels:
+    {{- include "builder.labels" . | nindent 4 }}
+data:
+  daemon.json: |
+    {
+      "insecure-registries": [],
+      "log-driver": "json-file",
+      "log-opts": {
+        "max-size": "10m",
+        "max-file": "3"
+      },
+      "features": {
+        "containerd-snapshotter": false
+      },
+      "registry-mirrors": [],
+      "exec-opts": []
+    }
+  credential-acr-env.sh: |
+    #!/bin/sh
+    case "$1" in
+      "get" )
+        echo "{\"ServerURL\":\"${ACR_SERVER}\",\"Username\":\"${ACR_USERNAME}\",\"Secret\":\"${ACR_PASSWORD}\"}"
+        ;;
+      * )
+        echo "Invalid command: $1"
+        exit 1
+        ;;
+    esac 

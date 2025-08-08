@@ -1,0 +1,43 @@
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("//bazel:kotlin.bzl", "ktlint")
+
+java_library(
+    name = "agent_installer",
+    srcs = ["AgentInstaller.java"],
+    resources = select({
+        "@platforms//os:android": [
+            "//src/main/java/com/code_intelligence/jazzer/android:jazzer_bootstrap_android",
+        ],
+        "//conditions:default": [
+            "//src/main/java/com/code_intelligence/jazzer/runtime:jazzer_bootstrap",
+        ],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":agent_lib",
+        "//src/main/java/com/code_intelligence/jazzer/driver:opt",
+        "//src/main/java/com/code_intelligence/jazzer/runtime:constants",
+        "@maven//:net_bytebuddy_byte_buddy_agent",
+    ],
+)
+
+kt_jvm_library(
+    name = "agent_lib",
+    srcs = [
+        "Agent.kt",
+        "AgentUtils.java",
+        "CoverageIdStrategy.kt",
+        "RuntimeInstrumentor.kt",
+    ],
+    deps = [
+        "//sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers:constants",
+        "//src/main/java/com/code_intelligence/jazzer/driver:opt",
+        "//src/main/java/com/code_intelligence/jazzer/instrumentor",
+        "//src/main/java/com/code_intelligence/jazzer/utils:class_name_globber",
+        "//src/main/java/com/code_intelligence/jazzer/utils:log",
+        "//src/main/java/com/code_intelligence/jazzer/utils:manifest_utils",
+        "@maven//:io_github_classgraph_classgraph",
+    ],
+)
+
+ktlint()

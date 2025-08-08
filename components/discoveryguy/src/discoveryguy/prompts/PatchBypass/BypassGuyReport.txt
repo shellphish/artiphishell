@@ -1,0 +1,18 @@
+After completing the bypass analysis, you MUST output a report in the specified format.
+
+
+<python_script>
+...
+</python_script>
+
+<summary>
+...
+</summary>
+
+<!-- Guidelines for output generation: -->
+1. Replace "..." in between of the <python_script> tags with a Python script that, when executed, outputs the crashing seed necessary to bypass this patch.
+
+IMPORTANT:
+1. The Python script should write this crashing input to a file called `/work/crash.txt` using `f.write`.
+2. The Python script goal is to only emit the crashing input that we are gonna feed to a fuzzing Harness that orginally crashed this target. DO NOT ATTEMPT CONNECTION OR ANYTHING ELSE. YOU MUST SIMPLY PROVIDE US THE INPUT.
+3. The Python script should not contain unnecessary print statements and/or comments.

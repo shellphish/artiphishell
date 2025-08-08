@@ -1,0 +1,24 @@
+# aixcc-build: aixcc-data
+FROM docker.io/library/ubuntu:22.04@sha256:340d9b015b194dc6e2a13938944e0d016e57b9679963fdeb9ce021daac430221 AS builder
+
+############################# DYVA ############################
+# Installing GDB 12, re https://github.com/google/oss-fuzz/issues/7513.
+FROM ubuntu:24.04 as static-gdb
+
+RUN apt update && apt install -y wget
+
+WORKDIR /dyva
+RUN wget https://github.com/guyush1/gdb-static/releases/download/v16.2-static/gdb-static-with-python-x86_64.tar.gz
+RUN tar -xf gdb-static-with-python-x86_64.tar.gz
+
+###############################################################
+
+############################# DATA CONTAINER ############################
+# This is the final container that will be used to hold the data
+#########################################################################
+
+FROM scratch
+FROM ubuntu:22.04
+
+COPY --from=static-gdb /dyva/gdb /dyva/gdb
+COPY --from=static-gdb /dyva/gdbserver /dyva/gdbserver

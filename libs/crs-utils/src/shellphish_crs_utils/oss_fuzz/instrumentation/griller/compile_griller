@@ -1,0 +1,18 @@
+#!/bin/bash
+
+export LLVM_COMPILER=clang
+export CC=wllvm
+export CXX=wllvm++
+
+# Let Clang silently skip unknown “-W…” flags (gcc onli) instead of erroring out
+export CFLAGS="$CFLAGS -Wno-unknown-warning-option -Wno-error=unknown-warning-option -g"
+export CXXFLAGS="$CXXFLAGS -Wno-unknown-warning-option -Wno-error=unknown-warning-option -g"
+
+export LIB_FUZZING_ENGINE=/usr/lib/libFuzzingEngine.a
+# export ASAN_OPTIONS=abort_on_error=1:detect_leaks=0
+# export ANTI_WRAP_LD_DEBUGGING=1
+
+$CC $CFLAGS -c -o $SRC/shellphish/generic_harness.o $SRC/shellphish/generic_harness.c
+ar rcs $SRC/shellphish/libgeneric_harness.a $SRC/shellphish/generic_harness.o
+cp $SRC/shellphish/libgeneric_harness.a $LIB_FUZZING_ENGINE
+sleep 1

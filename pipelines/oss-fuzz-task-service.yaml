@@ -1,0 +1,379 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  project_sources: FilesystemRepository
+  project_metadata: MetadataRepository
+
+  project_build_request: MetadataRepository
+  project_run_request: MetadataRepository
+
+  project_volumes: FilesystemRepository
+  project_build_artifacts: FilesystemRepository
+
+  ################### OUTPUTS #####################
+  project_build_metadata: MetadataRepository
+  project_build_log_stdout: BlobRepository
+  project_build_log_stderr: BlobRepository
+
+  project_run_metadata: MetadataRepository
+  project_run_log_stdout: BlobRepository
+  project_run_log_stderr: BlobRepository
+  project_run_artifacts: FilesystemRepository
+
+
+tasks:
+  oss_fuzz_project_build:
+    priority: "{{ build_request.priority | default('2') }}"
+    job_quota:
+      template: "{{ build_request.quota | to_yaml }}"
+    resource_limits:
+      template: "{% if build_request.resource_limits %}{{ build_request.resource_limits | to_yaml }}{% else %}null{% endif %}"
+    failure_ok: true
+
+    links:
+      build_request_id:
+        repo: project_build_request
+        kind: InputId
+      build_request:
+        repo: project_build_request
+        kind: InputMetadata
+      build_request_path:
+        repo: project_build_request
+        kind: InputFilepath
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_request.project_id
+
+      # The project_id is provided by the build request
+      project_id:
+        repo: project_sources
+        kind: InputId
+        key: build_request.project_id
+      project_sources:
+        repo: project_sources
+        kind: InputFilepath
+        key: build_request.project_id
+      project_metadata:
+        repo: project_metadata
+        kind: InputMetadata
+        key: build_request.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_request.project_id
+
+      # OUTPUTS
+      project_build_metadata:
+        repo: project_build_metadata
+        kind: OutputFilepath
+      project_build_log_stdout:
+        repo: project_build_log_stdout
+        kind: OutputFilepath
+      project_build_log_stderr:
+        repo: project_build_log_stderr
+        kind: OutputFilepath
+      project_build_artifacts:
+        repo: project_build_artifacts
+        kind: OutputFilepath
+        required_for_success: false
+    
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "{{ build_request.docker_image }}"
+        host_mounts:
+          "/shared/": "/shared/"
+          "/m2cache/": "/shared/{{project_id}}.m2.cache/"
+        template: |
+          set -x
+          set -e
+
+          if [ -d "/m2cache/m2" ]; then
+            rm -rf /root/.m2
+            rsync -rav --delete  /m2cache/m2/ /root/.m2
+          fi
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export BUILD_REQUEST_ID={{ build_request_id }}
+          export PROJECT_ID={{ project_id }}
+
+          export FUZZING_LANGUAGE={{ build_request.project_language }}
+          export SANITIZER={{ build_request.sanitizer }}
+          export FUZZING_ENGINE={{ build_request.fuzzing_engine }}
+
+          export BUILD_REQUEST_PATH={{ build_request_path }}
+
+          {{ build_request.env | export_env }}
+
+          export CCACHE_DIR="/shared/ccache"
+
+          # The build command will not configure ccache if the following env variable 
+          # is set to 1.
+          if [ -f "/shared/{{project_id}}.nocompilercache" ]; then
+            export ARTIPHISHELL_CCACHE_DISABLE=1
+          fi
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # The target source gets copied over the source in current directory
+          rsync -rav --delete {{project_sources | shquote}}/ $PWD
+          ls -al /src/
+          ls -al $PWD
+
+          {% if build_request.extra_files %}
+            {{ build_request.extra_files | base64_files }}
+          {% endif %}
+
+          # TODO think of smarter ways to do this 
+          {% if build_request.git_ref -%}
+              git config --global --add safe.directory '*' || true
+              git reset --hard {{ build_request.git_ref }}
+          {%- endif %}
+
+          {% if build_request.patch -%}
+          {% if build_request.patch | length < 4096 %}
+          echo '{{ build_request.patch }}' | base64 -d > /tmp/patch.diff
+          {% else %}
+          sed -n 's/^patch: //p' $BUILD_REQUEST_PATH | base64 -d > /tmp/patch.diff
+          {% endif %}
+          sha256sum /tmp/patch.diff || true
+          git apply /tmp/patch.diff -v
+          {%- endif %}
+
+          touch /out/build.stdout.log
+          touch /out/build.stderr.log
+
+          # Final bash command to run
+          (
+          set -e
+
+          {% if build_request.timeout -%}
+            timeout -s KILL --preserve-status {{ build_request.timeout + 1 }} timeout -sINT --preserve-status {{ build_request.timeout }}
+          {%- endif %} {{ build_request.command | shquote }}
+
+          if [ $? -eq 0 ]; then
+            touch /out/.build_success
+          fi
+          ) 2> /out/build.stderr.log | tee /out/build.stdout.log || true
+
+          echo "===== STDOUT ====="
+          cat /out/build.stdout.log
+          echo "===== STDERR ====="
+          cat /out/build.stderr.log
+          echo "=================="
+
+          touch /out/build_metadata.yaml
+          echo "request_id: {{ build_request_id }}" >> /out/build_metadata.yaml
+          echo "project_id: {{ project_id }}" >> /out/build_metadata.yaml
+          echo "sanitizer: {{ build_request.sanitizer }}" >> /out/build_metadata.yaml
+          echo "fuzzing_engine: {{ build_request.fuzzing_engine }}" >> /out/build_metadata.yaml
+          echo "language: {{ build_request.project_language }}" >> /out/build_metadata.yaml
+
+          if [ -f /out/.build_success ]; then
+            echo "build_success: true" >> /out/build_metadata.yaml
+          else
+            # The build failed for reasons unknown to us, so we disable ccache
+            # to ensure that the next build does not use the ccache. This is just to 
+            # rule out ccache as a source of build failures.
+            touch /shared/{{project_id}}.nocompilercache
+            echo "build_success: false" >> /out/build_metadata.yaml
+          fi
+          cp /out/build_metadata.yaml {{ project_build_metadata | shquote }}
+
+          cp /out/build.stdout.log {{ project_build_log_stdout | shquote }}
+          cp /out/build.stderr.log {{ project_build_log_stderr | shquote }}
+
+          ccache -s -v
+
+          (
+            # If the m2 cache is not empty, copy it back to the shared directory
+            if [ -d "/root/.m2" ] && [ ! -d "/m2cache/m2" ]; then
+              # make a tmpdir prefixed in the m2cache directory
+              M2_TMPDIR=$(mktemp -d -u /m2cache/tmp.XXXXXX)
+              rsync -ra /root/.m2/ "$M2_TMPDIR"
+              mv "$M2_TMPDIR" "/m2cache/m2"
+            fi
+          ) || true
+
+          rsync -ra /out /work {{ project_build_artifacts | shquote }}/
+          {% if build_request.preserve_built_src_dir -%}
+          rsync -ra /src/ {{ project_build_artifacts | shquote }}/built_src/
+          {%- endif %}
+
+          touch /tmp/.nginx_upload
+
+  oss_fuzz_project_run:
+    priority: "{{ run_request.priority | default('2') }}"
+    job_quota:
+      template: "{{ run_request.quota | to_yaml }}"
+
+    links:
+      run_request_id:
+        repo: project_run_request
+        kind: InputId
+      run_request:
+        repo: project_run_request
+        kind: InputMetadata
+
+      # The project_id is provided by the run request
+      project_id:
+        repo: project_sources
+        kind: InputId
+        key: run_request.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: run_request.project_id
+
+      project_sources:
+        repo: project_sources
+        kind: InputFilepath
+        key: run_request.project_id
+      project_metadata:
+        repo: project_metadata
+        kind: InputMetadata
+        key: run_request.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: run_request.project_id
+
+      # The /src/ /work/ and /out/ directories which will be mounted into the container
+      project_volumes_id:
+        repo: project_volumes
+        kind: InputId
+        key: run_request.volumes_id
+      project_volumes:
+        repo: project_volumes
+        kind: InputFilepath
+        key: run_request.volumes_id
+      
+      # OUTPUTS
+      project_run_metadata:
+        repo: project_run_metadata
+        kind: OutputFilepath
+      project_run_log_stdout:
+        repo: project_run_log_stdout
+        kind: OutputFilepath
+      project_run_log_stderr:
+        repo: project_run_log_stderr
+        kind: OutputFilepath
+      project_run_artifacts:
+        repo: project_run_artifacts
+        kind: OutputFilepath
+        required_for_success: false
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "{{ run_request.docker_image }}"
+        host_mounts:
+          "/shared/": "/shared/"
+          "/root/.m2/": "/shared/{{project_id}}.m2.cache/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export RUN_REQUEST_ID={{ run_request_id }}
+          export PROJECT_ID={{ project_id }}
+          export VOLUMES_ID={{ project_volumes_id }}
+
+          export FUZZING_LANGUAGE={{ run_request.project_language }}
+          export SANITIZER={{ run_request.sanitizer }}
+          export FUZZING_ENGINE={{ run_request.fuzzing_engine }}
+
+          {{ run_request.env | export_env }}
+
+          # # Check if CMakeLists.txt exists and set CC/CXX to clang if it does
+          # if [ -f "{{project_sources | shquote}}/CMakeLists.txt" ]; then
+          #   export CC=clang
+          #   export CXX=clang++
+          #   export CMAKE_C_COMPILER_LAUNCHER=ccache
+          #   export CMAKE_CXX_LAUNCHER=ccache
+          #   export ARTIPHISHELL_CCACHE_DISABLE=1 
+          # fi
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d {{project_volumes | shquote}}/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra {{project_volumes | shquote}}/$dir/ /$dir/
+            fi
+          done
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          {% if run_request.extra_files %}
+            {{ run_request.extra_files | base64_files }}
+          {% endif %}
+
+          cd $WD
+
+          touch /out/run.stdout.log
+          touch /out/run.stderr.log
+
+          # Final bash command to run
+          (
+          set -e
+
+          {% if run_request.timeout -%}
+            timeout -s KILL --preserve-status {{ run_request.timeout + 1 }} timeout -sINT --preserve-status {{ run_request.timeout }}
+          {%- endif %} {{ run_request.command | shquote }}
+
+          exit_code=$?
+          echo "run_exit_code: $exit_code" >> /out/run_metadata.yaml
+
+          if [ $exit_code -eq 0 ]; then
+            touch /out/.run_success
+          fi
+          ) 2> /out/run.stderr.log | tee /out/run.stdout.log || true
+
+          echo "===== STDOUT ====="
+          cat /out/run.stdout.log
+          echo "===== STDERR ====="
+          cat /out/run.stderr.log
+          echo "=================="
+
+          touch /out/run_metadata.yaml
+          echo "request_id: {{ run_request_id }}" >> /out/run_metadata.yaml
+          echo "project_id: {{ project_id }}" >> /out/run_metadata.yaml
+          echo "input_volumes_id: {{ project_volumes_id }}" >> /out/run_metadata.yaml
+
+          if [ -f /out/.run_success ]; then
+            echo "run_success: true" >> /out/run_metadata.yaml
+          else
+            echo "run_success: false" >> /out/run_metadata.yaml
+          fi
+
+          cp /out/run_metadata.yaml {{ project_run_metadata | shquote }}
+
+          cp /out/run.stdout.log {{ project_run_log_stdout | shquote }}
+          cp /out/run.stderr.log {{ project_run_log_stderr | shquote }}
+
+          {% if run_request.collect_artifacts -%}
+          # TODO support globbing of output artifacts
+          rsync -ra /src /out /work {{ project_run_artifacts | shquote }}/
+          {%- endif %}
+
+          touch /tmp/.nginx_upload
+      
+        

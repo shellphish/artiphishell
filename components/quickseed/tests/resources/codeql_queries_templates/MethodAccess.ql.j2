@@ -1,0 +1,11 @@
+import java
+
+from MethodCall call, Callable c
+where
+    call.getCallee().getName() = "{{ function_name }}" and
+    call.getCallee().getDeclaringType().hasQualifiedName("{{ class_name_prefix }}", "{{ class_name }}") and
+    call.getCaller() = c 
+select
+    c as source_name,
+    c.getLocation() as source_location,
+    c.getDeclaringType().getQualifiedName() as source_class_name

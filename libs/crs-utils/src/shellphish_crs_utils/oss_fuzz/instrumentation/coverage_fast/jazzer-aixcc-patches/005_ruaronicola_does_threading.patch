@@ -1,0 +1,61 @@
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+index 48b021eb..61efbe68 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+@@ -56,6 +56,12 @@ import java.util.Set;
+ import java.util.function.Consumer;
+ import java.util.stream.Stream;
+ import sun.misc.Unsafe;
++// Threading stuff for timeouts
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
++import java.util.concurrent.Future;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.TimeoutException;
+ 
+ /**
+  * Executes a fuzz target and reports findings.
+@@ -195,9 +201,41 @@ public final class FuzzTargetRunner {
+    * @return
+    */
+   static int runOneDir(byte[] data,String inpname, String input_name) {
+-    System.out.println("[PRE-RUN] Initial coverage array lenght : " + CoverageRecorder.getWholeCoverage().length);
++    //System.out.println("[PRE-RUN] Initial coverage array lenght : " + CoverageRecorder.getWholeCoverage().length);
++    if (CoverageRecorder.getWholeCoverage().length != 0){
++      CoverageRecorder.resetCoverage();
++    }
+     long startTime = System.nanoTime();
+-    runOne(data,1,input_name);
++    // Timeout implementation using threads
++    long timeout;
++    try{
++      timeout = Long.parseLong(System.getenv("TIMEOUT_PER_SEED"));
++      System.out.println("[MYROCO] The environment variable TIMEOUT_PER_SEED is set to " + timeout + " seconds");
++    } catch (Exception e){
++      System.out.println("[MYROCO] The environment variable TIMEOUT_PER_SEED is not set. Using default timeout (60s)");
++      timeout = 60;
++    }
++    ExecutorService executor = Executors.newSingleThreadExecutor();
++    Future<Integer> future = executor.submit(() -> {
++      // Call the runOne function with the data and input name
++      return runOne(data,1,input_name);
++    });
++    try {
++        future.get(timeout, TimeUnit.SECONDS);
++    } catch (TimeoutException e) {
++        System.out.println("[MYROCO] Timeout occurred after " + timeout + " seconds. Skipping this seed.");
++        // Cancel the task and shutdown the executor
++        future.cancel(true);
++        // Lets dump empty coverage for the seed
++        // ackchyually Lukas wants what ever it covers in the time
++        //CoverageRecorder.resetCoverage();
++    } catch (Exception e) {
++        System.out.println("[MYROCO] An error occurred while running the seed: " + e.getMessage());
++        e.printStackTrace();
++    } finally {
++        executor.shutdown();        
++    }
++    //runOne(data,1,input_name);
+     System.out.println("[POST-RUN] Coverage array length : " + CoverageRecorder.getWholeCoverage().length);
+     CoverageRecorder.dumpJacocoCoverage(inpname);
+     long endTime = System.nanoTime();

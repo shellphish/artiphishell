@@ -1,0 +1,1120 @@
+name: Run Artiphishell In Cluster
+run-name: "🐟 ${{ github.event_name == 'workflow_dispatch' && format('[K8] {0} Running ARTIPHISHELL against {1} target for {2} mins | {3} {4}', (github.event.inputs.diff-mode == 'true' && '[DELTA] ' || '[FULL]') , github.event.inputs.target-name, github.event.inputs.run-duration, github.event.inputs.inject-crash == 'true' && 'Crash Injected' || '', github.event.inputs.inject-sarif == 'true' && 'SARIF Injected' || '') || format('Running ARTIPHISHELL on commit - {0}',(github.event.head_commit.message || github.event.workflow_run.head_commit.message )) }}"
+
+on:
+  # These should be triggered on periodic nightly runs via a dispatched workflow.
+
+  # Do trigger after the apt-cache is successful
+  #workflow_run:
+  #  workflows: [apt-cache-check]
+  #  :
+  #    - completed
+      
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      target-name:
+        type: choice
+        description: Which target to run
+        default: all-supported
+        options:
+          - mock-cp
+          - mock-cp-evil
+          - libxml2
+          - nginx
+          - libpng
+          - sqlite3
+          - cups
+          - wasm3
+          - assimp
+          - selinux
+          - php
+          - krb5
+          - jpegoptim
+          - hiredis
+          - mupdf
+          - libjxl
+          - tor
+          - ghostscript
+          - arrow-java
+          - "---"
+          - mock-cp-java
+          - mock-cp-java-easy
+          - zookeeper
+          - jenkins-email-plugin
+          - jenkins-pipeline-util-plugin
+          - jenkins
+          - tika
+          - zip4j
+          - quartz
+          - pdfbox
+          - zt-zip
+          - cronutils
+          - sqlite-jdbc
+          - "----"
+          - exhibition3-apache-commons-compress-full---01974537-0f16-7093-aa93-f7daf63c1fbe
+          - exhibition3-apache-commons-compress-delta---01974d23-f8ab-7768-aedc-84d65d0d7425
+          - exhibition3-apache-commons-compress-delta---01974d23-fa85-70dd-bfee-dfe6c14ed308
+          - exhibition3-curl-full---01974189-9f82-74b4-8366-71ea0d695cdd
+          - exhibition3-curl-delta---019747e6-188f-7ac5-8bf3-dd468184a881
+          - exhibition3-dropbear-full---01974189-3a80-71b2-8e99-c886e5be1963
+          - exhibition3-freerdp-full---01974189-7c01-7635-892f-06b064dc065c
+          - exhibition3-freerdp-delta---019747e5-ef1b-75df-8e04-4bb98c1b5887
+          - exhibition3-integration-test-delta---019747e5-9698-7d7d-9d34-5115bb2fac82
+          - exhibition3-libexif-delta---019747e5-9d5a-7473-9a49-84092d701d36
+          - exhibition3-libpng-delta---019747e5-e851-7391-af4b-87c6c5222c07
+          - exhibition3-libpostal-full---01974189-8143-7cb8-9968-a380e62736be
+          - exhibition3-libxml2-delta---01974a72-0aee-7025-8547-35267db47f01
+          - exhibition3-libxml2-delta---01974a72-0bff-73ae-873a-d4d5f8876cf6
+          - exhibition3-sqlite3-full---0197418a-d675-7533-9d63-9050f5b0bd7d
+          - exhibition3-sqlite3-delta---01974a73-131e-7600-8284-0c860c35fd10
+          - exhibition3-sqlite3-delta---01974a73-1440-7673-9f56-58721722fb42
+          - exhibition3-sqlite3-delta---01974a73-165c-7814-ab11-178fdd2d45cf
+          - exhibition3-tika-full---01974537-bb05-7bf8-8c79-da70974f4974
+          - exhibition3-tika-delta---01974bc3-f5a1-7b37-a651-7c39fd308d99
+          - exhibition3-tika-delta---01974bc3-f9ed-73a2-9c76-bfe9d5311d3d
+          - exhibition3-tika-delta---01974bc3-fa69-7a10-a4cf-9405a8a4a257
+          - exhibition3-tika-delta---01974bd4-0df0-7d96-aad6-4e3db89d190d
+          - exhibition3-tika-delta---01974bd4-10e9-784a-b6c7-2c5dc5151cf6
+          - exhibition3-zookeeper-full---01974536-d8c1-78d9-86e0-bf1927f0710f
+          - exhibition3-zookeeper-delta---01974d23-c924-7e19-91d0-855f182487e8
+          - exhibition3-zookeeper-delta---01974d31-1a5c-7f33-8877-081c884f2d12
+          - "----"
+          - exhibition2-apache-commons-compress-delta
+          - exhibition2-apache-commons-compress-delta-1
+          - exhibition2-apache-commons-compress-full
+          - exhibition2-dropbear-full
+          - exhibition2-freerdp-delta
+          - exhibition2-freerdp-full
+          - exhibition2-integration-test-delta
+          - exhibition2-libpng-delta
+          - exhibition2-libxml2-delta
+          - exhibition2-libxml2-delta-1
+          - exhibition2-libxml2-full
+          - exhibition2-sqlite3-delta
+          - exhibition2-sqlite3-full
+          - exhibition2-zookeeper-delta
+          - exhibition2-zookeeper-full
+          - "-----"
+          - multi
+      diff-mode:
+        type: boolean
+        description: Do you want to run in delta mode. Otherwise will run in full mode
+        default: true
+      run-duration:
+        type: choice
+        description: How long to run ARTIPHISHELL for (in mins)
+        default: 10
+        options:
+          - 5
+          - 10
+          - 30
+          - 60
+          - 120
+          - 180
+          - 240
+          - 480
+          - 720
+          - 1440
+      inject-crash:
+        type: boolean
+        description: Do you want to inject crashes
+        default: false
+      inject-sarif:
+        type: boolean
+        description: Do you want to inject sarif reports
+        default: false
+      keep-cluster-alive:
+        type: boolean
+        description: 'Keep the new worker alive after the pipeline run completes for investigation, it will last up to a few hours extra'
+        default: false
+      deployment-name:
+        type: string
+        description: 'Give the deployment a name, < 8 chars and only alphanumeric (!!! NO SPACE NO - NO _ !!!). If combined with "Keep Cluster Alive" then you can re-use the name to save some time on deployments between runs. Only use if you actually are making multiple runs in a row.'
+        default: ''
+      use-competition-infra:
+        type: boolean
+        description: Use the competition infra
+        default: false
+      llm-budget:
+        type: choice
+        description: 'The LLM budget for this run. Please keep this on low or broke'
+        default: low
+        options:
+          - broke
+          - low
+          - nightly
+          - medium
+          - high
+          - insane
+          - patch_test
+      extra-config:
+        type: string
+        description: Extra config to pass to the pipeline in json format
+        default: '{"region":"","fail-early":false,"global-env":{},"multi":[]}'
+
+env:
+  # Setting an environment variable with the value of a configuration variable
+  AIXCC_LITELLM_HOSTNAME: "http://wiseau.seclab.cs.ucsb.edu:666"
+  #LITELLM_KEY: ${{ vars.LITELLM_KEY }}
+  RETRIEVAL_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:48751"
+  EMBEDDING_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:49152"
+  OPENAI_API_KEY: "${{ secrets.OPENAI_KEY }}"
+  LITELLM_KEY: sk-artiphishell
+  USE_LLM_API: "1"
+  API_COMPONENTS_USE_DUMMY_DATA: "1"
+
+jobs:
+  extract-data:
+    runs-on: ubuntu-latest
+    name: "Configure Pipeline Run"
+    outputs:
+      targets:            ${{ steps.data.outputs.targets }}
+      targets-full-ready: ${{ steps.data.outputs.targets-full-ready }}
+      deployment-name:    ${{ steps.data.outputs.deployment-name }}
+      extra-config:       ${{ steps.data.outputs.extra-config }}
+      region:             ${{ steps.data.outputs.region }}
+    steps:
+      - name: Cleanup CI Worker
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+        with:
+          runner: self-hosted
+          is-artiphishell: false
+          CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+      - name: Check if ubuntu is working
+        run: |
+          set -ex
+          # for i in {1..2}; do
+          #   echo "Attempt $i/10: Testing ubuntu container"
+          #   if ! timeout -s kill 130 docker run --rm -i ubuntu:24.04 /bin/bash -c 'export DEBIAN_FRONTEND=noninteractive && timeout 120 apt-get update -y && timeout 120 apt-get install openssh-server -y' 2>&1; then
+          #     echo "Ubuntu container test failed on attempt $i"
+          #     exit 1
+          #   fi
+          # done
+          # echo "All 10 ubuntu container tests passed"
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell-lite
+          persist-credentials: true
+          lfs: false
+          submodules: false
+          fetch-depth: 1
+          sparse-checkout: |
+            .github
+      - name: Extract target data
+        id: data
+        working-directory: artiphishell-lite/.github/workflows
+        run: |
+          set -x
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]
+          then
+            if [ "${{ github.event.inputs.target-name }}"  = "all" ]; then
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready")]' < ./targets.json) >> $GITHUB_OUTPUT
+            elif [ "${{ github.event.inputs.target-name }}"  = "all-supported" ]; then
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."supported-target")]' < ./targets.json) >> $GITHUB_OUTPUT
+            else
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."short-name" == "${{ github.event.inputs.target-name }}")]' < ./targets.json) >> $GITHUB_OUTPUT
+            fi
+          else
+            echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."only-on-manual-run" == false)]' < ./targets.json) >> $GITHUB_OUTPUT
+          fi
+
+
+          if [ "${{ inputs.deployment-name }}" = "" ]; then
+            NAME=$(curl -s "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/reserve?token=${{ secrets.WORKER_TOKEN }}&job_id=${{ github.run_id }}")
+          else
+            NAME=${{ inputs.deployment-name }}
+          fi
+
+          echo '${{ github.event.inputs.extra-config }}' > /tmp/extra-config
+
+          # get .region from extra-config if it exists
+          REGION=$(jq -r '.region // empty' /tmp/extra-config 2>/dev/null || echo "")
+          if [ -z "$REGION" ]; then
+            REGION=$(curl -s "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/region?token=${{ secrets.WORKER_TOKEN }}")
+          fi
+
+          echo "deployment-name=${NAME}" >> $GITHUB_OUTPUT
+          echo "region=${REGION}" >> $GITHUB_OUTPUT
+
+          echo -e "\
+            Deployment name: "'`'"${NAME}"'`'"\n\n\
+            Please do not cancel this action run, instead you can use this button:\n\n
+            🛑 To end this run early click here: [STOP RUN](https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/stop?job_id=${{ github.run_id }})\n\n
+            🚀 [Run Queue Status](https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/ui/deployment-status?name=${NAME})
+          " >> $GITHUB_STEP_SUMMARY
+
+      - name: Decode extra config
+        id: decode-extra-config
+        run: |
+          set -x
+          # This will json decode it into a json object, no extra encoding is needed
+          echo 'extra-config=${{ github.event.inputs.extra-config }}' >> $GITHUB_OUTPUT
+
+  deploy-registry:
+    runs-on: ubuntu-latest
+    needs: [extract-data]
+    name: "Deploy Registry"
+    outputs:
+      acr_login_server: ${{ steps.deploy-registry.outputs.acr_login_server }}
+      acr_username: ${{ steps.deploy-registry.outputs.acr_username }}
+      acrp: ${{ steps.deploy-registry.outputs.acrp }}
+      az-resource-group: ${{ steps.deploy-registry.outputs.az-resource-group }}
+    steps:
+      - name: Deploy Registry
+        shell: bash
+        id: deploy-registry
+        run: |
+          RES=$(curl "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}")
+          if echo "$RES" | jq -e '.acr_login_server' > /dev/null; then
+            ACR_LOGIN_SERVER="$(echo "$RES" | jq -r '.acr_login_server')"
+            ACR_USERNAME="$(echo "$RES" | jq -r '.acr_username')"
+            ACR_PASSWORD="$(echo "$RES" | jq -r '.acr_password')"
+            if [ ! -z "$ACR_LOGIN_SERVER" ] && [ "$ACR_LOGIN_SERVER" != "null" ] && [ ! -z "$ACR_PASSWORD" ] && [ "$ACR_PASSWORD" != "null" ]; then
+              echo "Found ACR login server: $ACR_LOGIN_SERVER"
+              echo "acr_login_server=${ACR_LOGIN_SERVER}" >> $GITHUB_OUTPUT
+              echo "acr_username=${ACR_USERNAME}" >> $GITHUB_OUTPUT
+              echo "acrp=$(echo -n "$ACR_PASSWORD" | base64)" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          set -ex
+          curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/update?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&acr_login_server=null&failed=false&target=${{ inputs.target-name }}&run_duration=${{ inputs.run-duration }}'
+
+          JOB=$(curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/registry/create?civ=v2&token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&region=${{ needs.extract-data.outputs.region }}') 
+          echo $JOB
+
+          # Wait for the registry to be ready
+          count=0
+          while true; do
+            RES=$(curl -s "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&acr_login_server=null")
+            echo $RES
+
+            if echo "$RES" | jq -e '.acr_login_server' > /dev/null; then
+              ACR_LOGIN_SERVER="$(echo "$RES" | jq -r '.acr_login_server')"
+              if [ ! -z "$ACR_LOGIN_SERVER" ] && [ "$ACR_LOGIN_SERVER" != "null" ]; then
+                ACR_USERNAME="$(echo "$RES" | jq -r '.acr_username')"
+                ACR_PASSWORD="$(echo "$RES" | jq -r '.acr_password')"
+                AZ_RESOURCE_GROUP="$(echo "$RES" | jq -r '.resource_group')"
+                echo "Found ACR login server: $ACR_LOGIN_SERVER"
+                echo "acr_login_server=${ACR_LOGIN_SERVER}" >> $GITHUB_OUTPUT
+                echo "acr_username=${ACR_USERNAME}" >> $GITHUB_OUTPUT
+                echo "acrp=$(echo -n "$ACR_PASSWORD" | base64)" >> $GITHUB_OUTPUT
+                echo "az-resource-group=${AZ_RESOURCE_GROUP}" >> $GITHUB_OUTPUT
+                break
+              fi
+            fi
+            if [ "$(echo "$RES" | jq -er '.failed')" = "true" ]; then
+              echo "🙃 Deployment failed"
+              exit 1
+            fi
+            echo "Waiting for registry to be ready please see https://github.com/shellphish-support-syndicate/ci-crs-actions/actions/workflows/launch-k8s-cluster-registry.yaml"
+            sleep 30
+            count=$((count+30))
+            if [ $count -gt 1200 ]; then
+              echo "🙃 Deployment did not finish within 20 minutes"
+              exit 1
+            fi
+          done
+
+  build-pipeline:
+    needs: [extract-data, deploy-registry]
+    runs-on: [self-hosted, "${{ (github.ref == 'refs/heads/main') && 'docker-build' || 'huge' }}"]
+    name: Build Pipeline Docker Images and Test Full Pipeline PDT Connections
+    outputs:
+      pipeline-ready: ${{ steps.build-pipeline.outputs.pipeline-ready }}
+    steps:
+      - name: Check if run is stopped
+        shell: bash
+        run: |
+          RES=$(curl -s 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status/stopped?job_id=${{ github.run_id }}')
+          if [ "$RES" = "true" ]; then
+            if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+              curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout=30'
+            fi
+            exit 1 # Fail the job
+          fi
+
+      #- name: Cleanup CI Worker
+      #  uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+      #  if: ${{ github.ref != 'refs/heads/main' }}
+      #  with:
+      #    runner: self-hosted
+      #    is-artiphishell: false
+      #    CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+      #    is-jit-worker: false
+
+      - name: Decode ACR password
+        id: decode-acr-password
+        timeout-minutes: 5
+        run: |
+          set -x
+
+          (curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash ) &
+          
+          while true; do
+            RES=$(curl "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&t=$(date +%s)")
+            ACR_PASSWORD=$(echo "$RES" | jq -r '.acr_password')
+            if [ ! -z "$ACR_PASSWORD" ] && [ "$ACR_PASSWORD" != "null" ]; then
+              break
+            fi
+            sleep 10
+          done
+          echo $RES
+          ACR_PASSWORD=$(echo "$RES" | jq -r '.acr_password')
+          echo "acrp=$ACR_PASSWORD" >> $GITHUB_OUTPUT
+
+
+          wait
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.AZ_IMPORT_TOKEN_USER }}","clientSecret":"${{ secrets.AZ_IMPORT_TOKEN_PASSWORD }}","subscriptionId":"${{ secrets.AZ_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZ_TENANT_ID }}"}' 
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: artiphishell.azurecr.io
+          username: ARTIPHISHELL-CI-ACR-PUSH-TOKEN
+          password: ${{ secrets.ACR_TOKEN }}
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: artiphishelltiny.azurecr.io
+          username: ARTIPHISHELL-CI-ACR-PUSH-TOKEN
+          password: ${{ secrets.ACR_TOKEN_TINY }}
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ needs.deploy-registry.outputs.acr_login_server }}
+          username: ${{ needs.deploy-registry.outputs.acr_username }}
+          password: ${{ steps.decode-acr-password.outputs.acrp }}
+
+      - uses: shellphish-support-syndicate/action-setup-pipeline@main
+        id: build-pipeline
+        with:
+          ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          rebuild-mode: remote
+          external-registry: ${{ needs.deploy-registry.outputs.acr_login_server }}
+          build-parallel: 'true'
+          worker-token: ${{ secrets.WORKER_TOKEN }}
+          use-docker-cache: 'true'
+          use-az-import: 'true'
+          az-resource-group: ${{ needs.deploy-registry.outputs.az-resource-group }}
+
+      - name: Test full pipeline pdt connections
+        id: test-pipeline
+        #i f: ${{ github.event_name != 'workflow_dispatch' }}
+        working-directory: ./artiphishell/
+        run: |
+          pdl --no-lockstep --no-launch-agent
+          echo "pipeline-ready=true" >> $GITHUB_OUTPUT
+
+      - name: Check if run is stopped 2
+        shell: bash
+        run: |
+          RES=$(curl -s 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status/stopped?job_id=${{ github.run_id }}')
+          if [ "$RES" = "true" ]; then
+            if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+              curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout=30'
+            fi
+            exit 1 # Fail the job
+          fi
+      
+      - name: Cleanup cluster
+        shell: bash
+        if: ${{ always() && steps.test-pipeline.outcome != 'success' }}
+        continue-on-error: true
+        working-directory: artiphishell/
+        run: |
+          if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+            curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout=30'
+          fi
+
+  terraform-cluster:
+    runs-on: ubuntu-latest
+    name: Deploy pipeline to cluster
+    needs: [extract-data, deploy-registry]
+    strategy:
+      fail-fast: false
+      matrix:
+        targets: ${{ fromJson(needs.extract-data.outputs.targets-full-ready) }}
+    steps:
+      - name: Check if run is stopped
+        shell: bash
+        run: |
+          RES=$(curl -s 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status/stopped?job_id=${{ github.run_id }}')
+          if [ "$RES" = "true" ]; then
+            if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+              curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout=30'
+            fi
+            exit 1 # Fail the job
+          fi
+
+      - name: Terraform cluster
+        id: terraform-cluster
+        shell: bash
+        run: |
+          set -ex
+
+          curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/update?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&api_ip=null&failed=false'
+
+          EXTRA_CONFIG="$(echo '${{ github.event.inputs.extra-config }}' | base64 -w0 | sed 's/=/%3d/g')"
+          EXTENDED_EXTRA_CONFIG='{"global-env":{ "AZURE_REGION":"${{ needs.extract-data.outputs.region }}", "MAX_FUZZING_NODES":"${{ matrix.targets.max-fuzzing-nodes || '3' }}", "INJECT_SEEDS":${{ github.event.inputs.inject-crash || 'false' }},"CI_DIFF_MODE":${{ github.event.inputs.diff-mode || 'false' }},"INJECT_SARIF":${{ github.event.inputs.inject-sarif || 'false' }},"TOTAL_RUN_TIME":"${{ github.event.inputs.run-duration }}","LLM_BUDGET":"'"$LLM_BUDGET"'"}}'
+          EXTENDED_EXTRA_CONFIG=$(echo "$EXTENDED_EXTRA_CONFIG" | base64 -w0 | sed 's/=/%3d/g')
+
+          curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/create?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&civ=v2&ref=${{ github.ref }}&cpus=32&fuzzing_size=${{ matrix.targets.fuzzing-size || 'null' }}&install=true&target=${{ inputs.target-name }}&run_duration=${{ inputs.run-duration }}&uninstall=true&num_user_nodes=1&llm_budget=${{ inputs.llm-budget }}'"&extra_config=$EXTRA_CONFIG&extended_extra_config=$EXTENDED_EXTRA_CONFIG"
+
+      - name: Cleanup cluster
+        shell: bash
+        if: ${{ always() && steps.terraform-cluster.outcome != 'success' }}
+        continue-on-error: true
+        run: |
+          if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+            curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout=30'
+          fi
+
+  # Wait for the monitor pod to come online
+  wait-for-deployment:
+    needs: [extract-data, terraform-cluster, build-pipeline]
+    runs-on: ["self-hosted","cluster-${{ needs.extract-data.outputs.deployment-name }}"]
+    strategy:
+      fail-fast: false
+      matrix:
+        targets: ${{ fromJson(needs.extract-data.outputs.targets-full-ready) }}
+    steps:
+      - name: Wait for cluster to be ready
+        id: decode-sts-token
+        timeout-minutes: 20
+        run: |
+          set -x
+          while true; do
+            RES=$(curl "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&t=$(date +%s)")
+            echo $RES
+            API_IP=$(echo "$RES" | jq -r '.api_ip')
+            if [ ! -z "$API_IP" ] && [ "$API_IP" != "null" ] && [ "$API_IP" != "0.0.0.0" ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          STS_TOKEN=$(echo "$RES" | jq -r '.sts_token' | base64 -w0)
+          echo "sts_token=$STS_TOKEN" >> $GITHUB_OUTPUT
+          CONNECTION_STRING=$(echo "$RES" | jq -r '.storage_connection_string' | base64 -w0)
+          echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+          API_IP=$(echo "$RES" | jq -r '.api_ip')
+          echo "api_ip=${API_IP}" >> $GITHUB_OUTPUT
+          CRS_URL=$(echo "$RES" | jq -r '.crs_endpoint')
+          echo "crs_url=${CRS_URL}" >> $GITHUB_OUTPUT
+
+          API_IP=$(echo "$RES" | jq -r '.api_ip')
+          AGENT_IP=$(echo "$RES" | jq -r '.agent_ip')
+          NODEVIZ_IP=$(echo "$RES" | jq -r '.nodeviz_ip')
+          K8_NAME=$(echo "$RES" | jq -r '.k8_name')
+          CRS_URL=$(echo "$RES" | jq -r '.crs_endpoint')
+          CRS_URL=${CRS_URL%/}
+          RESOURCE_GROUP=$(echo "$RES" | jq -r '.resource_group')
+          VIZ_URL="http://${AGENT_IP}:5555/"
+          echo -e "\
+          PD Viz: $VIZ_URL\n\
+          Username: shellphish\n\
+          Password: Hacking!\n\
+          \n\
+          Node Viz: http://$NODEVIZ_IP:8080/\n\
+          \n\
+          K8 Name: $K8_NAME\n\
+          To access this cluster with azure creds use:\n\
+          "'```'"\n\
+          az aks get-credentials --resource-group $RESOURCE_GROUP --name $K8_NAME\n\
+          kubectl get pods\n\
+          "'```'"\n\
+          \n\
+          \n\
+          To end this run early (taking backup) click here: [STOP RUN](https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/stop?job_id=${{ github.run_id }})
+          " >> $GITHUB_STEP_SUMMARY
+      - name: Wait for deployment
+        shell: bash
+        run: |
+          echo "Deployment complete"
+
+  start-task:
+    needs: [extract-data, wait-for-deployment, build-pipeline]
+    runs-on: ["self-hosted","cluster-${{ needs.extract-data.outputs.deployment-name }}"]
+    strategy:
+      fail-fast: false
+      matrix:
+        targets: ${{ fromJson(needs.extract-data.outputs.targets-full-ready) }}
+    timeout-minutes: 3120
+    steps:
+      - name: Check if run is stopped
+        shell: bash
+        run: |
+          RES=$(curl -s 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status/stopped?job_id=${{ github.run_id }}')
+          if [ "$RES" = "true" ]; then
+            if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+              curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout=30'
+            fi
+            exit 1 # Fail the job
+          fi
+
+      - name: Wait for cluster to be ready
+        id: decode-sts-token
+        timeout-minutes: 20
+        run: |
+          set -x
+          while true; do
+            RES=$(curl "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&t=$(date +%s)")
+            echo $RES
+            API_IP=$(echo "$RES" | jq -r '.api_ip')
+            if [ ! -z "$API_IP" ] && [ "$API_IP" != "null" ] && [ "$API_IP" != "0.0.0.0" ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          STS_TOKEN=$(echo "$RES" | jq -r '.sts_token' | base64 -w0)
+          echo "sts_token=$STS_TOKEN" >> $GITHUB_OUTPUT
+          CONNECTION_STRING=$(echo "$RES" | jq -r '.storage_connection_string' | base64 -w0)
+          echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+          API_IP=$(echo "$RES" | jq -r '.api_ip')
+          echo "api_ip=${API_IP}" >> $GITHUB_OUTPUT
+          CRS_URL=$(echo "$RES" | jq -r '.crs_endpoint')
+          echo "crs_url=${CRS_URL}" >> $GITHUB_OUTPUT
+
+      - name: Set running timeout based on event type (push 10 minutes and scheduled 4 hours)
+        run: |
+          echo "PIPELINE_RUN_TIMEOUT_MINUTES=${{ github.event.inputs.run-duration }}" >> "$GITHUB_ENV"
+          # set deadline to length of run + 60 min
+          DEADLINE_SECONDS=$((${{ github.event.inputs.run-duration }} * 60 + 7200))
+
+          curl "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/deadline?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&deadline=$DEADLINE_SECONDS&timeout=1800" || true
+
+      - name: Cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: build-${{ matrix.targets.name }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell
+
+      - name: Get Signoz IP
+        shell: bash
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: artiphishell/
+        run: |
+          SIGNOZ_IP=$(./infra/scripts/get_signoz_ip.sh)
+          echo "Signoz Dashboard: http://${SIGNOZ_IP}:3301" >> $GITHUB_STEP_SUMMARY
+
+
+      - name: Start Task 
+        id: start-task
+        working-directory: artiphishell/
+        shell: bash
+        timeout-minutes: 30
+        if: ${{ matrix.targets.name != 'multi' }}
+        run: |
+          set -ex
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az --version
+
+          export GITHUB_RUN_ID=${{ github.run_id }}
+          
+
+          echo "https://git:${{ secrets.CI_DEPLOY_TOKEN }}@github.com" > ~/.git-credentials
+          # import into git
+          git config --global credential.helper store
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+
+          export CUSTOM_OSS_FUZZ_TARGETS_REPO=${{ matrix.targets.targets-repo }}
+
+          export TARGET_STS_TOKEN="$(echo "${{ steps.decode-sts-token.outputs.sts_token }}" | base64 -d)"
+          export STORAGE_CONNECTION_STRING="$(echo "${{ steps.decode-sts-token.outputs.connection_string }}" | base64 -d)"
+          echo "TARGET_STS_TOKEN=$TARGET_STS_TOKEN"
+          echo "STORAGE_CONNECTION_STRING=$STORAGE_CONNECTION_STRING"
+          export CLUSTER_IP="${{ steps.decode-sts-token.outputs.api_ip }}"
+          export CLUSTER_URL="http://$CLUSTER_IP/"
+
+          sed -i 's|git@github.com:|https://github.com/|g' local_run/run_in_cluster.sh
+
+          RUN_ARGS=""
+          if [ "${{ inputs.diff-mode }}" == "true" ] && [ ! -z "${{ matrix.targets.diff }}" ]; then
+            RUN_ARGS="${{ matrix.targets.basis || '' }} ${{ matrix.targets.diff || '' }}"
+          elif [ ! -z "${{ matrix.targets.diff }}" ]; then
+            RUN_ARGS="${{ matrix.targets.diff || '' }}"
+          elif [ ! -z "${{ matrix.targets.basis }}" ]; then
+            RUN_ARGS="${{ matrix.targets.basis || '' }}"
+          fi
+
+          # set RUN_DUR_MS to the run time plus 13 minutes
+          export RUN_DUR_MS=$((${{ github.event.inputs.run-duration }} * 60 * 1000 +  1500000))
+          echo "RUN_DUR_MS=$RUN_DUR_MS" >> "$GITHUB_ENV"
+
+          ./local_run/run_in_cluster.sh ${{ matrix.targets.repo }} ${{ matrix.targets.short-name }} $RUN_ARGS | tee /tmp/run_in_cluster.log
+
+          cat /tmp/run_in_cluster.log
+
+          #grep -q "error" /tmp/run_in_cluster.log && exit 1
+
+          echo "PIPELINE_RUN_SUCCESS=yes" >> "$GITHUB_ENV"
+
+      - name: Inject Crashes
+        id: inject-crashes
+        shell: bash
+        timeout-minutes: 10
+        if: ${{ github.event.inputs.inject-crash == 'true' }}
+        working-directory: artiphishell/
+        run: |
+          set -ex
+          ./local_run/scripts/cluster_inject_crashes.sh ${{ matrix.targets.short-name }}
+      
+      - name: Inject Sarif Report
+        shell: bash
+        timeout-minutes: 10
+        if: ${{ github.event.inputs.inject-sarif == 'true' }}
+        working-directory: artiphishell/
+        continue-on-error: true
+        run: |
+          set -ex
+          echo "https://git:${{ secrets.CI_DEPLOY_TOKEN }}@github.com" > ~/.git-credentials
+          # import into git
+          git config --global credential.helper store
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+
+          export CLUSTER_IP="${{ steps.decode-sts-token.outputs.api_ip }}"
+          ./local_run/scripts/cluster_inject_sarifs.sh ${{ matrix.targets.short-name }} || true
+
+      - name: Run Multiple Targets
+        id: run-multiple-targets
+        working-directory: artiphishell/
+        shell: bash
+        timeout-minutes: 3120
+        continue-on-error: true
+        if: ${{ matrix.targets.name == 'multi' }}
+        run: |
+          set -ex
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az --version
+
+          export GITHUB_RUN_ID=${{ github.run_id }}
+
+          echo "https://git:${{ secrets.CI_DEPLOY_TOKEN }}@github.com" > ~/.git-credentials
+          # import into git
+          git config --global credential.helper store
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+
+          export CUSTOM_OSS_FUZZ_TARGETS_REPO=${{ matrix.targets.targets-repo }}
+
+          export TARGET_STS_TOKEN="$(echo "${{ steps.decode-sts-token.outputs.sts_token }}" | base64 -d)"
+          export STORAGE_CONNECTION_STRING="$(echo "${{ steps.decode-sts-token.outputs.connection_string }}" | base64 -d)"
+          echo "TARGET_STS_TOKEN=$TARGET_STS_TOKEN"
+          echo "STORAGE_CONNECTION_STRING=$STORAGE_CONNECTION_STRING"
+          export CLUSTER_IP="${{ steps.decode-sts-token.outputs.api_ip }}"
+          export CLUSTER_URL="http://$CLUSTER_IP/"
+
+          sed -i 's|git@github.com:|https://github.com/|g' local_run/run_in_cluster.sh
+
+          (
+            while true; do
+              set +ex
+              for i in $(seq 1 $NUM_CONCURRENT_TASKS); do
+                AGENT_POD="$(kubectl get pod -l app.kubernetes.io/name=pydatatask-agent-$i -o jsonpath='{.items[0].metadata.name}')"
+
+                kubectl exec $AGENT_POD -- /app/infra/agent/agent_viz.sh;
+              done
+
+              sleep 300
+
+              if [ -f /tmp/.stop_run ]; then
+                echo "Stopping due to stop_run signal"
+                exit 0
+              fi
+            done
+          ) &
+
+          set -ex
+
+          echo '${{ github.event.inputs.extra-config }}' > /tmp/extra-config
+
+          python3 local_run/run_multiple_targets_in_cluster.py /tmp/extra-config
+
+      - name: Cleanup cluster
+        shell: bash
+        if: ${{ always() && ( steps.start-task.outcome == 'failure' ||  steps.inject-crashes.outcome == 'failure' || steps.run-multiple-targets.outcome == 'failure') }}
+        continue-on-error: true
+        run: |
+          if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+            curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout=30'
+          fi
+
+  monitor-pipeline:
+    needs: [extract-data, start-task]
+    runs-on: ["self-hosted","cluster-${{ needs.extract-data.outputs.deployment-name }}"]
+    timeout-minutes: 3120
+    strategy:
+      fail-fast: false
+      matrix:
+        targets: ${{ fromJson(needs.extract-data.outputs.targets-full-ready) }}
+    outputs:
+      target_matrix: ${{ steps.generate-summary.outputs.target_matrix }}
+    steps:
+      - name: Check if run is stopped
+        shell: bash
+        if: ${{ matrix.targets.name != 'multi' }}
+        run: |
+          RES=$(curl -s 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status/stopped?job_id=${{ github.run_id }}')
+          if [ "$RES" = "true" ]; then
+            if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+              curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout=30'
+            fi
+            exit 1 # Fail the job
+          fi
+
+      - name: Set running timeout based on event type (push 10 minutes and scheduled 4 hours)
+        run: |
+          echo "PIPELINE_RUN_TIMEOUT_MINUTES=${{ github.event.inputs.run-duration }}" >> "$GITHUB_ENV"
+      - name: Cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: build-${{ matrix.targets.name }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell
+
+
+
+      - name: Monitor Pipeline
+        working-directory: artiphishell/
+        shell: bash
+        timeout-minutes: ${{ fromJSON(env.PIPELINE_RUN_TIMEOUT_MINUTES) }}
+        if: ${{ matrix.targets.name != 'multi' }}
+        continue-on-error: true
+        run: |
+          function retry_until_success() {
+            local CMD="$@"
+            local RETRIES=0
+            local CMD_NAME=$(echo "$CMD" | cut -d' ' -f1-3)
+
+            while [ $RETRIES -lt $MAX_RETRIES ]; do
+              if [ ! -z "$OUTPUT_FILE" ]; then
+                $CMD > $OUTPUT_FILE && return 0
+                cat $OUTPUT_FILE
+              else
+                $CMD && return 0
+              fi
+              RETRIES=$((RETRIES+1))
+              echo "Retrying failed command $CMD_NAME ($RETRIES/$MAX_RETRIES) in $INTERVAL seconds..."
+              sleep $INTERVAL
+            done
+            return 1
+          }
+          export MAX_RETRIES=60
+          export INTERVAL=10
+
+          set -ex
+          (
+            while true; do
+              set +ex
+              AGENT_POD="$(kubectl get pod -l app.kubernetes.io/name=pydatatask-agent-1 -o jsonpath='{.items[0].metadata.name}')"
+
+              kubectl exec $AGENT_POD -- /app/infra/agent/agent_viz.sh;
+
+              sleep 300
+
+              if [ -f /tmp/.stop_run ]; then
+                echo "Stopping due to stop_run signal"
+                exit 0
+              fi
+            done
+          ) &
+
+
+          set -ex
+          (
+            set +xe
+            sleep 300
+            NUM_TIMES_WITH_NO_RUNNING_TASKS=0
+            while true; do
+              SHOULD_EXIT=0
+              RES=$(curl -s 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status/stopped?job_id=${{ github.run_id }}')
+              if [ "$RES" = "true" ]; then
+                SHOULD_EXIT=1
+              fi
+
+              export MAX_RETRIES=60
+              export INTERVAL=10
+
+              export OUTPUT_FILE=/tmp/agent_pod
+              retry_until_success kubectl get pod -l app.kubernetes.io/name=pydatatask-agent-1 -o jsonpath='{.items[0].metadata.name}'
+              export OUTPUT_FILE=""
+              AGENT_POD=$(cat /tmp/agent_pod)
+
+              export OUTPUT_FILE=/tmp/num_running
+              retry_until_success kubectl exec $AGENT_POD -- /bin/bash /app/infra/agent/scripts/ci/still_running_target.sh
+              export OUTPUT_FILE=""
+              NUM_RUNNING=$(cat /tmp/num_running)
+              echo "# Of Running Tasks = $NUM_RUNNING"
+              # Check if we are actually running the target or if we failed
+              if [ "$NUM_RUNNING" = "0" ] || [ "$NUM_RUNNING" = "1" ]; then
+                NUM_TIMES_WITH_NO_RUNNING_TASKS=$((NUM_TIMES_WITH_NO_RUNNING_TASKS+1))
+                if [ "$NUM_TIMES_WITH_NO_RUNNING_TASKS" -gt 10 ]; then
+                  echo "No running tasks left (besides submitter), exiting"
+                  SHOULD_EXIT=1
+                fi
+              else
+                NUM_TIMES_WITH_NO_RUNNING_TASKS=0
+              fi
+
+              if [ "$SHOULD_EXIT" = "1" ]; then
+                set -x
+                touch /tmp/.stop_run
+                for i in {1..5}; do
+                  pkill -f 'logs' 
+                  sleep 10
+                done
+                exit 0
+              fi
+
+              sleep 30
+            done
+          ) &
+          while true; do
+            export OUTPUT_FILE=/tmp/agent_pod
+            retry_until_success kubectl get pod -l app.kubernetes.io/name=pydatatask-agent-1 -o jsonpath='{.items[0].metadata.name}'
+            export OUTPUT_FILE=""
+            AGENT_POD=$(cat /tmp/agent_pod)
+
+            echo "AGENT_POD=$AGENT_POD"
+            kubectl logs -f $AGENT_POD --tail 10  || true
+            sleep 10
+            if [ -f /tmp/.stop_run ]; then
+              echo "Stopping due to stop_run signal"
+              exit 0
+            fi
+          done
+
+      - name: Take backup
+        shell: bash
+        if: ${{ always() }}
+        working-directory: artiphishell/
+        run: |
+          if [ "$ARTIPHISHELL_GLOBAL_ENV_DISABLE_BACKUP" == "true" ]; then
+            if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+              TO=30
+              curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout='$TO
+            fi
+            exit 1;
+          fi
+
+          if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+            DEADLINE_SECONDS=7200
+            curl "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/deadline?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&deadline=$DEADLINE_SECONDS&timeout=1800" || true
+          fi
+
+          function retry_until_success() {
+            local CMD="$@"
+            local RETRIES=0
+            local CMD_NAME=$(echo "$CMD" | cut -d' ' -f1-3)
+
+            while [ $RETRIES -lt $MAX_RETRIES ]; do
+              if [ ! -z "$OUTPUT_FILE" ]; then
+                $CMD > $OUTPUT_FILE && return 0
+              else
+                $CMD && return 0
+              fi
+              RETRIES=$((RETRIES+1))
+              echo "Retrying failed command $CMD_NAME ($RETRIES/$MAX_RETRIES) in $INTERVAL seconds..."
+              sleep $INTERVAL
+            done
+            return 1
+          }
+
+          for i in $(seq 1 $NUM_CONCURRENT_TASKS); do
+            set -ex
+            export MAX_RETRIES=60
+            export INTERVAL=10
+
+            export OUTPUT_FILE=/tmp/agent_pod
+            retry_until_success kubectl get pod -l app.kubernetes.io/name=pydatatask-agent-$i -o jsonpath='{.items[0].metadata.name}'
+            export OUTPUT_FILE=""
+            AGENT_POD=$(cat /tmp/agent_pod)
+
+            retry_until_success kubectl exec $AGENT_POD -- pkill --signal INT -f 'pydatatask.cli.main'
+
+            sleep 40
+
+            retry_until_success kubectl exec $AGENT_POD -- pkill --signal STOP -f 'pydatatask.cli.main'
+
+          cat << EOF > $GITHUB_WORKSPACE/ci_ssh
+            ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          EOF
+
+            sha256sum $GITHUB_WORKSPACE/ci_ssh
+
+            set +x
+
+
+            export BACKUP_SSH_KEY="$(cat $GITHUB_WORKSPACE/ci_ssh | base64 -w0)"
+
+            echo + kubectl exec -i $AGENT_POD -- /bin/bash /app/infra/agent/scripts/ci/backup_in_background.sh
+            retry_until_success kubectl exec $AGENT_POD -- /usr/bin/env GITHUB_STEP_SUMMARY=/tmp/summary.md TARGET_NAME=${{ matrix.targets.short-name }} RUN_ID=${{ github.run_id }} PIPELINE_RUN_TIMEOUT_MINUTES=${{ fromJSON(env.PIPELINE_RUN_TIMEOUT_MINUTES) }} GITHUB_REF=${{ github.ref }} GITHUB_SHA=${{ github.sha }} GITHUB_RUN_ID=${{ github.run_id }} BACKUP_SSH_KEY=$BACKUP_SSH_KEY /app/infra/agent/scripts/ci/backup_in_background.sh
+            set -x
+          done
+
+          set +e
+
+          for i in $(seq 1 $NUM_CONCURRENT_TASKS); do
+            export MAX_RETRIES=60
+            export INTERVAL=10
+
+            export OUTPUT_FILE=/tmp/agent_pod
+            retry_until_success kubectl get pod -l app.kubernetes.io/name=pydatatask-agent-$i -o jsonpath='{.items[0].metadata.name}'
+            export OUTPUT_FILE=""
+            AGENT_POD=$(cat /tmp/agent_pod)
+
+            while true; do
+              timeout 60 kubectl exec $AGENT_POD -- /bin/bash -c "timeout 30 tail -n 10 -f /tmp/backup.log" || true
+              sleep 5
+
+              export OUTPUT_FILE=/tmp/backup_in_progress_status
+              retry_until_success kubectl exec $AGENT_POD -- /bin/bash /app/infra/agent/scripts/ci/is_backup_in_progress.sh
+              export OUTPUT_FILE=""
+
+              RES=$(cat /tmp/backup_in_progress_status)
+
+              if [ "$RES" == "BACKUPDONE" ]; then
+                break
+              fi
+              sleep 5
+            done
+          done
+
+      
+      - name: generate summary
+        shell: bash
+        id: generate-summary
+        if: ${{ always() }}
+        working-directory: artiphishell/
+        continue-on-error: true
+        run: |
+          if [ "$ARTIPHISHELL_GLOBAL_ENV_DISABLE_BACKUP" == "true" ]; then
+            if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+              TO=30
+              curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout='$TO
+            fi
+            exit 1;
+          fi
+
+          function retry_until_success() {
+            local CMD="$@"
+            local RETRIES=0
+            local CMD_NAME=$(echo "$CMD" | cut -d' ' -f1-3)
+
+            while [ $RETRIES -lt $MAX_RETRIES ]; do
+              if [ ! -z "$OUTPUT_FILE" ]; then
+                $CMD > $OUTPUT_FILE && return 0
+              else
+                $CMD && return 0
+              fi
+              RETRIES=$((RETRIES+1))
+              echo "Retrying failed command $CMD_NAME ($RETRIES/$MAX_RETRIES) in $INTERVAL seconds..."
+              sleep $INTERVAL
+            done
+            return 1
+          }
+
+          set -ex
+          export MAX_RETRIES=30
+          export INTERVAL=10
+
+          # Set default value for NUM_CONCURRENT_TASKS if not set
+          if [ -z "$NUM_CONCURRENT_TASKS" ]; then
+            NUM_CONCURRENT_TASKS=1
+          fi
+
+
+          for i in $(seq 1 $NUM_CONCURRENT_TASKS); do
+            export OUTPUT_FILE=/tmp/agent_pod
+            retry_until_success kubectl get pod -l app.kubernetes.io/name=pydatatask-agent-$i -o jsonpath='{.items[0].metadata.name}'
+            export OUTPUT_FILE=""
+
+            AGENT_POD=$(cat /tmp/agent_pod)
+
+            retry_until_success kubectl cp $AGENT_POD:/tmp/results.json /tmp/results-$i.json || true
+
+            retry_until_success kubectl cp $AGENT_POD:/tmp/summary.md /tmp/summary-$i.md || true
+          done
+
+          echo "# Full pipeline CI of ${{ matrix.targets.short-name }} for ${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }} minutes" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "🌐 [ci.internal.artiphishell.com/?run=${{ github.run_id }}-${{ matrix.targets.short-name }}](https://ci.internal.artiphishell.com/?run=${{ github.run_id }}-${{ matrix.targets.short-name }})" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "[📈 Task Execution Timeline](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/task_durations.html)" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "${{ github.event.inputs.inject-crash }}" = "true" ]; then
+            echo "**Crash Injection Attempted**" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "### Run Artifacts" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full backup.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full shared.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/shared.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "" | tee -a "$GITHUB_STEP_SUMMARY"
+
+          target_matrix=$(seq 1 $NUM_CONCURRENT_TASKS | jq -R . | jq -c -s .)
+          echo "target_matrix={\"target\":$target_matrix}" >> $GITHUB_OUTPUT
+
+  save-outputs:
+    needs: [extract-data, monitor-pipeline]
+    runs-on: ["self-hosted","cluster-${{ needs.extract-data.outputs.deployment-name }}"]
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.monitor-pipeline.outputs.target_matrix) }}
+    steps:
+      - name: Print summary
+        shell: bash
+        continue-on-error: true
+        run: |
+          cat /tmp/summary-${{ matrix.target }}.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Save results for CI UI
+        uses: shellphish-support-syndicate/ci-crs-actions@v2.0.0
+        continue-on-error: true
+        if: ${{ always() }}
+        with:
+          github-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          action: 'save-pipeline-results'
+          results_path: /tmp/results-${{ matrix.target }}.json
+          cache: '/tmp/cache'
+
+  cleanup:
+    needs: [extract-data, save-outputs]
+    runs-on: ["self-hosted","cluster-${{ needs.extract-data.outputs.deployment-name }}"]
+    timeout-minutes: 10
+    steps:
+      - name: Cleanup cluster
+        shell: bash
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          if [ "${{ inputs.keep-cluster-alive }}" == "false" ]; then
+            TO=30
+            curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/destroy?token=${{ secrets.WORKER_TOKEN }}&name=${{ needs.extract-data.outputs.deployment-name }}&timeout='$TO
+          fi
+

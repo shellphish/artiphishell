@@ -1,0 +1,5 @@
+#!/bin/bash
+
+compile.old
+python3 /extract_bc.py
+# cp -r /griller_afl $OUT/griller_afl

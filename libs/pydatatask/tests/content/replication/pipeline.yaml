@@ -1,0 +1,49 @@
+repo_classes:
+  input: MetadataRepository
+  build_input: MetadataRepository
+
+tasks:
+  fuzzer_1:
+    job_quota:
+      cpu: 1
+      mem: 0
+    priority: 1
+    priority_factor: 0.75
+    replicable: true
+    executable:
+      cls: Process
+      args:
+        template: sleep 9999999
+    links:
+      input:
+        repo: input
+        kind: InputMetadata
+  fuzzer_2:
+    job_quota:
+      cpu: 2
+      mem: 0
+    priority: 2
+    priority_factor: 0.5
+    replicable: true
+    executable:
+      cls: Process
+      args:
+        template: sleep 9999999
+    links:
+      input:
+        repo: input
+        kind: InputMetadata
+  builder:
+    job_quota:
+      cpu: 5
+      mem: 0
+    priority: 3
+    replicable: false
+    executable:
+      cls: Process
+      args:
+        template: sleep 9999999
+    links:
+      input:
+        repo: build_input
+        kind: InputMetadata

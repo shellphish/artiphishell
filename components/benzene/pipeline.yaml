@@ -1,0 +1,203 @@
+repo_classes:
+  project_build_configurations: MetadataRepository
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+
+  benzene_outputs: { cls: FilesystemRepository, required: false, compress_backend: true, compress_backup: true }
+
+  # Intermediate repos
+  benzene_build_artifacts: {cls: FilesystemRepository, required: false, compress_backend: true, compress_backup: true}
+
+tasks:
+  benzene_build:
+    priority: 2
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+      
+      # OUTPUTS
+      benzene_build_artifacts:
+        repo: benzene_build_artifacts
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation benzene $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture {{ build_configuration.architecture | shquote }} \
+            --sanitizer {{ build_configuration.sanitizer | shquote }} \
+            --instrumentation benzene \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/artifacts/ {{benzene_build_artifacts | shquote}}/
+
+  benzene:
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    max_concurrent_jobs: 40 # TODO Fix this once the metadata file write race is fixed
+    links:
+      crashing_input_id:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputId
+      crashing_input_path:
+        repo: crashing_harness_inputs
+        kind: InputFilepath
+      crashing_input_metadata:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputMetadata
+      crashing_input_metadata_path:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputFilepath
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: crashing_input_metadata.build_configuration_id
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: crashing_input_metadata.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: crashing_input_metadata.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: crashing_input_metadata.project_id
+
+      benzene_build_artifacts_path:
+        repo: benzene_build_artifacts
+        kind: InputFilepath
+        key: crashing_input_metadata.build_configuration_id
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: crashing_input_metadata.project_id
+
+      benzene_outputs_path:
+        repo: benzene_outputs
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--benzene"
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+          
+          export SHELLPHISH_HARNESS_NAME={{ crashing_input_metadata.cp_harness_name | shquote }}
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ benzene_build_artifacts_path | shquote }}
+
+          export SANITIZER=$(yq -r '.sanitizer' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD
+
+          touch /out/benzene_fuzz.stdout.log
+          touch /out/benzene_fuzz.stderr.log
+
+          # Final bash command to run
+          (
+            set -e
+
+            if [ "$SANITIZER" == "address" ]; then
+              /benzene/benzene --cmd "/out/$SHELLPHISH_HARNESS_NAME {{crashing_input_path | shquote}}" --proc 16 --asan
+            else
+              /benzene/benzene --cmd "/out/$SHELLPHISH_HARNESS_NAME {{crashing_input_path | shquote}}" --proc 16
+            fi
+
+            if [ $? -eq 0 ]; then
+              touch /out/.run_success
+            fi
+          ) 2> /out/benzene_fuzz.stderr.log | tee /out/benzene_fuzz.stdout.log || true
+
+          echo "===== STDOUT ====="
+          cat /out/benzene_fuzz.stdout.log
+          echo "===== STDERR ====="
+          cat /out/benzene_fuzz.stderr.log
+          echo "=================="

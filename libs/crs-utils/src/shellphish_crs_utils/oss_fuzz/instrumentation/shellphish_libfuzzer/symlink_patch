@@ -1,0 +1,79 @@
+if [[ "$FUZZING_LANGUAGE" = "c" || "$FUZZING_LANGUAGE" = "c++" ]]; then
+  # Declare associative array for harness mappings
+  declare -A HARNESS
+  echo "Running from symlink! ================="
+
+  # echo "Testing yq command..."
+  # yq -r '.harness_infos | to_entries[] | "\(.key) \(.value.cp_harness_name)"' "$TARGET_SPLIT_METADATA"
+
+  # for metadata file
+  # # Populate the HARNESS array from metadata
+  # while read -r id name; do
+  #     echo "Processing: id='$id' name='$name'"
+  #     HARNESS["$id"]="$name"
+  # done < <(
+  #     yq -r '.harness_infos
+  #               | to_entries[]
+  #               | "\(.key) \(.value.cp_harness_name)"' \
+  #           "$TARGET_SPLIT_METADATA"
+  # )
+
+  echo "DEBUG: TARGET_SPLIT_METADATA variable check:"
+  echo "Length: ${#TARGET_SPLIT_METADATA}"
+  echo "Content preview: ${TARGET_SPLIT_METADATA:0:100}..."
+  echo "================================"
+
+  echo "DEBUG: Testing yq command separately:"
+  yq_output=$(yq -r '.harness_infos | to_entries[] | "\(.key) \(.value.cp_harness_name)"' "$TARGET_SPLIT_METADATA")
+  echo "yq output: '$yq_output'"
+  echo "yq exit code: $?"
+  echo "================================"
+
+  # for metadata
+  while read -r id name; do
+      echo "Processing: id='$id' name='$name'"
+      HARNESS["$id"]="$name"
+  done < <(
+      yq -r '
+        .harness_infos
+        | to_entries
+        | map(select(.value.sanitizer == env(SANITIZER)))
+        | .[]
+        | "\(.key) \(.value.cp_harness_name)"
+      ' "$TARGET_SPLIT_METADATA"
+  )
+
+  # Create symlinks from wrapper.py to each harness location
+  for id in "${!HARNESS[@]}"; do
+    harness_name="${HARNESS[$id]}"
+    echo "Harness name $harness_name"
+    og_harness_path="/out/$harness_name"
+
+    # Create symlink from wrapper.py to the harness path
+    mv $og_harness_path "$og_harness_path.instrumented"
+    cp /shellphish/wrapper.py /out/wrapper.py
+    ln -s /out/wrapper.py "$og_harness_path"
+    echo "Created symlink: $og_harness_path -> wrapper.py"
+
+  done
+  
+
+  # harness_name="filein_harness"
+  # og_harness_path="/out/$harness_name"
+  ls /shellphish
+  # echo "out"
+  ls -al /out
+    
+  # Create symlink from wrapper.py to the harness path
+  # mv $og_harness_path "$og_harness_path.instrumented"
+  # cp /shellphish/wrapper.py /out/wrapper.py
+  # ln -s /out/wrapper.py "$og_harness_path"
+
+  # echo "Created symlink: $og_harness_path -> wrapper.py"
+  
+  # mkdir -p $OUT/shellphish/nautilus/
+  # cp $SRC/shellphish/nautilus/librevolver_mutator.so $OUT/shellphish/nautilus/librevolver_mutator.so
+  # cp $SRC/shellphish/nautilus/watchtower $OUT/shellphish/nautilus/watchtower 
+fi
+
+

@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "builder.fullname" . }}-label-first-node
+  labels:
+    {{- include "builder.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "builder.serviceAccountName" . }}
+      containers:
+      - name: kubectl
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Get the first node from the user node pool
+          FIRST_NODE=$(kubectl get nodes -l 'kubernetes.azure.com/agentpool=usr' -o jsonpath='{.items[0].metadata.name}')
+          if [ -n "$FIRST_NODE" ]; then
+            # Label the first node
+            kubectl label node $FIRST_NODE artiphishell.io/docker-builder-host=true --overwrite
+            echo "Successfully labeled node $FIRST_NODE"
+          else
+            echo "No user nodes found"
+            exit 1
+          fi
+      restartPolicy: Never
+  backoffLimit: 4 

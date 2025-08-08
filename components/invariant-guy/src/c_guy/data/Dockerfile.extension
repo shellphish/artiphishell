@@ -1,0 +1,60 @@
+
+##############################################################################
+#  R1: A folder ./shellphish exists in the working directory
+##############################################################################
+
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} 
+
+# This has been tested with Ubuntu 20/22
+ARG ISOLATED=
+RUN test -z "${ISOLATED}" || echo "deb [trusted=yes arch=amd64] http://apt-mirror-$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\./-/g'):$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\.//g') $(grep DISTRIB_CODENAME /etc/lsb-release | cut -d= -f2) main universe" > /etc/apt/sources.list
+
+RUN apt-get update && apt-get install -y \
+	binutils-dev \
+	bison \
+	clang \
+	file \
+	flex \
+	libaudit-dev \
+	libbabeltrace-dev \
+	libcap-dev \
+	libcapstone-dev \
+	libdw-dev \
+	libelf-dev \
+	libiberty-dev \
+	liblzma-dev \
+	libnuma-dev \
+	libperl-dev \
+	libpfm4-dev \
+	libslang2-dev \
+	libssl-dev \
+	# libtraceevent-dev \ --> this is not available in Ubuntu 20.04
+	libunwind-dev \
+	libzstd-dev \
+	make \
+	pkg-config \
+	python3-dev \
+	python3-pip \
+	python3-setuptools \
+	python3-yaml \
+	rsync \
+	systemtap-sdt-dev \
+	python3-ipdb
+
+# Create the shellphish folder in challenge container too
+RUN mkdir -p /shellphish
+
+# Copy libtraceevent in the shellphish working directory
+COPY ./shellphish/libtraceevent-1.8.2.tar.gz /shellphish/
+COPY ./shellphish/linux-6.11.tar.gz /shellphish/
+COPY ./shellphish/in_docker_ctrace.py /shellphish
+
+# Install libtraceevent. The folder has been copied to the working directory by cbuild
+RUN cd /shellphish && tar -xf libtraceevent-1.8.2.tar.gz && mv libtraceevent-1.8.2 libtraceevent
+RUN cd /shellphish/libtraceevent && make && make install 
+
+# Install perf
+RUN cd /shellphish && tar -xf linux-6.11.tar.gz && mv linux-6.11 linux
+RUN cd /shellphish/linux/tools/perf && make -j$NPROC_VAL && make install
+RUN /shellphish/linux/tools/perf/perf --version

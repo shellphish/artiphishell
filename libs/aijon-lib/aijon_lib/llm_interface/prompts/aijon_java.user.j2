@@ -1,0 +1,22 @@
+{% if retry %}
+<YELL>
+YOUR OUTPUT DID NOT FOLLOW THE FORMAT OF:
++ LINE_NUMBER_TO_INSERT_AFTER IJON_XXX(YYY, ZZZ, ...)
+TRY AGAIN.
+TRY AGAIN.
+</YELL>
+{% endif %}
+
+{% if curly_braces %}
+{% endif %}
+
+Here's the Java code block you need to instrument:
+
+<code_block>
+{{code}}
+</code_block>
+
+And here's the Point-Of-Interest (POI) report for your reference:
+<poi_report>
+{{poi_report}}
+</poi_report>

@@ -1,0 +1,45 @@
+{{- if .Values.rbac.create -}}
+# First create the role
+apiVersion: rbac.authorization.k8s.io/v1
+{{- if .Values.rbac.clusterWide }}
+kind: ClusterRole
+{{- else }}
+kind: Role
+{{- end }}
+metadata:
+  {{- if not .Values.rbac.clusterWide }}
+  namespace: {{ .Release.Namespace }}
+  {{- end }}
+  name: {{ include "telegraf.fullname" . }}-role
+  labels:
+    {{- include "telegraf.labels" . | nindent 4 }}
+rules:
+{{- toYaml .Values.rbac.rules | nindent 2 }}
+---
+# Then create the binding
+apiVersion: rbac.authorization.k8s.io/v1
+{{- if .Values.rbac.clusterWide }}
+kind: ClusterRoleBinding
+{{- else }}
+kind: RoleBinding
+{{- end }}
+metadata:
+  {{- if not .Values.rbac.clusterWide }}
+  namespace: {{ .Release.Namespace }}
+  {{- end }}
+  name: {{ include "telegraf.fullname" . }}-binding
+  labels:
+    {{- include "telegraf.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  {{- if .Values.rbac.clusterWide }}
+  kind: ClusterRole
+  {{- else }}
+  kind: Role
+  {{- end }}
+  name: {{ include "telegraf.fullname" . }}-role
+subjects:
+- kind: ServiceAccount
+  name: {{ include "telegraf.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}

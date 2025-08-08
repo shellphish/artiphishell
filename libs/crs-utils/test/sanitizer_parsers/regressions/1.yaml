@@ -1,0 +1,18 @@
+focus_repo_path: "/src/quartz/"
+language: jvm
+sanitizer: address
+exit_code: 77
+expected_organizer_significance: 212 # RecognizedNonSanitizerNotableCrash
+expected_organizer_crash_description: "LibFuzzer Generic crash and/or Jazzer Sanitizer Crash"
+expected_parser: 'jazzer'
+expected_summary: '== Java Exception: java.lang.NoClassDefFoundError: jakarta/xml/bind/DatatypeConverter'
+expected_sanitizer: java.lang.NoClassDefFoundError
+expected_crash_type: jakarta/xml/bind/DatatypeConverter
+expected_stack_trace_file_names:
+  main:
+    - source: "XMLSchedulingDataProcessor.java"
+    - source: "XMLSchedulingDataProcessor.java" # this should appear a second time
+    - source: "XMLSchedulingDataProcessorFuzzer.java"
+    - source: "BuiltinClassLoader.java"
+    - source: "ClassLoaders.java"
+    - source: "ClassLoader.java"

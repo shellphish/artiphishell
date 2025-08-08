@@ -1,0 +1,20 @@
+
+'''
+_________ ________ ______   _______
+\__   __/(  ___  )(  __  \ (  ___  )
+   ) (   | (   ) || (  \  )| (   ) |
+   | |   | |   | || |   ) || |   | |
+   | |   | |   | || |   | || |   | |
+   | |   | |   | || |   ) || |   | |
+   | |   | (___) || (__/  )| (___) |
+   )_(   (_______)(______/ (_______)
+'''
+
+- Error cases and timeout
+- Keep an eye on disk/ram consumption.
+- carrot should support "string in list" invariants
+- QUESTION: the Dockerfile of the challenges have apt-get install inside
+- What to do if the kernel is 64 bit( + detect it)
+- Speed of kernel probing and insertion of the probes is pretty bad
+- Fix the "-V" problem to speed up dumping of variables from vmlinux.
+- Check if different kernel versions require different .config to enable perf.

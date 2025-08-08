@@ -1,0 +1,16 @@
+ranking:
+- class_name: null
+  filename: ngx_linux_sendfile_chain.c
+  full_funcname: ngx_sendfile_r
+  func_return_type: int
+  funcname: ngx_sendfile_r
+  function_index_key: /src/nginx/src/os/unix/ngx_linux_sendfile_chain.c:49:1::int
+    ngx_sendfile_r(int *, int *, int)
+  metadata:
+    diffguy_category: overlap
+    potentially_dangerous_code:
+    - 'for '
+  package: null
+  priority_score: 10.5
+  rank_index: 1
+  signature: int ngx_sendfile_r(int *, int *, int)

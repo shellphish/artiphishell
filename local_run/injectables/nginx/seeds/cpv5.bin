@@ -1,0 +1,9 @@
+GET /lastConnection HTTP/1.1
+Host: localhost
+Keep-Alive: timeout=5, max=1000
+
+
+GET /lastConnection HTTP/1.1
+Host: localhost
+Connection: Close
+

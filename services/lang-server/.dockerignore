@@ -1,0 +1,8 @@
+.idea/
+java/data/
+java/code_archive/
+c-cpp/data/
+c-cpp/code_archive/
+c-cpp/clangd_19.1.2
+./*.sh
+./*.log

@@ -1,0 +1,28 @@
+The experts are provided with the following information: 
+
+===========================================================
+INFORMATION
+===========================================================
+
+The changes for file {{FILE_CHANGED}} are as follows:
+
+```
+{{FILE_DIFF}}
+```
+
+{% if SANITIZER != '' %}
+When the program crashed, it triggered the following sanitizer: {{ SANITIZER }}
+{% endif %}
+
+{% if REASON != ''%}
+Additionally, the reason for the crash was: {{ REASON }}
+{% endif %}
+
+# Crash Report
+This is the stack trace at the crashing point:
+----------------------------------------------
+{{ POI_REPORT }}
+----------------------------------------------
+
+===========================================================
+

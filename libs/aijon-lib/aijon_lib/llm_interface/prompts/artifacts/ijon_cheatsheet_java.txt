@@ -1,0 +1,14 @@
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│  QUICK REFERENCE (insert exactly as shown with the proper variable(s))             │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ IJON_CTX(v)             – state change occured and all subsequent edges should be  |
+|                           considered new coverage (use sparingly)                  |
+│ IJON_INC(v)             – reward coverage when variable v changes                  │
+│ IJON_SET(v)             – reward coverage for unique values of v                   │
+│ IJON_MAX(v)             – reward coverage for maximizing value of v                │
+│ IJON_MIN(v)             – reward coverage for minimizing value of v                │
+│ IJON_CMP(x,y)           – reward coverage for integer x satisfying integer magic   |
+|                           value y (such as header ints)                            |
+│ IJON_DIST(x,y)          – reward coverage for making x closer to y                 │
+│ IJON_STRDIST(x,y)       – reward coverage for string x getting closer to string y  │
+└────────────────────────────────────────────────────────────────────────────────────┘

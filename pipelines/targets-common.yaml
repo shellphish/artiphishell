@@ -1,0 +1,55 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  c_crs_tasks: MetadataRepository
+  java_crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  crs_tasks_diffs: BlobRepository
+  codeswipe_rankings: BlobRepository
+  fuzzers_started: BlobRepository
+
+  codeql_analysis_ready: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  project_metadatas: MetadataRepository
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+
+  commit_functions_jsons_dirs: FilesystemRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+
+  discovery_guy_output_seeds: BlobRepository
+
+imports:
+  aijon:
+    path: ../components/aijon/pipeline.yaml
+    repos:
+      target_split_metadatas: target_split_metadatas
+      crs_tasks: crs_tasks
+      c_crs_tasks: c_crs_tasks
+      java_crs_tasks: java_crs_tasks
+      crs_tasks_diffs: crs_tasks_diffs
+      crs_tasks_cancelled: crs_tasks_cancelled
+      codeql_analysis_ready: codeql_analysis_ready
+      base_project_metadatas: base_project_metadatas
+      codeswipe_rankings: codeswipe_rankings
+      project_metadatas: project_metadatas
+      project_build_configurations: project_build_configurations
+      project_harness_infos: project_harness_infos
+      project_analysis_sources: project_analysis_sources
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      full_functions_indices: full_functions_indices
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      discovery_guy_output_seeds: discovery_guy_output_seeds
+      fuzzers_started: fuzzers_started

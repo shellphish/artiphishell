@@ -1,0 +1,30 @@
+/**
+ * @id cpp/generic_c_reaching_functions
+ * @kind problem
+ * @name Finds filepaths involved with reaching a given set of target functions
+ * @severity information
+ */
+
+
+import generic_c_calls_analysis
+
+
+predicate is_target_function(Function f) {
+{% for i, name in enumerate(target_functions) %}
+  {% if i > 0 %}or {% endif %}f.hasGlobalName({{ json.dumps(name) }})
+{% endfor %}
+}
+predicate is_source_function(Function f) {
+  f.hasGlobalName("LLVMFuzzerTestOneInput")
+}
+
+from CallGraph::PathNode source, CallGraph::PathNode intermediate, CallGraph::PathNode reachable
+where
+  is_source_function(source.asFunction())
+  and
+  is_target_function(reachable.asFunction())
+  and
+  CallGraph::edges+(source, intermediate)
+  and
+  CallGraph::edges+(intermediate, reachable)
+select intermediate.asFunction().getName()

@@ -1,0 +1,261 @@
+   { "cpvs":
+    {
+        "cpv1": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-buffer-overflow"],
+            "dedup_tokens": {
+                "allocate": ["__interceptor_malloc--ngx_alloc--ngx_palloc_large"],
+                "main": ["ngx_http_validate_from--ngx_http_process_from--ngx_http_process_request_headers"]
+            },
+            "dedup_tokens_full": {
+                "allocate": [
+                    "malloc--ngx_alloc--ngx_palloc_large",
+                    "malloc--ngx_alloc--ngx_palloc_large--ngx_http_validate_from--ngx_http_process_from--ngx_http_process_request_headers--ngx_http_process_request_line--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main",
+                    "malloc--ngx_alloc--ngx_palloc_large--ngx_http_validate_from--ngx_http_process_from--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main"
+                ],
+                "main": [
+                    "ngx_http_validate_from--ngx_http_process_from--ngx_http_process_request_headers--ngx_http_process_request_line--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_validate_from--ngx_http_process_from--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start"
+                ]
+            },
+            "patch": [{"file": "src/http/ngx_http_request.c", "function": "ngx_http_validate_from", "lines": [4104, 4118]}]
+        },
+        "cpv2": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-buffer-overflow"],
+            "dedup_tokens": {
+                "allocate": ["__interceptor_malloc--ngx_alloc--ngx_palloc_large"],
+                "main": [
+                    "ngx_http_auth_basic_user--ngx_http_variable_remote_user--ngx_http_get_indexed_variable",
+                    "ngx_decode_base64_internal--ngx_http_auth_basic_user--ngx_http_variable_remote_user"
+                ]
+            },
+            "patch": [{"file": "src/http/ngx_http_core_module.c", "function": "ngx_http_auth_basic_user", "lines": [1985, 1992]}]
+        },
+        "cpv3": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-buffer-overflow"],
+            "dedup_tokens":{
+                "allocate": [
+                    "__interceptor_malloc--ngx_alloc--ngx_palloc_large"
+                ],
+                "main": [
+                    "__asan_memcpy--ngx_http_trace_handler--ngx_http_process_request_header",
+                    "ngx_http_trace_handler--ngx_http_process_request_header--ngx_http_process_request_headers"
+                ]
+            },
+            "patch": [{"file": "src/http/ngx_http_request.c", "function": "ngx_http_trace_handler", "lines": [4227, 4233]}]
+        },
+        "cpv4": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-buffer-overflow"],
+            "dedup_tokens":{
+                "allocate": [
+                    "__interceptor_malloc--ngx_alloc--ngx_palloc_large"
+                ],
+                "main": [
+                    "ngx_sprintf_str--ngx_vslprintf--ngx_sprintf"
+                ]
+            },
+            "dedup_tokens_full": {
+                "allocate": [
+                    "malloc--ngx_alloc--ngx_palloc_large",
+                    "malloc--ngx_alloc--ngx_palloc_large--ngx_http_set_browser_cookie--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_internal_redirect--ngx_http_index_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main",
+                    "malloc--ngx_alloc--ngx_palloc_large--ngx_http_set_browser_cookie--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main"
+                ],
+                "main": [
+                    "ngx_sprintf_str--ngx_vslprintf--ngx_sprintf--ngx_http_set_browser_cookie--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_internal_redirect--ngx_http_index_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_sprintf_str--ngx_vslprintf--ngx_sprintf--ngx_http_set_browser_cookie--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start"
+                ]
+            },
+            "patch": [{"file": "src/http/ngx_http_core_module.c", "function": "ngx_http_set_browser_cookie", "lines": [5269, 5275]}, {"file": "src/http/ngx_http_core_module.c", "function": "ngx_http_set_browser_cookie", "lines": [5278, 5285]}]
+        },
+        "cpv5": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: SEGV"],
+            "dedup_tokens":{
+                "main": [
+                    "ngx_http_get_last_ip_variable--ngx_http_get_indexed_variable--ngx_http_script_copy_var_len_code"
+                ]
+            },
+            "patch": [{"file": "src/core/ngx_cycle.c", "function": "ngx_get_con_his", "lines": [57, 70]}, {"file": "src/http/ngx_http_variables.c", "function": "ngx_http_get_last_ip_variable", "lines": [2848, 2856]}]
+        },
+        "cpv8": {
+            "harness": ["mail_request_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-buffer-overflow"],
+            "dedup_tokens": {
+                "main": ["__asan_memcpy--ngx_mail_pop3_user--ngx_mail_pop3_auth_state"],
+                "allocate": ["__interceptor_malloc--ngx_alloc--ngx_palloc_large"]
+            },
+            "patch": [{"file": "src/mail/ngx_mail_pop3_handler.c", "function": "ngx_mail_pop3_user", "lines": [329, 338]}]
+        },
+        "cpv9": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-use-after-free", "AddressSanitizer: SEGV"],
+            "dedup_tokens":{
+                "allocate": ["__interceptor_malloc--ngx_alloc--ngx_black_list_insert"],
+                "free": ["__interceptor_free--ngx_black_list_remove--ngx_http_process_white_list"],
+                "main": ["ngx_black_list_remove--ngx_http_process_white_list--ngx_http_process_request_headers"]
+            },
+            "dedup_tokens_full": {
+                "allocate": [
+                    "malloc--ngx_alloc--ngx_black_list_insert",
+
+                    "malloc--ngx_alloc--ngx_black_list_insert--ngx_http_process_black_list--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main"
+                ],
+                "free": [
+                    "ngx_black_list_remove--ngx_http_process_white_list",
+
+                    "ngx_black_list_remove--ngx_http_process_white_list--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main",
+                    "free--ngx_black_list_remove--ngx_http_process_white_list--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main"
+                ],
+                "main": [
+                    "ngx_black_list_remove--ngx_http_process_white_list--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start"
+                ]
+            },
+            "patch": [{"file": "src/core/ngx_cycle.c", "function": "ngx_black_list_insert", "lines": [1626, 1654]},
+                      {"file": "src/core/ngx_cycle.c", "function": "ngx_black_list_remove", "lines": [1660, 1680]},
+                      {"file": "src/core/ngx_cycle.c", "function": "ngx_is_ip_banned", "lines": [1682, 1692]}
+
+                     ]
+        },
+        "cpv10": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: double-free", "AddressSanitizer: heap-use-after-free"],
+            "dedup_tokens":{
+                "allocate": [
+                    "__interceptor_malloc--ngx_alloc--ngx_http_process_prefer",
+                    "malloc--ngx_alloc--ngx_http_process_prefer"
+                ],
+                "free": [
+                    "__interceptor_free--ngx_http_process_prefer--ngx_http_process_request_headers"
+                ],
+                "main": [
+                    "__interceptor_free--ngx_http_process_prefer--ngx_http_process_request_headers",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter",
+                    "ngx_http_header_filter--ngx_http_v2_header_filter--ngx_http_charset_header_filter"
+                ]
+            },
+            "dedup_tokens_full": {
+                "allocate": [
+                    "malloc--ngx_alloc--ngx_http_process_prefer--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main"
+                ],
+                "free": [
+                    "ngx_http_process_prefer--ngx_http_process_request_headers",
+                    "ngx_http_process_prefer--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main",
+                    "free--ngx_http_process_prefer--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main"
+                ],
+                "main": [
+                    "free--ngx_http_process_prefer--ngx_http_process_request_headers",
+
+                    "free--ngx_http_process_prefer--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_special_response--ngx_http_special_response_handler--ngx_http_finalize_request--ngx_http_process_from--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_special_response--ngx_http_special_response_handler--ngx_http_finalize_request--ngx_http_process_host--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_special_response--ngx_http_special_response_handler--ngx_http_finalize_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_special_response--ngx_http_special_response_handler--ngx_http_finalize_request--ngx_http_process_request_header--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_special_response--ngx_http_special_response_handler--ngx_http_finalize_request--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_special_response--ngx_http_special_response_handler--ngx_http_finalize_request--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_internal_redirect--ngx_http_index_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_special_response--ngx_http_special_response_handler--ngx_http_finalize_request--ngx_http_process_unique_header_line--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_response--ngx_http_empty_gif_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_internal_redirect--ngx_http_index_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_http_header_filter--ngx_http_v2_header_filter--ngx_http_charset_header_filter--ngx_http_userid_filter--ngx_http_headers_filter--ngx_http_send_special_response--ngx_http_special_response_handler--ngx_http_finalize_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start"
+                ]
+            },
+            "patch": [{"file": "src/http/ngx_http_request.c", "function": "ngx_http_process_prefer", "lines": [4032, 4039]}]
+        },
+        "cpv11": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-use-after-free"],
+            "dedup_tokens":{
+                "allocate": [
+                    "__interceptor_malloc--ngx_alloc--ngx_init_cycle"
+                ],
+                "free": [
+                    "__interceptor_free--ngx_init_cycle--InitializeNginx"
+                ],
+                "main": [
+                    "ngx_http_get_host_specs--ngx_http_get_indexed_variable--ngx_http_script_copy_var_len_code"
+                ]
+            },
+            "patch": [{"file": "src/core/ngx_cycle.c", "function": "ngx_init_cycle", "lines": [355, 464]}, 
+                      {"file": "src/http/ngx_http_variables.c", "function": "ngx_http_get_host_specs", "lines": [2867, 2876]}
+                     ]
+        },
+        "cpv12": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-buffer-overflow"],
+            "dedup_tokens":{
+                "allocate": [
+                    "__interceptor_malloc--ngx_alloc--ngx_sendfile_r"
+                ],
+                "main": [
+                    "ngx_sendfile_r--ngx_linux_sendfile--ngx_linux_sendfile_chain"
+                ]
+            },
+            "dedup_tokens_full": {
+                "allocate": [
+                    "malloc--ngx_alloc--ngx_sendfile_r",
+                    "malloc--ngx_alloc--ngx_sendfile_r--ngx_linux_sendfile--ngx_linux_sendfile_chain--ngx_http_write_filter--ngx_http_chunked_body_filter--ngx_http_gzip_body_filter--ngx_http_ssi_body_filter--ngx_http_charset_body_filter--ngx_http_addition_body_filter--ngx_http_gunzip_body_filter--ngx_http_trailers_filter--ngx_output_chain--ngx_http_copy_filter--ngx_http_range_singlepart_body--ngx_http_range_body_filter--ngx_http_output_filter--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_internal_redirect--ngx_http_index_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver",
+                    "malloc--ngx_alloc--ngx_sendfile_r--ngx_linux_sendfile--ngx_linux_sendfile_chain--ngx_http_write_filter--ngx_http_chunked_body_filter--ngx_http_gzip_body_filter--ngx_http_ssi_body_filter--ngx_http_charset_body_filter--ngx_http_addition_body_filter--ngx_http_gunzip_body_filter--ngx_http_trailers_filter--ngx_output_chain--ngx_http_copy_filter--ngx_http_range_singlepart_body--ngx_http_range_body_filter--ngx_http_output_filter--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main"
+                ],
+                "main": [
+                    "ngx_sendfile_r--ngx_linux_sendfile--ngx_linux_sendfile_chain--ngx_http_write_filter--ngx_http_chunked_body_filter--ngx_http_gzip_body_filter--ngx_http_ssi_body_filter--ngx_http_charset_body_filter--ngx_http_addition_body_filter--ngx_http_gunzip_body_filter--ngx_http_trailers_filter--ngx_output_chain--ngx_http_copy_filter--ngx_http_range_singlepart_body--ngx_http_range_body_filter--ngx_http_output_filter--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_internal_redirect--ngx_http_index_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start",
+                    "ngx_sendfile_r--ngx_linux_sendfile--ngx_linux_sendfile_chain--ngx_http_write_filter--ngx_http_chunked_body_filter--ngx_http_gzip_body_filter--ngx_http_ssi_body_filter--ngx_http_charset_body_filter--ngx_http_addition_body_filter--ngx_http_gunzip_body_filter--ngx_http_trailers_filter--ngx_output_chain--ngx_http_copy_filter--ngx_http_range_singlepart_body--ngx_http_range_body_filter--ngx_http_output_filter--ngx_http_static_handler--ngx_http_core_content_phase--ngx_http_core_run_phases--ngx_http_handler--ngx_http_process_request--ngx_http_process_request_headers--ngx_event_process_posted--LLVMFuzzerTestOneInput--fuzzer::Fuzzer::ExecuteCallback--fuzzer::RunOneTest--fuzzer::FuzzerDriver--main--__libc_start_main--_start"
+                ]
+            },
+            "patch": [{"file": "src/os/unix/ngx_linux_sendfile_chain.c", "function": "ngx_sendfile_r", "lines": [70, 77]}]
+        },
+        "cpv13": {
+            "harness": ["mail_request_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: SEGV"],
+            "dedup_tokens":{
+                "main": [
+                    "ngx_mail_pop3_pass--ngx_mail_pop3_auth_state--ngx_event_process_posted"
+                ]
+            },
+            "patch": [{"file": "src/mail/ngx_mail_pop3_handler.c", "function": "ngx_mail_pop3_pass", "lines": [349, 356]},
+                      {"file": "src/mail/ngx_mail_pop3_handler.c", "function": "ngx_mail_pop3_pass", "lines": [370, 396]}
+                     ]
+        },
+        "cpv14": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: global-buffer-overflow"],
+            "dedup_tokens":{
+                "main": [
+                    "ngx_http_rewrite_handler--ngx_http_core_rewrite_phase--ngx_http_core_run_phases"
+                ]
+            },
+            "patch": [{"file": "src/http/ngx_http_script.c", "function": "ngx_http_script_regex_end_code", "lines": [1272, 1278]}]
+        },
+        "cpv15": {
+            "harness": ["pov_harness"],
+            "consistent_sanitizers": ["AddressSanitizer: heap-buffer-overflow", "AddressSanitizer: SEGV", "AddressSanitizer: heap-use-after-free"],
+            "dedup_tokens": {
+                "allocate": [
+                    "malloc--ngx_alloc--ngx_palloc_large",
+                    "malloc--ngx_alloc--ngx_hash_init",
+
+                    "__interceptor_malloc--ngx_alloc--ngx_palloc_large",
+                    "__interceptor_malloc--ngx_alloc--ngx_hash_init"
+                ],
+                "free": [
+                    "__interceptor_free--ngx_hash_init--ngx_http_proxy_init_headers",
+                    "__interceptor_free--ngx_destroy_pool--ngx_http_free_request",
+                    "__interceptor_free--ngx_destroy_pool--ngx_init_cycle",
+                    "__interceptor_free--ngx_hash_init--ngx_http_upstream_hide_headers_hash",
+
+                    "ngx_hash_init--ngx_http_upstream_hide_headers_hash"
+                ],
+                "main": [
+                    "ngx_decode_base64_internal--ngx_http_userid_get_uid--ngx_http_userid_filter",
+                    "QuickCheckForUnpoisonedRegion--__asan_memcpy--ngx_http_userid_set_uid",
+                    "memcpy--__asan_memcpy--ngx_http_userid_set_uid",
+                    "__asan_memcpy--ngx_http_userid_set_uid--ngx_http_userid_filter"
+                ]
+            },
+            "patch": [{"file": "src/http/modules/ngx_http_userid_filter_module.c", "function": "ngx_http_userid_get_uid", "lines": [356, 364]}]
+        }
+    },
+    "backup": "backup-nginx-15168235272",
+    "backup_url": "https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/nginx/14855798182/backup-nginx-14855798182.tar.gz"
+}

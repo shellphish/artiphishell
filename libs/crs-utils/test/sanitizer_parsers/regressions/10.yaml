@@ -1,0 +1,12 @@
+focus_repo_path: "/src/sqlite3/"
+language: c
+sanitizer: address
+exit_code: 77
+expected_organizer_significance: 212 # RecognizedNonSanitizerNotableCrash
+expected_organizer_crash_description: "LibFuzzer Generic crash and/or Jazzer Sanitizer Crash"
+expected_parser: 'asan'
+expected_summary: 'SUMMARY: AddressSanitizer: SEGV'
+expected_sanitizer: AddressSanitizer
+expected_crash_type: 'SEGV'
+expected_stack_trace_file_names:
+  main: []

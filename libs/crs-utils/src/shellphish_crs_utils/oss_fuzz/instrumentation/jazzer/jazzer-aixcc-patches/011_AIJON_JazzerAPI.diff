@@ -1,0 +1,154 @@
+diff --git a/src/main/java/com/code_intelligence/jazzer/api/Jazzer.java b/src/main/java/com/code_intelligence/jazzer/api/Jazzer.java
+index 3809479e..bc3face5 100644
+--- a/src/main/java/com/code_intelligence/jazzer/api/Jazzer.java
++++ b/src/main/java/com/code_intelligence/jazzer/api/Jazzer.java
+@@ -24,21 +24,36 @@ import java.security.SecureRandom;
+ 
+ /** Static helper methods that hooks can use to provide feedback to the fuzzer. */
+ public final class Jazzer {
+-  private static final Class<?> JAZZER_INTERNAL;
++  private static final String ENV_MAX_NUM_COUNTERS = "JAZZER_MAX_NUM_COUNTERS";
++  private static final int MAX_NUM_COUNTERS =
++      System.getenv(ENV_MAX_NUM_COUNTERS) != null
++          ? Integer.parseInt(System.getenv(ENV_MAX_NUM_COUNTERS))
++          : 1 << 20;
++  private static final int MASK = MAX_NUM_COUNTERS - 1;
+ 
++  private static final Class<?> JAZZER_INTERNAL;
+   private static final MethodHandle ON_FUZZ_TARGET_READY;
+ 
++  private static final Class<?> COVERAGE_MAP;
++  private static final MethodHandle RECORD_COVERAGE;
++
+   private static final MethodHandle TRACE_STRCMP;
+   private static final MethodHandle TRACE_STRSTR;
+   private static final MethodHandle TRACE_MEMCMP;
++  private static final MethodHandle TRACE_INTCMP;
++  private static final MethodHandle TRACE_LONGCMP;
+   private static final MethodHandle TRACE_PC_INDIR;
+ 
+   static {
+     Class<?> jazzerInternal = null;
+     MethodHandle onFuzzTargetReady = null;
++    Class<?> coverageMap = null;
++    MethodHandle recordCoverage = null;
+     MethodHandle traceStrcmp = null;
+     MethodHandle traceStrstr = null;
+     MethodHandle traceMemcmp = null;
++    MethodHandle traceIntcmp = null;
++    MethodHandle traceLongcmp = null;
+     MethodHandle tracePcIndir = null;
+     try {
+       jazzerInternal = Class.forName("com.code_intelligence.jazzer.runtime.JazzerInternal");
+@@ -47,6 +62,14 @@ public final class Jazzer {
+           MethodHandles.publicLookup()
+               .findStatic(
+                   jazzerInternal, "registerOnFuzzTargetReadyCallback", onFuzzTargetReadyType);
++
++      coverageMap = Class.forName("com.code_intelligence.jazzer.runtime.CoverageMap");
++      MethodType recordCoverageType = MethodType.methodType(void.class, int.class);
++      recordCoverage =
++          MethodHandles.publicLookup()
++              .findStatic(
++                  coverageMap, "recordCoverage", recordCoverageType);
++
+       Class<?> traceDataFlowNativeCallbacks =
+           Class.forName("com.code_intelligence.jazzer.runtime.TraceDataFlowNativeCallbacks");
+ 
+@@ -70,6 +93,14 @@ public final class Jazzer {
+       tracePcIndir =
+           MethodHandles.publicLookup()
+               .findStatic(traceDataFlowNativeCallbacks, "tracePcIndir", tracePcIndirType);
++      MethodType traceIntcmpType = MethodType.methodType(void.class, int.class, int.class, int.class);
++      traceIntcmp =
++          MethodHandles.publicLookup()
++              .findStatic(traceDataFlowNativeCallbacks, "traceCmpInt", traceIntcmpType);
++      MethodType traceLongcmpType = MethodType.methodType(void.class, long.class, long.class, int.class);
++      traceLongcmp =
++          MethodHandles.publicLookup()
++              .findStatic(traceDataFlowNativeCallbacks, "traceCmpLong", traceLongcmpType);
+     } catch (ClassNotFoundException ignore) {
+       // Not running in the context of the agent. This is fine as long as no methods are called on
+       // this class.
+@@ -82,9 +113,15 @@ public final class Jazzer {
+     }
+     JAZZER_INTERNAL = jazzerInternal;
+     ON_FUZZ_TARGET_READY = onFuzzTargetReady;
++
++    COVERAGE_MAP = coverageMap;
++    RECORD_COVERAGE = recordCoverage;
++
+     TRACE_STRCMP = traceStrcmp;
+     TRACE_STRSTR = traceStrstr;
+     TRACE_MEMCMP = traceMemcmp;
++    TRACE_INTCMP = traceIntcmp;
++    TRACE_LONGCMP = traceLongcmp;
+     TRACE_PC_INDIR = tracePcIndir;
+   }
+ 
+@@ -147,6 +184,65 @@ public final class Jazzer {
+     }
+   }
+ 
++  /**
++   * Instructs the fuzzer to guide its mutations towards making {@code current} equal to {@code
++   * target}.
++   *
++   * <p>If the relation between the raw fuzzer input and the value of {@code current} is relatively
++   * complex, running the fuzzer with the argument {@code -use_value_profile=1} may be necessary to
++   * achieve equality.
++   *
++   * @param current int
++   * @param target int
++   * @param id a (probabilistically) unique identifier for this particular compare hint
++   */
++  public static void guideTowardsEquality(int current, int target, int id) {
++    if (TRACE_INTCMP == null) {
++      return;
++    }
++    try {
++      TRACE_INTCMP.invokeExact(current, target, id);
++    } catch (Throwable e) {
++      e.printStackTrace();
++    }
++  }
++
++  /**
++   * Instructs the fuzzer to guide its mutations towards making {@code current} equal to {@code
++   * target}.
++   *
++   * <p>If the relation between the raw fuzzer input and the value of {@code current} is relatively
++   * complex, running the fuzzer with the argument {@code -use_value_profile=1} may be necessary to
++   * achieve equality.
++   *
++   * @param current long
++   * @param target long
++   * @param id a (probabilistically) unique identifier for this particular compare hlong
++   */
++  public static void guideTowardsEquality(long current, long target, int id) {
++    if (TRACE_LONGCMP == null) {
++      return;
++    }
++    try {
++      TRACE_LONGCMP.invokeExact(current, target, id);
++    } catch (Throwable e) {
++      e.printStackTrace();
++    }
++  }
++
++  /**
++   * Record coverage for a value.
++   *
++   * @param id The index in the coverage bitmap to mark
++   */
++  public static void markCoverage(int id) {
++    try {
++      RECORD_COVERAGE.invokeExact(id & MASK);
++    } catch (Throwable e) {
++      e.printStackTrace();
++    }
++  }
++
+   /**
+    * Instructs the fuzzer to guide its mutations towards making {@code haystack} contain {@code
+    * needle} as a substring.

@@ -1,0 +1,775 @@
+repos:
+  delta_mode_tasks:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: crs_tasks
+      filter_source: crs_tasks
+      filter_query: '.type == "delta"'
+  full_mode_tasks:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: crs_tasks
+      filter_source: crs_tasks
+      filter_query: '.type == "full"'
+
+  # all_targets_with_sources:
+  #   cls: CokeyedJqFilterRepository
+  #   args:
+  #     source: targets_with_sources
+  #     filter_source: target_metadatas
+  #     filter_query: 'true'
+  # all_target_metadatas:
+  #   cls: CokeyedJqFilterRepository
+  #   args:
+  #     source: target_metadatas
+  #     filter_source: target_metadatas
+  #     filter_query: 'true'
+
+  java_crs_tasks:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: crs_tasks
+      filter_source: base_project_metadatas
+      filter_query: '.language == "jvm"'
+
+  java_crs_tasks_analysis_sources:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: crs_tasks_analysis_sources
+      filter_source: base_project_metadatas
+      filter_query: '.language == "jvm"'
+
+  java_crs_tasks_base_sources:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: crs_tasks_base_sources
+      filter_source: base_project_metadatas
+      filter_query: '.language == "jvm"'
+
+  java_project_metadatas:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: project_metadatas
+      filter_source: base_project_metadatas
+      filter_query: '.language == "jvm"'
+
+  c_crs_tasks:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: crs_tasks
+      filter_source: base_project_metadatas
+      filter_query: '(.language == "c") or (.language == "c++")'
+
+  c_full_mode_tasks:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: full_mode_tasks
+      filter_source: base_project_metadatas
+      filter_query: '(.language == "c") or (.language == "c++")'
+
+  c_delta_mode_tasks:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: delta_mode_tasks
+      filter_source: base_project_metadatas
+      filter_query: '(.language == "c") or (.language == "c++")'
+
+  c_crs_tasks_analysis_sources:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: crs_tasks_analysis_sources
+      filter_source: base_project_metadatas
+      filter_query: '(.language == "c") or (.language == "c++")'
+
+  c_crs_tasks_base_sources:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: crs_tasks_base_sources
+      filter_source: base_project_metadatas
+      filter_query: '(.language == "c") or (.language == "c++")'
+
+  c_project_metadatas:
+    cls: CokeyedJqFilterRepository
+    args:
+      source: project_metadatas
+      filter_source: base_project_metadatas
+      filter_query: '(.language == "c") or (.language == "c++")'
+
+
+  # kernel_targets_with_sources:
+  #   cls: CokeyedJqFilterRepository
+  #   args:
+  #     source: c_targets_with_sources
+  #     filter_source: target_metadatas
+  #     filter_query: '(.shellphish.known_sources | has("linux_kernel")) and (.shellphish.known_sources.linux_kernel | length > 0)'
+  # kernel_target_metadatas:
+  #   cls: CokeyedJqFilterRepository
+  #   args:
+  #     source: target_metadatas
+  #     filter_source: target_metadatas
+  #     filter_query: '(.shellphish.known_sources | has("linux_kernel")) and (.shellphish.known_sources.linux_kernel | length > 0)'
+
+  # all_non_kernel_targets_with_sources:
+  #   cls: CokeyedJqFilterRepository
+  #   args:
+  #     source: targets_with_sources
+  #     filter_source: target_metadatas
+  #     filter_query: '(.shellphish.known_sources | has("linux_kernel") | not) or (.shellphish.known_sources.linux_kernel | length == 0)'
+
+  # non_kernel_c_targets_with_sources:
+  #   cls: CokeyedJqFilterRepository
+  #   args:
+  #     source: c_targets_with_sources
+  #     filter_source: target_metadatas
+  #     filter_query: '(.shellphish.known_sources | has("linux_kernel") | not) or (.shellphish.known_sources.linux_kernel | length == 0)'
+
+  # non_kernel_c_target_metadatas:
+  #   cls: CokeyedJqFilterRepository
+  #   args:
+  #     source: target_metadatas
+  #     filter_source: target_metadatas
+  #     filter_query: '(.shellphish.known_sources | has("linux_kernel") | not) or (.shellphish.known_sources.linux_kernel | length == 0)'
+
+repo_classes:
+  sanity_check_input: { "cls": "FilesystemRepository", "required": false }
+  sanity_check_project: { "cls": "MetadataRepository", "required": false }
+  sanity_check_cancelled: { "cls": "MetadataRepository", "required": false }
+  sanity_check_output: { "cls": "FilesystemRepository", "required": false }
+
+  # testing_project_with_sources: { "cls": "FilesystemRepository", "required": false }
+  # testing_project_metadatas: { "cls": "MetadataRepository", "required": false }
+  # testing_project_build_requests: { "cls": "MetadataRepository", "required": false }
+  # testing_project_run_requests: { "cls": "MetadataRepository", "required": false }
+
+  # targets_with_sources: { "cls": "FilesystemRepository", "required": false }
+  # debug_built_targets_with_sources: { "cls": "FilesystemRepository", "required": false }
+  # targets_built_with_coverage: { "cls": "FilesystemRepository", "required": false }
+  # cp_image_ready: { "cls": "MetadataRepository", "required": false }
+  # target_metadatas: { "cls": "MetadataRepository", "required": false }
+  # target_harness_infos: { "cls": "MetadataRepository", "required": false }
+  # target_directed_fuzz_requests: { "cls": "MetadataRepository", "required": false }
+  # info_extraction_requests: { "cls": "MetadataRepository", "required": false }
+  # target_directed_seeds: { "cls": "FilesystemRepository", "required": false }
+  # targets_with_sources_for_fuzzing: { "cls": "FilesystemRepository", "required": false }
+  # full_functions_indices: { "cls": "BlobRepository", "required": false }
+  # full_functions_jsons_dirs: { "cls": "FilesystemRepository", "required": false }
+  # commit_functions_indices: { "cls": "BlobRepository", "required": false }
+  # commit_functions_jsons_dirs: { "cls": "FilesystemRepository", "required": false }
+  # libfuzzer_reaching_functions_dicts: { "cls": "BlobRepository", "required": false }
+  # libfuzzer_reaching_files_dicts: { "cls": "BlobRepository", "required": false }
+
+
+  crs_tasks:                          { "cls": "MetadataRepository",    "required": false }
+  crs_tasks_cancelled:                { "cls": "MetadataRepository",    "required": false }
+  crs_tasks_oss_fuzz_repos:           { "cls": "FilesystemRepository",  "required": false, "annotations":{
+      "blob_storage_key":"crs_tasks_oss_fuzz_repos",
+      "use_nginx_cache": true
+  } }
+  crs_tasks_base_sources:             { "cls": "FilesystemRepository",  "required": false, "annotations":{
+      "blob_storage_key":"crs_tasks_base_sources",
+      "use_nginx_cache": true
+  } }
+  crs_tasks_diffs:                    { "cls": "BlobRepository",        "required": false }
+  base_project_metadatas:             { "cls": "MetadataRepository",    "required": false }
+  project_metadatas:                  { "cls": "MetadataRepository",    "required": false } # the oss-fuzz challenge.yaml for the project in this crs_task
+  sarif_reports:                      { "cls": "BlobRepository",        "required": false }
+  sarif_metadatas:                    { "cls": "MetadataRepository",    "required": false }
+  patcher_generated_sarif_reports:    { "cls": "BlobRepository",        "required": false }
+  patcher_generated_sarif_metadatas:  { "cls": "MetadataRepository",    "required": false }
+  sarif_retry_metadatas:              { "cls": "MetadataRepository",    "required": false }
+  sarif_heartbeat_paths:              { "cls": "MetadataRepository",        "required": false } 
+  project_build_configurations:       { "cls": "MetadataRepository",    "required": false }
+  project_harness_infos:              { "cls": "MetadataRepository",    "required": false }
+  crs_tasks_analysis_sources:         { "cls": "FilesystemRepository",  "required": false }
+  target_split_metadatas:             { "cls": "MetadataRepository",    "required": false }
+  project_harness_only_metadatas:     { "cls": "MetadataRepository",    "required": false }
+
+  canonical_build_artifacts:          { "cls": "FilesystemRepository",  "required": false, "annotations":{
+      "blob_storage_key":"canonical_build_artifacts",
+      "use_azure_storage": true
+  } }
+  canonical_build_delta_artifacts:    {"cls": "FilesystemRepository",   "required": false, "annotations":{
+      "blob_storage_key":"canonical_build_delta_artifacts",
+      "use_azure_storage": true
+  } }
+  canonical_build_delta_failures:     { "cls": "MetadataRepository",    "required": false }
+  debug_build_artifacts:              { "cls": "FilesystemRepository", "required": false, "annotations":{
+      "blob_storage_key":"debug_build_artifacts",
+      "use_azure_storage": true
+  } }
+  jazzer_build_artifacts:             { "cls": "FilesystemRepository", "required": false, "annotations":{
+      "blob_storage_key":"jazzer_build_artifacts",
+      "use_azure_storage": true
+  } }
+  coverage_build_artifacts:           { "cls": "FilesystemRepository", "required": false, "annotations":{
+      "blob_storage_key":"coverage_build_artifacts",
+      "use_azure_storage": true
+  } }
+  locs_of_interest:                   { "cls": "BlobRepository",       "required": false }
+  funcs_of_interest:                  { "cls": "BlobRepository",       "required": false }
+  jazzer_build_shellphish_dir:        { "cls": "FilesystemRepository", "required": false  }
+  # These are used to run builds against the oss-fuzz project
+  project_build_requests: { "cls": "MetadataRepository", "required": false }
+  project_build_metadatas: { "cls": "MetadataRepository", "required": false }
+  project_build_logs_stdout: { "cls": "BlobRepository", "required": false }
+  project_build_logs_stderr: { "cls": "BlobRepository", "required": false }
+
+  project_volumes: { "cls": "FilesystemRepository", "required": false }
+  project_build_artifacts: { "cls": "FilesystemRepository", "required": false, "annotations":{
+      "blob_storage_key":"project_build_artifacts",
+      "use_nginx_cache": true
+  } }
+
+  project_run_requests: { "cls": "MetadataRepository", "required": false }
+  project_run_metadatas: { "cls": "MetadataRepository", "required": false }
+  project_run_logs_stdout: { "cls": "BlobRepository", "required": false }
+  project_run_logs_stderr: { "cls": "BlobRepository", "required": false }
+  project_run_artifacts: { "cls": "FilesystemRepository", "required": false }
+
+  fuzzers_started: { "cls": "BlobRepository", "required": false }
+
+  # for the debug build targets we probably want the base and analysis targets to ensure that the crash doesn't already happen in the base
+  # debug_built_targets_projects_analysis: { "cls": "FilesystemRepository", "required": false }
+  # debug_built_targets_projects_base: { "cls": "FilesystemRepository", "required": false }
+
+  # # for coverage, we only need the analysis targets
+  # coverage_built_targets_projects_analysis: { "cls": "FilesystemRepository", "required": false }
+
+
+  # targets_with_sources: { "cls": "FilesystemRepository", "required": false }
+  # debug_built_targets_with_sources: { "cls": "FilesystemRepository", "required": false }
+  # targets_built_with_coverage: { "cls": "FilesystemRepository", "required": false }
+  # cp_image_ready: { "cls": "MetadataRepository", "required": false }
+  # target_metadatas: { "cls": "MetadataRepository", "required": false }
+  # target_harness_infos: { "cls": "MetadataRepository", "required": false }
+  # target_directed_fuzz_requests: { "cls": "MetadataRepository", "required": false }
+  info_extraction_requests: { "cls": "MetadataRepository", "required": false }
+  # target_directed_seeds: { "cls": "FilesystemRepository", "required": false }
+  # targets_with_sources_for_fuzzing: { "cls": "FilesystemRepository", "required": false }
+  full_functions_indices: { "cls": "BlobRepository", "required": false }
+  full_functions_by_file_index_jsons: { "cls": "BlobRepository", "required": false, "annotations":{
+      "blob_storage_key":"full_functions_by_file_index_jsons",
+      "use_nginx_cache": true
+  } }
+  commit_functions_indices: { "cls": "BlobRepository", "required": false }
+  full_functions_jsons_dirs: { "cls": "FilesystemRepository", "required": false, "annotations":{
+      "blob_storage_key":"full_functions_jsons_dirs",
+      "use_nginx_cache": true
+  } }
+  commit_functions_jsons_dirs: { "cls": "FilesystemRepository", "required": false }
+  libfuzzer_reaching_functions_dicts: { "cls": "BlobRepository", "required": false }
+  libfuzzer_reaching_files_dicts: { "cls": "BlobRepository", "required": false }
+  aflpp_build_artifacts: { "cls": "FilesystemRepository", "required": false, "annotations":{
+      "blob_storage_key":"aflpp_build_artifacts",
+      "use_azure_storage": true
+  } }
+  libfuzzer_build_artifacts: { "cls": "FilesystemRepository", "required": false, "annotations":{
+      "blob_storage_key":"libfuzzer_build_artifacts",
+      "use_azure_storage": true
+  } }
+  likely_input_formats_corpuses: { "cls": "FilesystemRepository", "required": false }
+  likely_input_formats_corpus_diffs: { "cls": "FilesystemRepository", "required": false }
+  likely_input_formats_dictionaries: { "cls": "FilesystemRepository", "required": false }
+  likely_input_formats_grammars: { "cls": "FilesystemRepository", "required": false }
+  likely_input_formats_metadatas: { "cls": "MetadataRepository", "required": false }
+
+  codeql_reports: { "cls": "BlobRepository", "required": false }
+  codeql_qlpack_reports: { "cls": "BlobRepository", "required": false }
+  # codeql_targets_strings: { "cls": "FilesystemRepository", "required": false }
+  # crashing_inputs: { "cls": "BlobRepository", "required": false }
+  # crashing_reports: { "cls": "BlobRepository", "required": false }
+  # crashing_inputs_metadatas: { "cls": "MetadataRepository", "required": false }
+  codeswipe_rankings: {cls: BlobRepository, required: false}
+  info_extraction_results: { "cls": "MetadataRepository", "required": false }
+
+  crashing_harness_inputs: { "cls": "BlobRepository", "required": false }
+  crashing_harness_inputs_metadatas: { "cls": "MetadataRepository", "required": false }
+  losan_crashing_harness_inputs: { "cls": "BlobRepository", "required": false }
+  losan_crashing_harness_inputs_metadatas: { "cls": "MetadataRepository", "required": false }
+  # crashing_harness_inputs_coverages: { "cls": "BlobRepository", "required": false }
+  benign_harness_inputs: { "cls": "BlobRepository", "required": false }
+  benign_harness_inputs_metadatas: { "cls": "MetadataRepository", "required": false }
+  # benign_harness_inputs_coverages: { "cls": "BlobRepository", "required": false }
+  # to_be_triaged_harness_inputs: { "cls": "BlobRepository", "required": false }
+  # to_be_triaged_harness_inputs_metadatas: { "cls": "MetadataRepository", "required": false }
+  # benign_coverages_full_report: { "cls": "BlobRepository", "required": false }
+
+  # crashing_commits: { "cls": "MetadataRepository", "required": false }
+  points_of_interest: { "cls": "BlobRepository", "required": false }
+  dedup_pov_reports: { "cls": "BlobRepository", "required": false }
+  codeql_db_ready: { "cls": "MetadataRepository", "required": false }
+  codeql_analysis_ready: { "cls": "MetadataRepository", "required": false }
+  # patch_diffs: { "cls": "BlobRepository", "required": false }
+  # patch_metadatas: { "cls": "MetadataRepository", "required": false }
+  # kernel_reachability_results: { "cls": "MetadataRepository", "required": false }
+
+  # target_start_times: { "cls": "MetadataRepository", "required": false }
+  patch_bypass_requests:        { cls: MetadataRepository, required: false }
+
+  base_run_success: { cls: MetadataRepository, required: false }
+  build_check_success: { cls: MetadataRepository, required: false }
+
+  dedup_pov_report_representative_crashing_inputs:  {cls: "BlobRepository", required: false}
+  dedup_pov_report_representative_metadatas:        {cls: "MetadataRepository", required: false}
+  dedup_pov_report_representative_full_reports:     {cls: "BlobRepository", required: false}
+
+  losan_dedup_pov_report_representative_crashing_inputs:  { cls: "BlobRepository", required: false    }
+  losan_dedup_pov_report_representative_metadatas:        { cls: "MetadataRepository", required: false}
+  losan_dedup_pov_report_representative_full_reports:     { cls: "BlobRepository", required: false    }
+
+  project_compile_commands: {cls: BlobRepository, required: false}
+  diffguy_reports: {cls: FilesystemRepository, required: false}
+  quickseed_codeql_reports: {cls: BlobRepository, required: false}
+  debug_build_base_artifacts: {cls: FilesystemRepository, required: false, "annotations":{
+      "blob_storage_key":"debug_build_base_artifacts",
+      "use_azure_storage": true
+  } }
+  aggregated_harness_infos: {cls: MetadataRepository, required: false}
+
+  dyva_build_artifacts: { cls: FilesystemRepository, compress_backend: true, compress_backup: true, required: false, "annotations":{
+      "blob_storage_key":"dyva_build_artifacts",
+      "use_azure_storage": true
+  } }
+
+  discovery_guy_output_seeds: { cls: BlobRepository, required: false }
+  patched_artifacts_dirs: { cls: FilesystemRepository, required: false }
+  discovery_guy_output_reports: {cls: BlobRepository, required: false}
+  # CWE query repos
+  codeql_cwe_sarif_report: { cls: BlobRepository, required: false }
+  codeql_cwe_report: { cls: BlobRepository, required: false }
+
+  # CWE query base repos (for delta mode)
+  codeql_cwe_sarif_report_base: { cls: BlobRepository, required: false }
+  codeql_cwe_report_base: { cls: BlobRepository, required: false }
+
+  # Semgrep analysis repos
+  semgrep_analysis_raw_findings: { cls: BlobRepository, required: false }
+  semgrep_analysis_report: { cls: BlobRepository, required: false }
+  semgrep_analysis_raw_findings_base: { cls: BlobRepository, required: false }
+  semgrep_analysis_report_base: { cls: BlobRepository, required: false }
+
+  crashing_harness_inputs_exploration: {cls: FilesystemRepository, required: false}
+  quickseed_log: {cls: FilesystemRepository, required: false}
+  suspicious_functions: {cls: BlobRepository, required: false}
+
+imports:
+  preprocessing:
+    path: ./preprocessing.yaml
+    repos:
+      java_crs_tasks: java_crs_tasks
+      c_crs_tasks: c_crs_tasks
+      delta_mode_tasks: delta_mode_tasks
+      full_mode_tasks: full_mode_tasks
+      target_split_metadatas: target_split_metadatas
+      project_build_configurations: project_build_configurations
+      crs_tasks_diffs: crs_tasks_diffs
+      project_metadatas: project_metadatas
+      sarif_reports: sarif_reports
+      sarif_metadatas: sarif_metadatas
+      codeswipe_rankings: codeswipe_rankings
+      crs_tasks_base_sources: crs_tasks_base_sources
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      commit_functions_indices: commit_functions_indices
+      full_functions_indices: full_functions_indices
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+      info_extraction_requests: info_extraction_requests
+      codeql_reports: codeql_reports
+      codeql_qlpack_reports: codeql_qlpack_reports
+      info_extraction_results: info_extraction_results
+      libfuzzer_reaching_functions_dicts: libfuzzer_reaching_functions_dicts
+      libfuzzer_reaching_files_dicts: libfuzzer_reaching_files_dicts
+      codeql_db_ready: codeql_db_ready
+      codeql_analysis_ready: codeql_analysis_ready
+      codeql_cwe_sarif_report: codeql_cwe_sarif_report
+      codeql_cwe_report: codeql_cwe_report
+      codeql_cwe_sarif_report_base: codeql_cwe_sarif_report_base
+      codeql_cwe_report_base: codeql_cwe_report_base
+      semgrep_analysis_raw_findings: semgrep_analysis_raw_findings
+      semgrep_analysis_report: semgrep_analysis_report
+      semgrep_analysis_raw_findings_base: semgrep_analysis_raw_findings_base
+      semgrep_analysis_report_base: semgrep_analysis_report_base
+      patch_bypass_requests: patch_bypass_requests
+      fuzzers_started: fuzzers_started
+
+      likely_input_formats_corpuses: likely_input_formats_corpuses
+      likely_input_formats_corpus_diffs: likely_input_formats_corpus_diffs
+      likely_input_formats_dictionaries: likely_input_formats_dictionaries
+      likely_input_formats_grammars: likely_input_formats_grammars
+      likely_input_formats_metadatas: likely_input_formats_metadatas
+
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      base_project_metadatas: base_project_metadatas
+      augmented_project_metadatas: project_metadatas
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      debug_build_artifacts: debug_build_artifacts
+      coverage_build_artifacts: coverage_build_artifacts
+      project_harness_infos: project_harness_infos
+      project_harness_only_metadatas: project_harness_only_metadatas
+
+      canonical_build_artifacts: canonical_build_artifacts
+      canonical_build_delta_artifacts: canonical_build_delta_artifacts
+      locs_of_interest: locs_of_interest
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_crashing_inputs: losan_dedup_pov_report_representative_crashing_inputs
+      losan_dedup_pov_report_representative_metadatas: losan_dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_full_reports: losan_dedup_pov_report_representative_full_reports
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+
+      project_compile_commands: project_compile_commands
+      quickseed_codeql_reports: quickseed_codeql_reports
+      diffguy_reports: diffguy_reports
+      debug_build_base_artifacts: debug_build_base_artifacts
+      patched_artifacts_dirs: patched_artifacts_dirs
+
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      quickseed_log: quickseed_log
+      sarif_retry_metadatas: sarif_retry_metadatas
+      sarif_heartbeat_paths: sarif_heartbeat_paths
+
+      dyva_build_artifacts: dyva_build_artifacts
+
+      project_analysis_sources: crs_tasks_analysis_sources
+
+      discovery_guy_output_seeds: discovery_guy_output_seeds
+      discovery_guy_output_reports: discovery_guy_output_reports
+      project_build_artifacts: project_build_artifacts
+
+      canonical_build_delta_failures: canonical_build_delta_failures
+      suspicious_functions: suspicious_functions
+
+  oss_fuzz_tasks:
+    path: ./oss-fuzz-task-service.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_metadata: base_project_metadatas
+      project_sources: crs_tasks_analysis_sources
+      project_build_request: project_build_requests
+      project_run_request: project_run_requests
+
+      # Just an easy way to test the oss-fuzz tasks pipeline, will be removed later
+      # project_sources: testing_project_with_sources
+      # project_metadata: testing_project_metadatas
+      # project_build_request: testing_project_build_requests
+      # project_run_request: testing_project_run_requests
+
+      project_volumes: project_volumes
+      project_build_artifacts: project_build_artifacts
+
+      project_build_metadata: project_build_metadatas
+      project_build_log_stdout: project_build_logs_stdout
+      project_build_log_stderr: project_build_logs_stderr
+
+      project_run_metadata: project_run_metadatas
+      project_run_log_stdout: project_run_logs_stdout
+      project_run_log_stderr: project_run_logs_stderr
+      project_run_artifacts: project_run_artifacts
+
+  targets_c:
+    path: ./targets-c.yaml
+    repos:
+      all_crs_tasks: c_crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_diffs: crs_tasks_diffs
+      target_split_metadatas: target_split_metadatas
+      delta_mode_tasks: c_delta_mode_tasks
+      project_build_configurations: project_build_configurations
+      base_project_metadatas: base_project_metadatas
+      codeql_analysis_ready: codeql_analysis_ready
+      project_metadatas: c_project_metadatas
+      project_harness_infos: project_harness_infos
+      project_analysis_sources: c_crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      aflpp_build_artifacts: aflpp_build_artifacts
+      codeswipe_rankings: codeswipe_rankings
+      full_functions_indices: full_functions_indices
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      fuzzers_started: fuzzers_started
+
+      canonical_build_artifacts: canonical_build_artifacts
+
+      locs_of_interest: locs_of_interest
+      funcs_of_interest: funcs_of_interest
+
+      project_compile_commands: project_compile_commands
+
+      discovery_guy_output_seeds: discovery_guy_output_seeds
+      libfuzzer_build_artifacts: libfuzzer_build_artifacts
+
+  targets_java:
+    path: ./targets-java.yaml
+    repos:
+      crs_tasks: java_crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      target_split_metadatas: target_split_metadatas
+      delta_mode_tasks: delta_mode_tasks
+      full_mode_tasks: full_mode_tasks
+      project_build_configurations: project_build_configurations
+      base_project_metadatas: base_project_metadatas
+      project_metadatas: java_project_metadatas
+      project_harness_infos: project_harness_infos
+      crs_tasks_analysis_sources: java_crs_tasks_analysis_sources
+      project_analysis_sources: crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      losan_crashing_harness_inputs: losan_crashing_harness_inputs
+      losan_crashing_harness_inputs_metadatas: losan_crashing_harness_inputs_metadatas
+      jazzer_build_artifacts: jazzer_build_artifacts
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      full_functions_indices: full_functions_indices
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+      codeql_db_ready: codeql_db_ready
+      canonical_build_artifacts: canonical_build_artifacts
+      canonical_build_delta_artifacts: canonical_build_delta_artifacts
+      canonical_build_delta_failures: canonical_build_delta_failures
+      fuzzers_started: fuzzers_started
+
+
+  targets_common:
+    path: ./targets-common.yaml
+    repos:
+      crs_tasks: crs_tasks
+      c_crs_tasks: c_crs_tasks
+      java_crs_tasks: java_crs_tasks
+      crs_tasks_diffs: crs_tasks_diffs
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      target_split_metadatas: target_split_metadatas
+      project_build_configurations: project_build_configurations
+      project_metadatas: project_metadatas
+      project_harness_infos: project_harness_infos
+      project_analysis_sources: crs_tasks_analysis_sources
+      base_project_metadatas: base_project_metadatas
+
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      full_functions_indices: full_functions_indices
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+
+      codeql_analysis_ready: codeql_analysis_ready
+      codeswipe_rankings: codeswipe_rankings
+      discovery_guy_output_seeds: discovery_guy_output_seeds
+      fuzzers_started: fuzzers_started
+
+#   linux:
+#     path: ./linux-kernel.yaml
+#     repos:
+#       cp_image_ready: cp_image_ready
+#       kernel_targets_with_sources: kernel_targets_with_sources
+#       target_metadatas: kernel_target_metadatas
+#       target_harness_infos: target_harness_infos
+#       points_of_interest: points_of_interest
+#       kernel_reachability_results: kernel_reachability_results
+#       full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+#       pov_report_representative_metadatas: pov_report_representative_metadatas
+
+#       snapchange_built_targets: debug_built_targets_with_sources
+
+#       crashing_harness_inputs: crashing_harness_inputs
+#       crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+#       crashing_harness_inputs_coverages: crashing_harness_inputs_coverages
+#       benign_harness_inputs: benign_harness_inputs
+#       benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+#       benign_harness_inputs_coverages: benign_harness_inputs_coverages
+
+  postprocessing:
+    path: ./postprocessing.yaml
+    repos:
+      crs_tasks:                          crs_tasks
+      crs_tasks_cancelled:                crs_tasks_cancelled
+      crs_tasks_oss_fuzz_repos:           crs_tasks_oss_fuzz_repos
+      crs_tasks_analysis_sources:         crs_tasks_analysis_sources
+      crs_tasks_base_sources:             crs_tasks_base_sources
+      crs_tasks_diffs:                    crs_tasks_diffs
+      project_harness_infos:              project_harness_infos
+      target_split_metadatas:             target_split_metadatas
+      project_metadatas:                  project_metadatas
+      project_build_configurations:       project_build_configurations
+      debug_build_artifacts:              debug_build_artifacts
+      jazzer_build_artifacts:             jazzer_build_artifacts
+      jazzer_build_shellphish_dir:        jazzer_build_shellphish_dir
+      coverage_build_artifacts:           coverage_build_artifacts
+      sarif_reports:                      sarif_reports
+      sarif_metadatas:                    sarif_metadatas
+      patcher_generated_sarif_reports:    patcher_generated_sarif_reports
+      patcher_generated_sarif_metadatas:  patcher_generated_sarif_metadatas
+      sarif_retry_metadatas:              sarif_retry_metadatas
+      delta_mode_tasks:                   delta_mode_tasks
+      full_mode_tasks:                    full_mode_tasks
+      java_crs_tasks:                  java_crs_tasks
+      c_crs_tasks:                      c_crs_tasks
+      aflpp_build_artifacts:              aflpp_build_artifacts
+      # libfuzzer_build_artifacts:          libfuzzer_build_artifacts
+
+      benign_harness_inputs:              benign_harness_inputs
+      benign_harness_inputs_metadatas:    benign_harness_inputs_metadatas
+      crashing_harness_inputs:            crashing_harness_inputs
+      crashing_harness_inputs_metadatas:  crashing_harness_inputs_metadatas
+      losan_crashing_harness_inputs:      losan_crashing_harness_inputs
+      losan_crashing_harness_inputs_metadatas:  losan_crashing_harness_inputs_metadatas
+      patch_bypass_requests: patch_bypass_requests
+      patched_artifacts_dirs: patched_artifacts_dirs
+
+      base_run_success: base_run_success
+      build_check_success: build_check_success
+
+      points_of_interest: points_of_interest
+      commit_functions_jsons_dirs:        commit_functions_jsons_dirs
+      full_functions_jsons_dirs:          full_functions_jsons_dirs
+      commit_functions_indices:           commit_functions_indices
+      full_functions_indices:             full_functions_indices
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+
+      dedup_pov_reports: dedup_pov_reports
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      losan_dedup_pov_report_representative_metadatas: losan_dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_crashing_inputs: losan_dedup_pov_report_representative_crashing_inputs
+      losan_dedup_pov_report_representative_full_reports: losan_dedup_pov_report_representative_full_reports
+
+      diffguy_reports: diffguy_reports
+      debug_build_base_artifacts: debug_build_base_artifacts
+      dyva_build_artifacts: dyva_build_artifacts
+      codeql_db_ready: codeql_db_ready
+
+tasks:
+  pipeline_input:
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      project_metadata:
+        repo: base_project_metadatas
+        kind: InputId
+
+      project_base_source:
+        repo: crs_tasks_base_sources
+        kind: InputId
+
+      sarif_report:
+        repo: sarif_reports
+        kind: InputId
+
+      sarif_metadata:
+        repo: sarif_metadatas
+        kind: InputId
+
+      sarif_report:
+        repo: sarif_reports
+        kind: InputId
+
+      sarif_metadata:
+        repo: sarif_metadatas
+        kind: InputId
+
+      sarif_report:
+        repo: sarif_reports
+        kind: InputId
+
+      sarif_metadata:
+        repo: sarif_metadatas
+        kind: InputId
+
+      project_diff:
+        repo: crs_tasks_diffs
+        kind: InputId
+
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputId
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-dependencies-base"
+        template: |
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          echo "Hack The Planet!"
+
+  sanity_check:
+    links:
+      sanity_check_input_path:
+        repo: sanity_check_input
+        kind: InputFilepath
+      project_id:
+        repo: sanity_check_project
+        kind: InputId
+      project_cancel:
+        repo: sanity_check_cancelled
+        kind: Cancel
+
+      crs_task:
+        repo: sanity_check_project
+        kind: InputMetadata
+
+      #sanity_check_output_path:
+      #  repo: sanity_check_output
+      #  kind: OutputFilepath
+
+    replicable: true
+    scale_replicas: true
+    priority_addend: '{{ 5 * 5 }}'
+    # We limit how many total jobs for this task can be running at once
+    # It will scale up the node pool until it reaches this number
+    # TODO this should be templated based on the # of crs tasks
+    max_concurrent_jobs: "{{ 5 + 5 }}"
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+      kubernetes.azure.com/scalesetpriority: "spot"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+      kubernetes.azure.com/scalesetpriority: "spot"
+
+    job_quota:
+      cpu: 1
+      mem: "2Gi"
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-dependencies-base"
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          echo "Hack The Planet!"
+          echo "Sanity check input: {{ sanity_check_input_path }}"
+          ls -laR {{ sanity_check_input_path }}
+          sleep infinity

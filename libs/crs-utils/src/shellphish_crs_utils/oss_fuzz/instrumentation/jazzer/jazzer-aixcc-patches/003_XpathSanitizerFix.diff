@@ -1,0 +1,13 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/XPathInjection.kt b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/XPathInjection.kt
+index af6308c7..8ba9699d 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/XPathInjection.kt
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/XPathInjection.kt
+@@ -53,7 +53,7 @@ object XPathInjection {
+         thisObject: Any?,
+         arguments: Array<Any>,
+         hookId: Int,
+-    ): Any {
++    ): Any? {
+         if (arguments.isNotEmpty() && arguments[0] is String) {
+             val query = arguments[0] as String
+             Jazzer.guideTowardsContainment(query, CHARACTERS_TO_ESCAPE, hookId)

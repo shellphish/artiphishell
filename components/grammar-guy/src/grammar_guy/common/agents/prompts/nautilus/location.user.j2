@@ -1,0 +1,48 @@
+# Task 
+
+Use the given information to generate a detailed functionality report for the provided source code. We are specifically looking for information that could help us identify issues related to {{ rule_id }}
+It is not clear whether or not there is actually a problem with the code, but we need to investigate and test for it.
+
+# **RULE ID**
+
+An Identifier for the presumed security issue (for example CVSS, CVE, CWE, etc.)
+
+{{ rule_id }}
+
+# **LOCATION NAME**
+
+{{ resolved_location }}
+
+# **LOCATION SOURCE CODE**
+
+{{ resolved_location_source }}
+
+# **LINES OF INTEREST**
+
+The special lines of interest for this location are: 
+
+{{ lines_of_interest }}
+
+{% if message %}
+
+# **ADDITIONAL MESSGE**
+{{ message }}
+
+{% endif %}
+
+{% if short_description %}
+
+# **SHORT DESCRIPTION**           
+{{ short_description }}
+
+A brief description of the problem we are looking for
+{% endif %}
+
+{% if short_description %}
+
+# **LONG DESCRIPTION**           
+
+A detailed description of the problem we are looking for
+{{ long_description }}
+
+{% endif %}

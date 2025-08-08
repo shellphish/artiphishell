@@ -1,0 +1,209 @@
+name: Tasking CRS
+run-name: "🛜🐟 ${{ github.event_name == 'workflow_dispatch' && format('[K8] {0} Tasking ARTIPHISHELL against {1} target for {2} mins', (github.event.inputs.diff-mode == 'true' && '[DELTA] ' || '[FULL]') , github.event.inputs.target-name, github.event.inputs.run-duration) }}"
+on:
+  # These should be triggered on periodic nightly runs via a dispatched workflow.
+
+  # Do trigger after the apt-cache is successful
+  #workflow_run:
+  #  workflows: [apt-cache-check]
+  #  types:
+  #    - completed
+      
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      target-name:
+        type: choice
+        description: Which target to run
+        default: all-supported
+        options:
+          - mock-cp
+          - nginx
+          - libpng
+          - sqlite3
+          - cups
+          - wasm3
+          - assimp
+          - selinux
+          - php
+          - krb5
+          - jpegoptim
+          - hiredis
+          - mupdf
+          - "---"
+          - mock-cp-java
+          - mock-cp-java-easy
+          - jenkins-email-plugin
+          - jenkins-pipeline-util-plugin
+          - tika
+          - zip4j
+          - quartz
+          - "----"
+          - jenkins-promax
+      diff-mode:
+        type: boolean
+        description: Do you want to run in delta mode. Otherwise will run in full mode
+        default: false
+      run-duration:
+        type: choice
+        description: How long to run ARTIPHISHELL for (in mins)
+        default: 10
+        options:
+          - 5
+          - 10
+          - 30
+          - 60
+          - 120
+          - 180
+          - 240
+          - 480
+          - 720
+          - 1440
+      deployment-name:
+        type: string
+        description: The name of the deployment to use. Even if you are tasking some other CRS you need to be able to use a azure deployment with a sts token
+        required: true
+
+env:
+  # Setting an environment variable with the value of a configuration variable
+  AIXCC_LITELLM_HOSTNAME: "http://wiseau.seclab.cs.ucsb.edu:666"
+  #LITELLM_KEY: ${{ vars.LITELLM_KEY }}
+  RETRIEVAL_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:48751"
+  EMBEDDING_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:49152"
+  OPENAI_API_KEY: "${{ secrets.OPENAI_KEY }}"
+  LITELLM_KEY: sk-artiphishell
+  USE_LLM_API: "1"
+  API_COMPONENTS_USE_DUMMY_DATA: "1"
+
+jobs:
+  extract-data:
+    runs-on: ubuntu-latest
+    name: "Configure Pipeline Run"
+    outputs:
+      targets:            ${{ steps.data.outputs.targets }}
+      targets-full-ready: ${{ steps.data.outputs.targets-full-ready }}
+    steps:
+      - name: Cleanup CI Worker
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+        with:
+          runner: self-hosted
+          is-artiphishell: false
+          CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell-lite
+          persist-credentials: true
+          lfs: false
+          submodules: false
+          fetch-depth: 1
+          sparse-checkout: |
+            .github
+      - name: Extract target data
+        id: data
+        working-directory: artiphishell-lite/.github/workflows
+        run: |
+          set -x
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]
+          then
+            if [ "${{ github.event.inputs.target-name }}"  = "all" ]; then
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready")]' < ./targets.json) >> $GITHUB_OUTPUT
+            elif [ "${{ github.event.inputs.target-name }}"  = "all-supported" ]; then
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."supported-target")]' < ./targets.json) >> $GITHUB_OUTPUT
+            else
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."short-name" == "${{ github.event.inputs.target-name }}")]' < ./targets.json) >> $GITHUB_OUTPUT
+            fi
+          else
+            echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."only-on-manual-run" == false)]' < ./targets.json) >> $GITHUB_OUTPUT
+          fi
+
+  start-task:
+    needs: [extract-data]
+    runs-on: ["self-hosted"]
+    strategy:
+      fail-fast: false
+      matrix:
+        targets: ${{ fromJson(needs.extract-data.outputs.targets-full-ready) }}
+    steps:
+      - name: Wait for cluster to be ready
+        id: decode-sts-token
+        timeout-minutes: 5
+        run: |
+          set -x
+          DID_REQUEST=false
+          while true; do
+            RES=$(curl "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status?token=${{ secrets.WORKER_TOKEN }}&name=${{ github.event.inputs.deployment-name }}&t=$(date +%s)")
+            echo $RES
+            API_IP=$(echo "$RES" | jq -r '.api_ip')
+            if [ ! -z "$API_IP" ] && [ "$API_IP" != "null" ] && [ "$API_IP" != "0.0.0.0" ]; then
+              break
+            fi
+            if [ "$DID_REQUEST" = "false" ]; then
+              DID_REQUEST=true
+              curl 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/details?token=${{ secrets.WORKER_TOKEN }}&get_details=true&name=${{ github.event.inputs.deployment-name }}&ref=${{ github.ref }}&install=false&cpus=32'
+            fi
+            sleep 10
+          done
+
+          STS_TOKEN=$(echo "$RES" | jq -r '.sts_token' | base64 -w0)
+          echo "sts_token=$STS_TOKEN" >> $GITHUB_OUTPUT
+          CONNECTION_STRING=$(echo "$RES" | jq -r '.storage_connection_string' | base64 -w0)
+          echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+          API_IP=$(echo "$RES" | jq -r '.api_ip')
+          echo "api_ip=${API_IP}" >> $GITHUB_OUTPUT
+          CRS_URL=$(echo "$RES" | jq -r '.crs_endpoint')
+          echo "crs_url=${CRS_URL}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell
+      - name: Start Task 
+        id: start-task
+        working-directory: artiphishell/
+        shell: bash
+        timeout-minutes: 30
+        run: |
+          set -ex
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az --version
+
+          export GITHUB_RUN_ID=${{ github.run_id }}
+
+          echo "https://git:${{ secrets.CI_DEPLOY_TOKEN }}@github.com" > ~/.git-credentials
+          # import into git
+          git config --global credential.helper store
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+
+          export CUSTOM_OSS_FUZZ_TARGETS_REPO=${{ matrix.targets.targets-repo }}
+
+          export TARGET_STS_TOKEN="$(echo "${{ steps.decode-sts-token.outputs.sts_token }}" | base64 -d)"
+          export STORAGE_CONNECTION_STRING="$(echo "${{ steps.decode-sts-token.outputs.connection_string }}" | base64 -d)"
+          echo "TARGET_STS_TOKEN=$TARGET_STS_TOKEN"
+          echo "STORAGE_CONNECTION_STRING=$STORAGE_CONNECTION_STRING"
+          export CLUSTER_IP="${{ steps.decode-sts-token.outputs.api_ip }}"
+          export CLUSTER_URL="${{ steps.decode-sts-token.outputs.crs_url }}"
+
+          sed -i 's|git@github.com:|https://github.com/|g' local_run/run_in_cluster.sh
+
+          RUN_ARGS=""
+          if [ "${{ inputs.diff-mode }}" == "true" ] && [ ! -z "${{ matrix.targets.diff }}" ]; then
+            RUN_ARGS="${{ matrix.targets.basis || '' }} ${{ matrix.targets.diff || '' }}"
+          elif [ ! -z "${{ matrix.targets.diff }}" ]; then
+            RUN_ARGS="${{ matrix.targets.diff || '' }}"
+          elif [ ! -z "${{ matrix.targets.basis }}" ]; then
+            RUN_ARGS="${{ matrix.targets.basis || '' }}"
+          fi
+
+
+          export RUNTIME="$(( ${{ github.event.inputs.run-duration }} * 60 ))"
+
+          ./local_run/run_in_cluster.sh ${{ matrix.targets.repo }} ${{ matrix.targets.short-name }} $RUN_ARGS | tee /tmp/run_in_cluster.log
+
+          cat /tmp/run_in_cluster.log
+
+          #grep -q "error" /tmp/run_in_cluster.log && exit 1
+
+          echo "PIPELINE_RUN_SUCCESS=yes" >> "$GITHUB_ENV"

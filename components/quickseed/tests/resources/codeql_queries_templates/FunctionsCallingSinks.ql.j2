@@ -1,0 +1,41 @@
+import java
+import semmle.code.java.frameworks.javaee.ejb.EJBRestrictions
+
+// Base predicate for direct calls
+predicate edges(Callable pred, Callable succ) {
+  pred.calls(succ) and
+  succ.getName() != ""
+}
+
+predicate is_target_function(Callable c) { 
+    {% for i, full_name in enumerate(sink_methods) %}
+     {% if i > 0 %}or {% endif %}c.getQualifiedName().matches("{{ full_name }}")
+    {% endfor %}
+    {% if sanitizer_name == "CommandInjection" %}
+    or c instanceof RuntimeExecMethod
+    {% endif %}
+}
+
+from Callable callee, Callable caller, Callable inbetween1, Callable inbetween2
+where
+  is_target_function(callee) and
+  (
+    edges(caller, callee) or
+    (
+    edges(inbetween1, inbetween2) and
+    edges(caller, inbetween1) and
+    edges(inbetween2, callee)
+    ) or
+    (
+    edges(caller, inbetween1) and
+    edges(inbetween1, callee)
+    )
+  ) and
+  not inbetween1.fromSource() and
+  not inbetween2.fromSource() and
+  not callee.fromSource() and  
+  caller.fromSource()
+select
+  caller.getQualifiedName() as sink_qualified_name,
+  caller.getLocation() as sink_location,
+  "{{ sanitizer_name }}"

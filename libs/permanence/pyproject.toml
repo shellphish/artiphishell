@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shellphish-permanence"
+version = "0.0.1"
+authors = [
+        {name = "Lukas Dresel", email = "lukas.dresel@cs.ucsb.edu"},
+    ]
+description = "A library for the preservation of fuzzing and patching artifacts of our ARTIPHISHELL pipeline runs on OSS-Fuzz targets."
+readme="README.md"
+requires-python=">=3.10"
+
+dependencies = [
+    "PyYaml",
+    "pyproject-toml>=0.1.0",
+    "rich",
+    "discord.py>=2.0.0",
+    "requests>=2.31.0",
+    "PyYAML>=6.0.0",
+]

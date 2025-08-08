@@ -1,0 +1,47 @@
+{
+    "name": "PatcherY Dev Container",
+    "build": {
+      "dockerfile": "../Dockerfile",
+      "context": "../",
+      "args": {
+        "IMAGE_PREFIX": "ghcr.io/shellphish-support-syndicate/",
+        "SOURCE_REPO": "https://github.com/shellphish-support-syndicate/artiphishell"
+      }
+    },
+    "workspaceMount": "source=${localWorkspaceFolder}/,target=/patchery/,type=bind,consistency=cached",
+    "workspaceFolder": "/patchery/",
+    "runArgs": [
+        "--add-host=localhost:host-gateway",
+        // This makes localhost point to the host machine
+      ],
+    "mounts": [
+      "source=${localEnv:HOME}/.git-credentials,target=/root/.git-credentials,type=bind,consistency=cached",
+      "source=${localWorkspaceFolder}/../../libs/,target=/shellphish/libs/,type=bind,consistency=cached",
+      "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+      "source=/shared/,target=/shared,type=bind,consistency=cached",
+      "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
+    "containerEnv": {
+      "AIXCC_LITELLM_HOSTNAME": "http://wiseau.seclab.cs.ucsb.edu:666",
+      "LITELLM_KEY": "sk-artiphishell-da-best!!!",
+      "LITELLM_LOG": "INFO"
+    },
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "github.copilot", 
+          "ms-azuretools.vscode-docker",
+          "ms-vscode.vscode-remote-extensionpack",
+          "ms-python.python"
+        ],
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash"
+        }
+      }
+    },
+    "forwardPorts": [
+      8050, 
+      8080
+    ],
+  "postCreateCommand": "bash -c 'pip install -e /patchery && pip install -e /shellphish/libs/crs-utils && /shellphish/libs/organizers/preinstall.sh'"
+  }

@@ -1,0 +1,15 @@
+After completing the analysis, you MUST output a report in the specified format.
+
+```
+<report>
+  <summary>
+    ...
+  </summary>
+</report>
+```
+
+<!-- Guidelines for output generation: -->
+1. For <summary>, replace the "..." with a summary of the warning you processed.
+
+<!-- Example: -->
+<PLACEHOLDER_FOR_EXAMPLE_REPORTS_BY_LANGUAGE>

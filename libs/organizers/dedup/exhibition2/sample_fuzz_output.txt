@@ -1,0 +1,90 @@
++ FUZZER=html
++ shift
++ '[' '!' -v TESTCASE ']'
++ TESTCASE=/testcase
++ '[' '!' -f /testcase ']'
++ export RUN_FUZZER_MODE=interactive
++ RUN_FUZZER_MODE=interactive
++ export FUZZING_ENGINE=libfuzzer
++ FUZZING_ENGINE=libfuzzer
++ export SKIP_SEED_CORPUS=1
++ SKIP_SEED_CORPUS=1
++ run_fuzzer html -runs=100 /testcase
+vm.mmap_rnd_bits = 28
+/out/html -rss_limit_mb=2560 -timeout=25 -runs=100 /testcase -timeout_exitcode=0 -dict=html.dict < /dev/null
+Dictionary: 118 entries
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 725214853
+INFO: Loaded 1 modules   (49539 inline 8-bit counters): 49539 [0x555555c4a8f8, 0x555555c56a7b),
+INFO: Loaded 1 PC tables (49539 PCs): 49539 [0x555555c56a80,0x555555d182b0),
+/out/html: Running 1 inputs 100 time(s) each.
+Running: /testcase
+=================================================================
+==18==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x515000000775 at pc 0x555555824164 bp 0x7ffffffcee30 sp 0x7ffffffce5f0
+WRITE of size 105 at 0x515000000775 thread T0
+SCARINESS: 45 (multi-byte-write-heap-buffer-overflow)
+    #0 0x555555824163 in __asan_memcpy /src/llvm-project/compiler-rt/lib/asan/asan_interceptors_memintrinsics.cpp:63:3
+    #1 0x55555597157f in htmlSecureComment /src/libxml2/HTMLparser.c:3591:13
+    #2 0x55555597157f in htmlTopParseComment /src/libxml2/HTMLparser.c:3700:19
+    #3 0x55555596e876 in htmlParseDocument /src/libxml2/HTMLparser.c:4718:13
+    #4 0x5555559793bf in htmlCtxtParseDocument /src/libxml2/HTMLparser.c:6272:5
+    #5 0x555555865a28 in LLVMFuzzerTestOneInput /src/libxml2/fuzz/html.c:49:15
+    #6 0x55555571a410 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #7 0x555555705685 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #8 0x55555570b11f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #9 0x5555557363c2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #10 0x7fffff442082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+    #11 0x5555556fd86d in _start (/out/html+0x1a986d)
+
+DEDUP_TOKEN: __asan_memcpy--htmlSecureComment--htmlTopParseComment
+0x515000000775 is located 0 bytes after 501-byte region [0x515000000580,0x515000000775)
+allocated by thread T0 here:
+    #0 0x5555558261df in malloc /src/llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:68:3
+    #1 0x555555865f38 in xmlFuzzMalloc /src/libxml2/fuzz/fuzz.c:127:11
+    #2 0x5555559708b4 in htmlSecureComment /src/libxml2/HTMLparser.c:3335:18
+    #3 0x5555559708b4 in htmlTopParseComment /src/libxml2/HTMLparser.c:3700:19
+    #4 0x55555596e876 in htmlParseDocument /src/libxml2/HTMLparser.c:4718:13
+    #5 0x5555559793bf in htmlCtxtParseDocument /src/libxml2/HTMLparser.c:6272:5
+    #6 0x555555865a28 in LLVMFuzzerTestOneInput /src/libxml2/fuzz/html.c:49:15
+    #7 0x55555571a410 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #8 0x555555705685 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #9 0x55555570b11f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #10 0x5555557363c2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #11 0x7fffff442082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+
+DEDUP_TOKEN: __interceptor_malloc--xmlFuzzMalloc--htmlSecureComment
+SUMMARY: AddressSanitizer: heap-buffer-overflow /src/libxml2/HTMLparser.c:3591:13 in htmlSecureComment
+Shadow bytes around the buggy address:
+  0x515000000480: fd fd fd fd fd fd fd fd fd fd fd fa fa fa fa fa
+  0x515000000500: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x515000000580: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x515000000600: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x515000000680: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0x515000000700: 00 00 00 00 00 00 00 00 00 00 00 00 00 00[05]fa
+  0x515000000780: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x515000000800: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x515000000880: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x515000000900: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x515000000980: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==18==ABORTING
+
+subprocess command returned a non-zero exit status: 1

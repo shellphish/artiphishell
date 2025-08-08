@@ -1,0 +1,32 @@
+Render the output in the following format:
+
+```
+<sarif>
+    <rule_id>...</rule_id>
+    <rule_name>...</rule_name>
+    <rule_description>...</rule_description>
+    <level>...</level>
+    <flow>
+        <flow_item>
+            <filepath>...</filepath>
+            <startline>...</startline>
+        </flow_item>
+        .
+        .
+        .
+        <flow_item>
+            <filepath>...</filepath>
+            <startline>...</startline>
+        </flow_item>
+    </flow>
+</sarif>
+```
+
+Guidelines
+1. For <rule_id>, replace the "..." with the name of the rule in sarif.
+2. For <level>, replace the "..." with either error or timeout.
+3. For the <filepath>, replace the "..." with the relative path of the file.
+4. For the <startline>, replace the "..." with the start line of the point of interest. If you do not know, leave it as "...".
+5. The <flow_item> blocks are ordered from user input to the crash.
+
+Try your best to put stuff in this format.

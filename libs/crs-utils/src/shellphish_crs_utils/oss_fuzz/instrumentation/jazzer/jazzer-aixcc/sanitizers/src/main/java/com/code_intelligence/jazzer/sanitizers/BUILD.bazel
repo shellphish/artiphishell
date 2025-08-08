@@ -1,0 +1,103 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("//bazel:kotlin.bzl", "ktlint")
+load("//sanitizers:sanitizers.bzl", "SANITIZER_CLASSES")
+
+java_library(
+    name = "clojure_lang_hooks",
+    srcs = ["ClojureLangHooks.java"],
+    deps = ["//src/main/java/com/code_intelligence/jazzer/api:hooks"],
+)
+
+java_library(
+    name = "file_path_traversal",
+    srcs = ["FilePathTraversal.java"],
+    deps = ["//src/main/java/com/code_intelligence/jazzer/api:hooks"],
+)
+
+java_library(
+    name = "os_command_injection",
+    srcs = ["OsCommandInjection.java"],
+    deps = ["//src/main/java/com/code_intelligence/jazzer/api:hooks"],
+)
+
+java_library(
+    name = "regex_roadblocks",
+    srcs = ["RegexRoadblocks.java"],
+    deps = [
+        "//sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/utils:reflection_utils",
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+        "//src/main/java/com/code_intelligence/jazzer/utils:unsafe_provider",
+    ],
+)
+
+java_library(
+    name = "server_side_request_forgery",
+    srcs = ["ServerSideRequestForgery.java"],
+    deps = ["//src/main/java/com/code_intelligence/jazzer/api:hooks"],
+)
+
+java_library(
+    name = "sql_injection",
+    srcs = ["SqlInjection.java"],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+        "@maven//:com_github_jsqlparser_jsqlparser",
+    ],
+)
+
+java_library(
+    name = "script_engine_injection",
+    srcs = ["ScriptEngineInjection.java"],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+    ],
+)
+
+kt_jvm_library(
+    name = "sanitizers",
+    srcs = [
+        "Deserialization.kt",
+        "ExpressionLanguageInjection.kt",
+        "LdapInjection.kt",
+        "NamingContextLookup.kt",
+        "ReflectiveCall.kt",
+        "RegexInjection.kt",
+        "Utils.kt",
+        "XPathInjection.kt",
+    ],
+    visibility = ["//sanitizers:__pkg__"],
+    runtime_deps = [
+        ":clojure_lang_hooks",
+        ":file_path_traversal",
+        ":os_command_injection",
+        ":regex_roadblocks",
+        ":script_engine_injection",
+        ":server_side_request_forgery",
+        ":sql_injection",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+    ],
+)
+
+java_library(
+    name = "constants",
+    srcs = [":constants_java"],
+    visibility = ["//visibility:public"],
+)
+
+write_file(
+    name = "constants_java",
+    out = "Constants.java",
+    content = [
+        "package com.code_intelligence.jazzer.sanitizers;",
+        "import java.util.Arrays;",
+        "import java.util.List;",
+        "public final class Constants {",
+        "  public static final List<String> SANITIZER_HOOK_NAMES = Arrays.asList(%s);" % ", ".join(["\"%s\"" % name for name in SANITIZER_CLASSES]),
+        "}",
+    ],
+)
+
+ktlint()

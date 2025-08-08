@@ -1,0 +1,21 @@
+ARG BASE_IMAGE
+
+FROM ${BASE_IMAGE}
+
+ARG ISOLATED=
+RUN test -z "${ISOLATED}" || echo "deb [trusted=yes arch=amd64] http://apt-mirror-$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\./-/g'):$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\.//g') $(grep DISTRIB_CODENAME /etc/lsb-release | cut -d= -f2) main universe" > /etc/apt/sources.list
+RUN apt-get update && apt-get install -y python3
+
+RUN mkdir -p /shellphish/
+COPY shellphish/codeql-bundle-linux64.tar.gz /shellphish/
+
+RUN mkdir -p /codeql
+RUN cd /codeql && tar -xzf /shellphish/codeql-bundle-linux64.tar.gz && cd -
+ENV PATH="/codeql/codeql:${PATH}"
+
+COPY shellphish/* /shellphish/
+
+COPY /shellphish/cqlbuild.sh /src/cqlbuild.sh
+
+COPY project.json /project.json
+RUN chmod 777 /project.json

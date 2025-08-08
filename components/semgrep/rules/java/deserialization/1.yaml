@@ -1,0 +1,13 @@
+# TODO: rm this later because codeql already returns it?
+rules:
+  - id: java-deserialization-detection
+    languages: [java]
+    severity: WARNING
+    message: "[Deserialization] Usage of ObjectInputStream.readObject() or similar methods can be dangerous if input is not trusted."
+    metadata:
+      cwe: "CWE-502"
+      vuln_type: deserialization
+    pattern-either:
+      - pattern: $OBJ.readObject()
+      - pattern: $OBJ.readUnshared()
+      - pattern: $OBJ.readObjectOverride()

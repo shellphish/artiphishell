@@ -1,0 +1,30 @@
+focus_repo_path: "/src/assimp/"
+language: c
+sanitizer: undefined
+exit_code: 1
+# they don't have the correct sanitizer config set up for this one, they are only looking for `runtime error:` in the ubsan crashes
+expected_organizer_significance: 214 # RecognizedErrorInReproducing
+expected_organizer_crash_description: 'Generic Docker build or container error' 
+expected_parser: 'asan'
+expected_summary: 'SUMMARY: UndefinedBehaviorSanitizer: stack-overflow'
+expected_sanitizer: UndefinedBehaviorSanitizer
+expected_crash_type: 'stack-overflow'
+expected_stack_trace_file_names:
+  main:
+    - binary: libc.so.6
+    - binary: assimp_fuzzer
+    - source: string
+    - source: ZipArchiveIOSystem.cpp
+    - source: ZipArchiveIOSystem.cpp
+    - source: D3MFOpcPackage.cpp
+    - source: D3MFImporter.cpp
+    - source: Importer.cpp
+    - source: Importer.cpp
+    - source: assimp_fuzzer.cc
+    - source: FuzzerLoop.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerMain.cpp
+    - binary: libc.so.6
+    - binary: assimp_fuzzer
+    

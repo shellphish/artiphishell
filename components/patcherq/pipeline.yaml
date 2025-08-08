@@ -1,0 +1,879 @@
+
+repo_classes:
+  # ==================
+  # 📥 PatcherQ Inputs
+  # ==================
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks_diffs: BlobRepository
+  project_metadatas: MetadataRepository
+  points_of_interest: BlobRepository
+  dedup_pov_report_representative_crashing_inputs: BlobRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  dyva_reports: MetadataRepository
+  crs_tasks_analysis_sources: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  sarif_reports: BlobRepository
+  sarif_metadatas: {cls: MetadataRepository, required: false}
+  patcher_generated_sarif_reports: BlobRepository
+  patcher_generated_sarif_metadatas: {cls: MetadataRepository, required: false}
+  codeql_db_ready: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+  full_mode_tasks: MetadataRepository
+  commit_functions_indices: BlobRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+
+  # The patch requests sent by patcherG
+  patch_requests_meta: MetadataRepository
+
+  # ==========
+  # 📤 Outputs
+  # ==========
+  patch_submissions: MetadataRepository
+  patch_diffs: BlobRepository
+  patch_metadatas: MetadataRepository
+  patch_bypass_requests: MetadataRepository
+  patcher_generated_sarif_reports: BlobRepository
+  patcher_generated_sarif_metadatas: MetadataRepository
+  patched_artifacts_dirs: FilesystemRepository
+
+tasks:
+  patcherq:
+    priority: 1000000
+    cache_dir: /pdt-per-node-cache
+    job_quota:
+      cpu: 2
+      mem: "8Gi"
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+    # TODO(FINALDEPLOY) Set max concurrent jobs
+    max_concurrent_jobs: 16
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-patching: "true"
+    node_taints:
+      support.shellphish.net/only-patching: "true"
+    node_affinity:
+      support.shellphish.net/only-patching: "true"
+
+    # "harness_queue" causes the pending jobs to be prioritized based on how many are queued for a given poi_report.harness_info_id
+    priority_function: "harness_queue"
+
+    # first, the component interface
+    links:
+      # ==========
+      # 📥 Inputs
+      # ==========
+      patch_request_meta:
+        repo: patch_requests_meta
+        kind: InputFilepath
+
+      patch_request_metadata:
+        repo: patch_requests_meta
+        kind: InputMetadata
+ 
+      dyva_report:
+        repo: dyva_reports
+        kind: InputFilepath
+      
+      poi_report_meta:
+        repo: dedup_pov_report_representative_metadatas
+        kind: InputMetadata
+        key: patch_request_metadata.poi_report_id
+      
+      poi_report:
+        repo: points_of_interest
+        kind: InputFilepath
+        key: patch_request_metadata.poi_report_id
+
+      poi_report_id:
+        repo: points_of_interest
+        kind: InputId
+        key: patch_request_metadata.poi_report_id
+      
+      crs_task:
+        repo: crs_tasks
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+
+      crs_task_meta:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      
+      full_mode_tasks:
+        repo: full_mode_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: poi_report_meta.project_id
+      
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      crashing_input_path:
+        repo: dedup_pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: patch_request_metadata.poi_report_id
+      
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "crs_tasks_oss_fuzz_repos-{{ poi_report_meta.project_id }}"
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: poi_report_meta.project_id
+      
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "crs_tasks_analysis_sources-{{ poi_report_meta.project_id }}"
+      
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "full_functions_jsons_dirs-{{ poi_report_meta.project_id }}"
+      
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "full_functions_indices-{{ poi_report_meta.project_id }}"
+      
+      full_functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "full_functions_by_file_index_jsons-{{ poi_report_meta.project_id }}"
+     
+      # ==========
+      # 📤 Outputs
+      # ==========
+      out_patch:
+        repo: patch_diffs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: patch_metadatas
+        auto_meta: meta
+      
+      out_sarif:
+        repo: patcher_generated_sarif_reports
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      patch_bypass_request:
+        repo: patch_bypass_requests
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      patched_artifacts_dir:
+        repo: patched_artifacts_dirs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+      
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patcherq
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task_meta.concurrent_target_num | default('1') }}
+
+          export ALLOW_RAW_DOCKER_USAGE=1
+          export LOCAL_RUN=False
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export CRASHING_INPUT_PATH={{ crashing_input_path | shquote }}
+          export SANITIZER_STRING={{ poi_report_meta.consistent_sanitizers[-1] | shquote }}
+          export POI_REPORT_ID={{ poi_report_id | shquote }}
+          export POI_REPORT={{ poi_report | shquote }}
+          export OSS_FUZZ_REPO={{ oss_fuzz_repo | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ full_functions_by_file_index_json | shquote }}
+          export DYVA_REPORT={{ dyva_report | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export PATCH_REQUEST_META={{ patch_request_meta | shquote }}
+          export BYPASS_REQUEST_PATH={{ patch_bypass_request | shquote }}
+          export PATCHED_ARTIFACTS_DIR={{ patched_artifacts_dir.main_dir | shquote }}
+          export PATCHED_ARTIFACTS_DIR_LOCK={{ patched_artifacts_dir.lock_dir | shquote }}
+          export CODEQL_DB_READY={{ codeql_db_ready | shquote }}
+
+          request_type={{ patch_request_metadata.request_type | shquote }}
+          
+          if [ "$request_type" = "patch" ]; then
+            export PATCHERQ_MODE="PATCH"
+          elif [ "$request_type" = "refine" ]; then
+            export PATCHERQ_MODE="REFINE"
+          else
+            echo "Bad request type for 'patcherq' task: $request_type"
+            exit 1
+          fi
+
+          export PATCH_OUTPUT_PATH={{ out_patch | shquote }}
+          export SARIF_OUTPUT_PATH={{ out_sarif | shquote }}
+          export PATCH_METADATA_OUTPUT_PATH={{ out_patch.cokeyed_dirs.meta | shquote }}
+
+          export CRS_MODE="full"
+
+          /src/run-patcherq.sh
+
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+          set +e
+          if [ -f /tmp/.pdt_upload_lock ]; then
+              echo "Upload lock file exists, waiting for it to be removed..."
+              for i in $(seq 1 60); do
+                  if [ ! -f /tmp/.pdt_upload_lock ]; then
+                      echo "Upload lock file removed after $i seconds"
+                      break
+                  fi
+                  sleep 5
+              done
+              if [ -f /tmp/.pdt_upload_lock ]; then
+                  echo "Upload lock file still exists after 5 minutes, proceeding anyway"
+              fi
+          fi
+
+
+  patcherq_from_sarif:
+    priority: 1000000
+    job_quota:
+      cpu: 2
+      mem: "8Gi"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-patching: "true"
+    node_taints:
+      support.shellphish.net/only-patching: "true"
+    node_affinity:
+      support.shellphish.net/only-patching: "true"
+
+    # first, the component interface
+    links:
+      # ==========
+      # 📥 Inputs
+      # ==========
+      sarif_path:
+        repo: sarif_reports
+        kind: InputFilepath
+      
+      sarif_meta:
+        repo: sarif_metadatas
+        kind: InputMetadata
+      
+      crs_task:
+        repo: crs_tasks
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      full_mode_tasks:
+        repo: full_mode_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+        
+      crs_task_meta:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id     
+        
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+      
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: sarif_meta.pdt_task_id
+      
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+      
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+        
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      full_functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      # ==========
+      # 📤 Outputs
+      # ==========
+      out_patch:
+        repo: patch_diffs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: patch_metadatas
+        auto_meta: meta
+
+      patched_artifacts_dir:
+        repo: patched_artifacts_dirs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patcherq
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task_meta.concurrent_target_num | default('1') }}
+
+          export ALLOW_RAW_DOCKER_USAGE=1
+          export LOCAL_RUN=False
+          export PATCHERQ_MODE="SARIF"
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export OSS_FUZZ_REPO={{ oss_fuzz_repo | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ full_functions_by_file_index_json | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+
+          export PATCH_OUTPUT_PATH={{ out_patch | shquote }}
+          export PATCH_METADATA_OUTPUT_PATH={{ out_patch.cokeyed_dirs.meta | shquote }}
+
+          export CODEQL_DB_READY={{ codeql_db_ready | shquote }}
+          
+          # For now, we are not doing this for patches generated from SARIF
+          export BYPASS_REQUEST_PATH=''
+
+          export PATCHED_ARTIFACTS_DIR={{ patched_artifacts_dir.main_dir | shquote }}
+          export PATCHED_ARTIFACTS_DIR_LOCK={{ patched_artifacts_dir.lock_dir | shquote }}
+
+          export SARIF_INPUT_PATH={{ sarif_path | shquote }}
+          export SARIF_ID={{ sarif_meta.pdt_sarif_id | shquote }}
+          
+          echo "========================================================="
+          echo "==== LAST SECOND THOUGHT: NO YOLO PATCHES FROM SARIF ===="
+          echo "=============== THIS IS TOTALLY FINE ===================="
+          echo "========================================================="
+          
+          exit 1
+
+          export CRS_MODE="full"
+
+          /src/run-patcherq.sh
+
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+  patcherq_delta:
+    priority: 1000000
+    job_quota:
+      cpu: 2
+      mem: "8Gi"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-patching: "true"
+    node_taints:
+      support.shellphish.net/only-patching: "true"
+    node_affinity:
+      support.shellphish.net/only-patching: "true"
+
+    # "harness_queue" causes the pending jobs to be prioritized based on how many are queued for a given poi_report.harness_info_id
+    priority_function: "harness_queue"
+
+    # TODO(FINALDEPLOY) Set max concurrent jobs
+    max_concurrent_jobs: 16
+    wait_for_image_pull: true
+
+    # first, the component interface
+    links:
+      # ==========
+      # 📥 Inputs
+      # ==========
+      patch_request_meta:
+        repo: patch_requests_meta
+        kind: InputFilepath
+
+      patch_request_metadata:
+        repo: patch_requests_meta
+        kind: InputMetadata
+
+      dyva_report:
+        repo: dyva_reports
+        kind: InputFilepath
+
+      poi_report_meta:
+        repo: dedup_pov_report_representative_metadatas
+        kind: InputMetadata
+        key: patch_request_metadata.poi_report_id
+      
+      poi_report:
+        repo: points_of_interest
+        kind: InputFilepath
+        key: patch_request_metadata.poi_report_id
+
+      poi_report_id:
+        repo: points_of_interest
+        kind: InputId
+        key: patch_request_metadata.poi_report_id
+     
+      crs_task:
+        repo: crs_tasks
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+
+      crs_task_meta:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      
+      crs_task_diff:
+        repo: crs_tasks_diffs
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      commit_functions_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      commit_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: poi_report_meta.project_id
+      
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      crashing_input_path:
+        repo: dedup_pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: patch_request_metadata.poi_report_id
+      
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: poi_report_meta.project_id
+      
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      full_functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      
+      # ==========
+      # 📤 Outputs
+      # ==========
+      out_patch:
+        repo: patch_diffs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: patch_metadatas
+        auto_meta: meta
+      
+      out_sarif:
+        repo: patcher_generated_sarif_reports
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      patch_bypass_request:
+        repo: patch_bypass_requests
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      patched_artifacts_dir:
+        repo: patched_artifacts_dirs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patcherq
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task_meta.concurrent_target_num | default('1') }}
+
+          export ALLOW_RAW_DOCKER_USAGE=1
+          export LOCAL_RUN=False
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export CRASHING_INPUT_PATH={{ crashing_input_path | shquote }}
+          export SANITIZER_STRING={{ poi_report_meta.consistent_sanitizers[-1] | shquote }}
+          export POI_REPORT_ID={{ poi_report_id | shquote }}
+          export POI_REPORT={{ poi_report | shquote }}
+          export OSS_FUZZ_REPO={{ oss_fuzz_repo | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ full_functions_by_file_index_json | shquote }}
+          export DYVA_REPORT={{ dyva_report | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export PATCH_REQUEST_META={{ patch_request_meta | shquote }}
+          export BYPASS_REQUEST_PATH={{ patch_bypass_request | shquote }}
+          export PATCHED_ARTIFACTS_DIR={{ patched_artifacts_dir.main_dir | shquote }}
+          export PATCHED_ARTIFACTS_DIR_LOCK={{ patched_artifacts_dir.lock_dir | shquote }}
+          export DIFF_FILE={{ crs_task_diff | shquote }}
+          export CHANGED_FUNCTIONS_INDEX={{ commit_functions_index | shquote }}
+          export CHANGED_FUNCTIONS_JSONS_DIR={{ commit_functions_jsons_dir | shquote }}
+          export CODEQL_DB_READY={{ codeql_db_ready | shquote }}
+
+          request_type={{ patch_request_metadata.request_type | shquote }}
+          
+          if [ "$request_type" = "patch" ]; then
+            export PATCHERQ_MODE="PATCH"
+          elif [ "$request_type" = "refine" ]; then
+            export PATCHERQ_MODE="REFINE"
+          else
+            echo "Bad request type for 'patcherq' task: $request_type"
+            exit 1
+          fi
+
+          export PATCH_OUTPUT_PATH={{ out_patch | shquote }}
+          export SARIF_OUTPUT_PATH={{ out_sarif | shquote }}
+          export PATCH_METADATA_OUTPUT_PATH={{ out_patch.cokeyed_dirs.meta | shquote }}
+
+          export CRS_MODE="delta"
+
+          /src/run-patcherq.sh
+
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+          set +e
+          if [ -f /tmp/.pdt_upload_lock ]; then
+              echo "Upload lock file exists, waiting for it to be removed..."
+              for i in $(seq 1 60); do
+                  if [ ! -f /tmp/.pdt_upload_lock ]; then
+                      echo "Upload lock file removed after $i seconds"
+                      break
+                  fi
+                  sleep 5
+              done
+              if [ -f /tmp/.pdt_upload_lock ]; then
+                  echo "Upload lock file still exists after 5 minutes, proceeding anyway"
+              fi
+          fi
+
+  patcherq_from_sarif_delta:
+    priority: 1000000
+    job_quota:
+      cpu: 2
+      mem: "8Gi"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-patching: "true"
+    node_taints:
+      support.shellphish.net/only-patching: "true"
+    node_affinity:
+      support.shellphish.net/only-patching: "true"
+
+    # first, the component interface
+    links:
+      # ==========
+      # 📥 Inputs
+      # ==========
+      sarif_path:
+        repo: sarif_reports
+        kind: InputFilepath
+      
+      sarif_meta:
+        repo: sarif_metadatas
+        kind: InputMetadata
+      
+      crs_task:
+        repo: crs_tasks
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      crs_task_meta:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id 
+
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+      
+      crs_task_diff:
+        repo: crs_tasks_diffs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      commit_functions_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      commit_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+      
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: sarif_meta.pdt_task_id
+      
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+      
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+        
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+      
+      full_functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      # ==========
+      # 📤 Outputs
+      # ==========
+      out_patch:
+        repo: patch_diffs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: patch_metadatas
+        auto_meta: meta
+
+      patched_artifacts_dir:
+        repo: patched_artifacts_dirs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patcherq
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task_meta.concurrent_target_num | default('1') }}
+
+          export ALLOW_RAW_DOCKER_USAGE=1
+          export LOCAL_RUN=False
+          export PATCHERQ_MODE="SARIF"
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export OSS_FUZZ_REPO={{ oss_fuzz_repo | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ full_functions_by_file_index_json | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+
+          export DIFF_FILE={{ crs_task_diff | shquote }}
+          export CHANGED_FUNCTIONS_INDEX={{ commit_functions_index | shquote }}
+          export CHANGED_FUNCTIONS_JSONS_DIR={{ commit_functions_jsons_dir | shquote }}
+
+          export PATCH_OUTPUT_PATH={{ out_patch | shquote }}
+          export PATCH_METADATA_OUTPUT_PATH={{ out_patch.cokeyed_dirs.meta | shquote }}
+          export CODEQL_DB_READY={{ codeql_db_ready | shquote }}
+
+          # For now, we are not doing this for patches generated from SARIF
+          export BYPASS_REQUEST_PATH=''
+
+          export PATCHED_ARTIFACTS_DIR={{ patched_artifacts_dir.main_dir | shquote }}
+          export PATCHED_ARTIFACTS_DIR_LOCK={{ patched_artifacts_dir.lock_dir | shquote }}
+
+          export SARIF_INPUT_PATH={{ sarif_path | shquote }}
+          export SARIF_ID={{ sarif_meta.pdt_sarif_id | shquote }}
+
+          echo "========================================================="
+          echo "==== LAST SECOND THOUGHT: NO YOLO PATCHES FROM SARIF ===="
+          echo "=============== THIS IS TOTALLY FINE ===================="
+          echo "========================================================="
+          
+          exit 1
+
+          export CRS_MODE="delta"
+
+          /src/run-patcherq.sh
+
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+          set +e
+          if [ -f /tmp/.pdt_upload_lock ]; then
+              echo "Upload lock file exists, waiting for it to be removed..."
+              for i in $(seq 1 60); do
+                  if [ ! -f /tmp/.pdt_upload_lock ]; then
+                      echo "Upload lock file removed after $i seconds"
+                      break
+                  fi
+                  sleep 5
+              done
+              if [ -f /tmp/.pdt_upload_lock ]; then
+                  echo "Upload lock file still exists after 5 minutes, proceeding anyway"
+              fi
+          fi

@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grammaroomba"
+version = "0.0.1"
+authors = [
+        {name = "zebck", email = "thezebck@gmail.com"}
+    ]
+description = "grammaroomba"
+readme="None"
+requires-python=">=3.10"
+
+dependencies = []
+
+[project.scripts]

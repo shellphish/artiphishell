@@ -1,0 +1,75 @@
+apiVersion: v2
+name: artiphishell
+description: A Helm chart for the complete Artiphishell platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+dependencies:
+  # ==== CI Only ====
+  - name: node-viz
+    version: "0.1.0"
+    repository: "file://../ci/nodeviz"
+    condition: global.include_node_viz.value
+  - name: monitor
+    version: "0.1.0"
+    repository: "file://../ci/monitor"
+    condition: global.include_ci_pods.value
+  - name: jaeger
+    version: "0.1.0"
+    repository: "file://../services/jaeger"
+    condition: global.include_ci_pods.value
+  - name: data-prepper
+    version: "0.1.0"
+    repository: "file://../services/data-prepper"
+    condition: global.include_ci_pods.value
+  - name: aixcc-server-infra
+    version: "0.1.0"
+    repository: "file://../ci/aixcc-server-infra"
+    condition: global.include_ci_pods.value
+  - name: opensearch
+    version: "0.1.0"
+    repository: "file://../services/opensearch"
+    condition: global.include_ci_pods.value
+  - name: opensearch-dashboard
+    version: "0.1.0"
+    repository: "file://../services/opensearch-dashboard"
+    condition: global.include_ci_pods.value
+
+  # ==== Services ====
+  - name: builder
+    version: "0.1.0"
+    repository: "file://../builder"
+  - name: agent
+    version: "0.1.0"
+    repository: "file://../agent"
+  - name: api
+    version: "0.1.0"
+    repository: "file://../api"
+  - name: codeql
+    version: "0.1.0"
+    repository: "file://../services/codeql"
+  - name: analysisgraph
+    version: "0.1.0"
+    repository: "file://../services/analysisgraph"
+  - name: telemetrydb
+    version: "0.1.0"
+    repository: "file://../services/telemetrydb"
+  - name: otel-collector
+    version: "0.1.0"
+    repository: "file://../ci/otel-collector"
+  - name: telegraf
+    version: "0.1.0"
+    repository: "file://../services/telegraf"
+  - name: litellm
+    version: "0.1.0"
+    repository: "file://../litellm"
+  #- name: langserver
+  #  version: "0.1.0"
+  #  repository: "file://../services/langserver"
+  - name: functionresolver
+    version: "0.1.0"
+    repository: "file://../services/functionresolver"
+  - name: permanence
+    version: "0.1.0"
+    repository: "file://../services/permanence"

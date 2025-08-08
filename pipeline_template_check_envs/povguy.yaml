@@ -1,0 +1,20 @@
+crs_task_metadata:
+  concurrent_target_num: 4
+  type: 'full'
+  project_name: 'nginx'
+
+crashing_input_metadata:
+  cp_harness_name: pov_harness
+  crash_report_id: '12345'
+  project_id: '6666'
+  project_name: 'nginx'
+losan_pov_report_path:
+  cokeyed:
+    representative_metadata: 'asdf'
+    representative_crash: 'asdf'
+    representative_full_report: 'asdf'
+dedup_pov_report_path:
+  cokeyed:
+    representative_metadata: 'asdf'
+    representative_crash: 'asdf'
+    representative_full_report: 'asdf'

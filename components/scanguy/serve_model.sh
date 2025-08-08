@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=4,5,6,7 vllm serve  secmlr/best_n_no_rationale_poc_agent_withjava_final_model_agent_h100 --dtype=bfloat16 --tensor-parallel-size=4 --port 25002 --enable-auto-tool-choice --tool-call-parser hermes

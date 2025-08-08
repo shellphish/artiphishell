@@ -1,0 +1,107 @@
+repo_classes:
+  ################### INPUTS ###################
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  full_functions_jsons_dirs: FilesystemRepository
+  crs_tasks: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  
+  ################### OUTPUTS ###################
+  locs_of_interest: BlobRepository
+  funcs_of_interest: BlobRepository
+  codechecker_reports: FilesystemRepository
+
+tasks:
+  run_codechecker:
+    priority: 2
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+    
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      full_functions_jsons_dirs:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+
+      # OUTPUTS
+      codechecker_report:
+        repo: codechecker_reports
+        kind: OutputFilepath
+
+      locs_of_interest:
+        repo: locs_of_interest
+        kind: OutputFilepath
+      
+      funcs_of_interest:
+        repo: funcs_of_interest
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-codechecker
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation codechecker $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture {{ meta.get("architectures", ["x86_64"])[0] }} \
+            --sanitizer {{ meta.get("sanitizers", ["address"])[0] }} \
+            --instrumentation codechecker \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          cp "${OSS_FUZZ_PROJECT_DIR}/artifacts/out/codechecker-reports/report.json" {{ codechecker_report | shquote }}
+
+          /scripts/parse_codechecker_output.py {{ codechecker_report | shquote }}/report.json --clang-indexer-dir {{ full_functions_jsons_dirs | shquote }} > {{ codechecker_report | shquote }}/report_parsed.json
+
+          /scripts/extract.py \
+            --report {{ codechecker_report | shquote }} \
+            --funcs-output {{ funcs_of_interest | shquote }} \
+            --locs-output {{ locs_of_interest | shquote }}

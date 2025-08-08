@@ -1,0 +1,43 @@
+{% if pois and pois|length > 0 %}
+# Cluster {{ cluster_id }} Initially Identified Points of Interest
+The following functions have been identified as potential points of interest. Use these to determine a real root cause.
+
+{% for poi in pois %}
+## File: {{ poi.function.file_path|default('Unknown file') }}
+### Function: `{{ poi.function.name|default('Unnamed function') }}`
+```
+{{ poi.function.code }}
+```
+{% if poi.function.global_vars %}
+### Global Variables
+{% for global_var in poi.function.global_vars %}
+{{ global_var.declaration }}
+{% endfor %}
+{% endif %}
+### Source of the Point of Interest
+Explaination of the sources of the point of interest:
+    STACK_TRACE: poi that was in the stack trace of the crash
+    DIFFGUY: found using static analysis in a commit diff, where the commit is the buggy commit
+    COMMIT: found in a commit diff, where the commit is the buggy commit
+    AURORA: found using invariant analysis tool aurora
+    VAR_DEP: found static analysis found data flow dependencies
+    FREE_STACK: in the ASAN free-trace
+    CALL_TRACE = 9: in call trace when executing the crashing input
+Sources: {{ poi.sources|default('No source information available') }}
+
+{% if not loop.last %}
+---
+{% endif %}
+{% endfor %}
+
+{% else %}
+No code snippets available for analysis.
+{% endif %}
+
+# Crash Report
+{% if asan_report %}
+{{ asan_report }}
+{% else %}
+# No Crash Report
+No crash report available.
+{% endif %}

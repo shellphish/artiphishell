@@ -1,0 +1,20 @@
+#!/bin/bash
+
+echo "Running CodeChecker wrapper on 'compile' script"
+
+. ${SRC}/shellphish/codechecker-venv/bin/activate
+
+if [ $(bear --version | awk '{print $2}' | cut -d. -f1) -lt 3 ]; then
+    bear /usr/local/bin/compile.old
+else
+    bear -- /usr/local/bin/compile.old
+fi
+
+# codechecker may fail for some files, but it may still have useful results
+CodeChecker analyze ./compile_commands.json -o ${OUT}/codechecker-reports --enable profile:security || true
+CodeChecker parse ${OUT}/codechecker-reports -o ${OUT}/codechecker-reports/report.json -e json || true
+
+if [ ! -d ${OUT}/codechecker-reports ] || [ ! "$(ls -A ${OUT}/codechecker-reports)" ]; then
+    echo "CodeChecker did not produce any reports"
+    exit 1
+fi

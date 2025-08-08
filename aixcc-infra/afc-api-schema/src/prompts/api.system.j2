@@ -1,0 +1,48 @@
+<task>
+Your task is to generate http API endpoints for the given swagger api schema, so we can use them to ensure compliance during the competition.
+{% if existing %}
+You will be given the existing state of the http API endpoints, which may be outdated from the swagger schema. You must update the existing endpoints to match the swagger schema, using as much of the existing code as possible (fewest changes possible to get it to match the swagger schema). Do not change formatting or spacing of existing code.
+{% endif %}
+<requirements>
+Please follow these guidelines:
+- We are using Flask as the web framework for this API
+- For endpoints with multiple HTTP methods, each method should be a different function
+- Each endpoint should call the associated method (or methods) on the impl_class to perform the action
+- Endpoints which take a type should use the `shellphish_crs_utils.models.aixcc_api` module to deserialize the request body into the type, and then use that type to call into the impl_class method
+- Endpoints which return a type should expect to get a type from the `shellphish_crs_utils.models.aixcc_api` module from the impl_class method call, and then should serialize the type and return it as the response
+- Exceptions with deseriliaztion should be caught and a 400 status returned
+- Exceptions during processing should be caught and a 500 status returned
+- Endpoints requiring basic auth should use the `@shellphish_basic_auth.login_required` decorator
+- You are free to import other things not currently imported
+- All endpoints require a docstring comment describing the endpoint based on the swagger schema. {% if existing %} If the endpoint already has a docstring comment, make sure not to change the comment unless it is incorrect {% endif %}
+- If an endpoint does not have an associated impl_class method, you should raise a NotImplementedError instead. But also add a # TODO XXX MISSING API comment to the endpoint so we can add the method later.
+- DO NOT MAKE UP EXTRA ENDPOINTS THAT ARE NOT PRESENT IN THE SWAGGER SCHEMA. If you see any, remove them.
+- MAKE SURE TO KEEP THE DESCRIPTIONS VERBATIM FROM THE SWAGGER SCHEMA. Its very important we notice any changes to the descriptions.
+- IMPORTANT: If you use try/except blocks you MUST use include the traceback.print_exc() call so we can see the full traceback in our logs (rather than silently failing).
+```
+except Exception as e:
+    import traceback
+    traceback.print_exc()
+    ...
+```
+- IMPORTANT: Before you start writing the updated code, you should spend some time thinking about what actually does not match the swagger schema. Please use <thinking></thinking> tags to think about what needs to be updated for at least 5 paragraphs! Try to be exaustive with all discrepancies with the swagger schema. Inside <thinking> tags, you cannot use ` code blocks, only for the final output code.
+</requirements>
+</task>
+
+{% if instructions %}
+<additional-user-instructions>
+{{ instructions }}
+</additional-user-instructions>
+{% endif %}
+
+<context>
+This is the schema for the AIxCyberChallenge (a DARPA Challenge) API, which will be implemented by our CyberReasoningSystem (CRS). The goal of this api is to allow DARPA to send tasking to our CRS and for our CRS to respond with the result of this tasking.
+In general tasking takes this form:
+- Some set of tasks we must complete
+- Each task has a set of sources of different types we must analyze.
+- There are two modes of source, full and delta. Full has no change info and delta has a basis source and a changeset
+
+We also have to provide some analytics on the stat of our CRS.
+
+We also have to process SARIF reports from other teams CRS as well as sending our own SARIF reports to DARPA and other teams.
+</context>

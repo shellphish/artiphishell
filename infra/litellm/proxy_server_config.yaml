@@ -1,0 +1,170 @@
+model_list:
+  - model_name: oai-gpt-4o-latest
+    litellm_params:
+        model: openai/chatgpt-4o-latest
+        api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-4o-mini
+    litellm_params:
+        model: openai/gpt-4o-mini
+        api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-4o
+    litellm_params:
+      model: openai/gpt-4o-2024-11-20
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-o1-preview
+    litellm_params:
+      model: openai/o1-preview
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-o1-mini
+    litellm_params:
+      model: openai/o1-mini
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-o1
+    litellm_params:
+      model: openai/o1-2024-12-17
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-o3-mini
+    litellm_params:
+      model: openai/o3-mini
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: claude-4-opus
+    litellm_params:
+      model: claude-opus-4-20250514
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+      max_tokens: 32000
+  - model_name: claude-4-sonnet
+    litellm_params:
+      model: claude-sonnet-4-20250514
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+      max_tokens: 64000
+  - model_name: claude-3-opus
+    litellm_params:
+      model: claude-3-opus-20240229
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+  - model_name: claude-3-sonnet
+    litellm_params:
+      model: claude-3-sonnet-20240229
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+  - model_name: claude-3.5-sonnet
+    litellm_params:
+      model: claude-3-5-sonnet-20241022
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+      max_tokens: 8192
+  - model_name: claude-3.7-sonnet
+    litellm_params:
+      model: claude-3-7-sonnet-20250219
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+      max_tokens: 64000
+  - model_name: claude-3.5-haiku
+    litellm_params:
+      model: claude-3-5-haiku-20241022
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+  - model_name: claude-3-haiku
+    litellm_params:
+      model: claude-3-haiku-20240307
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+  - model_name: oai-text-embedding-3-large
+    litellm_params:
+      model: openai/text-embedding-3-large
+      api_key: os.environ/OPENAI_API_KEY
+    model_info:
+      mode: embedding
+      base_model: text-embedding-3-large
+  - model_name: oai-text-embedding-3-small
+    litellm_params:
+      model: openai/text-embedding-3-small
+      api_key: os.environ/OPENAI_API_KEY
+    model_info:
+      mode: embedding
+      base_model: text-embedding-3-small
+  - model_name: gemini-2.0-flash
+    litellm_params:
+      model: gemini/gemini-2.0-flash
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: gemini-2.0-flash-lite
+    litellm_params:
+      model: gemini/gemini-2.0-flash-lite
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: gemini-1.5-pro
+    litellm_params:
+      model: gemini/gemini-1.5-pro
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: gemini-1.5-flash-8b
+    litellm_params:
+      model: gemini/gemini-1.5-flash-8b
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro-preview-06-05
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: gemini-2.5-pro-preview
+    litellm_params:
+      model: gemini/gemini-2.5-pro-preview-06-05
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: oai-gpt-4.1-nano
+    litellm_params:
+        model: openai/gpt-4.1-nano
+        api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-4.1-mini
+    litellm_params:
+        model: openai/gpt-4.1-mini
+        api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-4.1
+    litellm_params:
+        model: openai/gpt-4.1
+        api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-o4-mini
+    litellm_params:
+      model: openai/o4-mini
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: oai-gpt-o3
+    litellm_params:
+      model: openai/o3
+      api_key: "os.environ/OPENAI_API_KEY"
+  
+  - model_name: oai-az-gpt-4.1
+    litellm_params:
+      model: azure/gpt-4.1
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_base: os.environ/AZURE_OPENAI_ENDPOINT
+      api_version: "2025-01-01-preview"
+
+  - model_name: oai-az-gpt-4.1-mini
+    litellm_params:
+      model: azure/gpt-4.1-mini
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_base: os.environ/AZURE_OPENAI_ENDPOINT
+      api_version: "2025-01-01-preview"
+
+  - model_name: oai-az-o3
+    litellm_params:
+      model: azure/o3
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_base: os.environ/AZURE_OPENAI_ENDPOINT
+      api_version: "2025-01-01-preview"
+  
+general_settings:
+  master_key: "sk-artiphishell-da-best!!!"
+  # === High Availability Redis Configuration ===
+  use_redis_transaction_buffer: true
+
+litellm_settings:
+  drop_params: true
+
+  # === Global Budget ===
+  # TODO(FINALDEPLOY)
+  # TODO XXX change this to be whatever is the correct value for the round
+  max_budget: 1300
+  budget_duration: 30d
+
+  # === Specific Component Budget ===
+
+  # === Redis Cache Configuration ===
+  cache: true
+  cache_params:
+    type: redis
+    ttl: 600  # Cache for 10 minutes
+    namespace: "litellm.caching"
+
+router_settings:
+  routing_strategy: "usage-based-routing-v2"

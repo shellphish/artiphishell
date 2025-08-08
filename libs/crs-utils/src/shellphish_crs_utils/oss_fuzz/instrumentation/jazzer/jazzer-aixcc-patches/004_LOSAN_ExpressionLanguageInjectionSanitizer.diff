@@ -1,0 +1,65 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+index 0227df65..7ef70858 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+@@ -80,6 +80,7 @@ kt_jvm_library(
+     ],
+     deps = [
+         "//src/main/java/com/code_intelligence/jazzer/api:hooks",
++        "shell_utils_lib",
+     ],
+ )
+ 
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ExpressionLanguageInjection.kt b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ExpressionLanguageInjection.kt
+index 0dbb1679..29f4c72a 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ExpressionLanguageInjection.kt
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ExpressionLanguageInjection.kt
+@@ -23,6 +23,10 @@ import com.code_intelligence.jazzer.api.MethodHook
+ import com.code_intelligence.jazzer.api.MethodHooks
+ import java.lang.invoke.MethodHandle
+ 
++
++// LOSAN imports
++import com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical
++
+ /**
+  * Detects injectable inputs to an expression language interpreter which may lead to remote code execution.
+  */
+@@ -40,6 +44,7 @@ object ExpressionLanguageInjection {
+         }
+     }
+ 
++    private val LoSan = System.getenv("SHELL_SAN");
+     @MethodHooks(
+         MethodHook(
+             type = HookType.BEFORE,
+@@ -74,6 +79,9 @@ object ExpressionLanguageInjection {
+             return
+         }
+         val expression = arguments[1] as? String ?: return
++        if(LoSan != null){
++            losan_crash(expression)
++        }
+         Jazzer.guideTowardsContainment(expression, EXPRESSION_LANGUAGE_ATTACK, hookId)
+     }
+ 
+@@ -100,6 +108,19 @@ object ExpressionLanguageInjection {
+             return
+         }
+         val message = arguments[0] as String
++        if(LoSan != null){
++            losan_crash(message)
++        }
+         Jazzer.guideTowardsContainment(message, EXPRESSION_LANGUAGE_ATTACK, hookId)
+     }
++    fun losan_crash(
++        found_string: String
++    ){
++        Jazzer.reportFindingFromHook(
++            FuzzerSecurityIssueCritical(
++                """[LOSAN] Expression Language Injection
++                Passing data without sanitization to EL functions can lead to remote code execution. SHELLPHISH_FOUND_LOSAN: ${reprString(found_string.toByteArray().map { it.toInt() })} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(EXPRESSION_LANGUAGE_ATTACK.toByteArray().map { it.toInt() })}""",
++            ),
++        )
++    }
+ }

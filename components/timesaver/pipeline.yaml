@@ -1,0 +1,39 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  target_start_times: MetadataRepository
+  
+tasks:
+  start_time_task:
+    annotations:
+      authors:
+        - clasm
+        - honululu
+      maturity: inProgress
+      doc: |
+        This task provides initial seeds for a given target.
+
+    links:
+      project_id:
+        repo: targets_with_sources
+        kind: InputId
+      start_time:
+        repo: target_start_times
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+
+        template: |
+          set -e
+          set -x
+
+          date +%s
+          export TIMESTAMP=$(date +%s) 
+          export PROJECT_ID={{ project_id | shquote }} 
+          OUT_FILE=output_file.yaml
+
+          touch $OUT_FILE
+          yq -i '.time = env(TIMESTAMP), .project_id = env(PROJECT_ID)' $OUT_FILE
+          cp $OUT_FILE {{ start_time | shquote }}

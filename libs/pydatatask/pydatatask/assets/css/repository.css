@@ -1,0 +1,437 @@
+/* Repository styles */
+.repo-container {
+    margin-bottom: 1.5rem;
+}
+
+.repo-header {
+    padding: 0.75rem 1rem;
+    background: var(--gradient-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.repo-header:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.repo-count {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-left: auto;
+}
+
+.repo-arrow {
+    transition: transform 0.2s;
+    font-size: 0.75rem;
+    margin-left: 1rem;
+    color: var(--text-secondary);
+}
+
+/* Delete buttons */
+.delete-repo-btn {
+    background: #dc3545;  /* Bootstrap red */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    opacity: 0.9;
+    margin-left: 0.5rem;
+}
+
+.delete-repo-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+    background: #c82333;
+}
+
+.delete-item-btn {
+    background: #dc3545;  /* Bootstrap red */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+    opacity: 0.9;
+    margin-top: 0.5rem;
+}
+
+.delete-item-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+    background: #c82333;
+}
+
+.delete-item-btn:active,
+.delete-repo-btn:active {
+    transform: scale(0.95);
+}
+
+/* Loading state for delete buttons */
+.delete-repo-btn.loading,
+.delete-item-btn.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.delete-repo-btn.loading::after,
+.delete-item-btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: delete-btn-spin 1s linear infinite;
+}
+
+@keyframes delete-btn-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.repo-files {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: var(--gradient-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.repo-files button {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    background: var(--status-success);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.repo-files button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.loading-files {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+/* File item styles */
+.file-item {
+    margin: 0.5rem 0;
+    padding: 0.75rem;
+    background: var(--gradient-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.file-item:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.file-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.2;
+    cursor: pointer;
+    font-family: monospace;
+    background: var(--bg-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+.file-name:hover {
+    background: var(--bg-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.file-name:active {
+    transform: translateY(0);
+}
+
+.file-name::after {
+    content: "📋";
+    font-size: 0.875rem;
+    opacity: 0.7;
+    margin-left: 0.5rem;
+}
+
+.file-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.file-size {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    min-width: fit-content;
+}
+
+.file-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+
+.file-delete-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+.file-delete-container .delete-item-btn {
+    margin-top: 0;
+}
+
+.action-button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+    min-width: fit-content;
+}
+
+.view-button {
+    background: var(--status-success);
+    color: white;
+}
+
+.download-button {
+    background: var(--status-running);
+    color: white;
+}
+
+.action-button:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.button-icon {
+    font-size: 0.9rem;
+}
+
+/* Repository search styles */
+.repo-search {
+    margin-bottom: 0.75rem;
+    position: relative;
+}
+
+.repo-search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.repo-search-input:focus {
+    outline: none;
+    border-color: var(--status-success);
+    box-shadow: var(--shadow-sm);
+}
+
+.repo-search-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.repo-search::before {
+    content: "🔍";
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 1rem;
+    z-index: 1;
+}
+
+/* Files list container */
+.files-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.files-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.files-list::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.files-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.files-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* File view modal styles */
+.file-view-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: var(--gradient-primary);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    max-width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+}
+
+.close-button:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1rem;
+    overflow: auto;
+    flex: 1;
+}
+
+.file-content {
+    margin: 0;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--text-primary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .file-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .file-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 1rem auto;
+    }
+
+    .modal-header {
+        padding: 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+} 

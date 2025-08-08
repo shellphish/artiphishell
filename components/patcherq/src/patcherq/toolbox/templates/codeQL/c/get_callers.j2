@@ -1,0 +1,7 @@
+import cpp
+
+from FunctionCall call, Function func
+where
+call.getTarget().hasName("{{ function_name }}") and
+call.getEnclosingFunction() = func
+select call, func, call.getLocation(), "Call to {{ function_name }} found in function " + func.getName() + "."

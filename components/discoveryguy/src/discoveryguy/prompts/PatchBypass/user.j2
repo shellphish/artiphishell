@@ -1,0 +1,59 @@
+
+
+{% if HUMAN_MSG %}
+{{HUMAN_MSG}}
+{% else %}
+
+The language of this project is {{LANGUAGE_EXPERTISE}}.
+
+The patch is as follows:
+<code>
+```
+{{PATCH}}
+```
+</code>
+
+The crashing input that triggered the vulnerability and the reason for the patch is as follows:
+```
+{{CRASHING_INPUT}}
+```
+
+{% if SUMMARY %}
+This patch was generated after a lot of investigation and analysis.There might be some mistakes in the reasoning, so don't treat it as your ground truth. The reasoning of the patch is as follows:
+{{SUMMARY}}
+{% endif %}
+
+The stack trace of the vulnerability is as follows:
+```
+{{STACK_TRACE}}
+```
+You must generate a Python script that creates a proof-of-concept exploit payload that bypasses the patch.
+
+{% if FEEDBACK %}
+Here is the feedback from the your last run (if have):
+<feedback>
+{{FEEDBACK}}
+</feedback>
+{% endif %}
+
+One more thing you need to keep in mind is that most of the easily exploitable paths might have been caught as this patch was reviewed by another tool with the following configuration:
+
+You are a security expert who specializes in patch validation for software vulnerabilities in {{LANGUAGE_EXPERTISE}}.
+You are provided with the initial root cause report for the vulnerability and the proposed patch by developer.
+As the patch already passes the initial checks of compilation, crashing input, and unit tests, your task is to thoroughly analyze the proposed patch for the following criteria:
+1. The patch does not add new unnecessary functionality that might change the behavior of the code in unintended ways or introduce new vulnerabilities.
+2. The patch is not easily bypassable by an attacker, meaning it effectively mitigates the vulnerability without leaving loopholes (in this case, look for easy ways an attacker could circumvent the patch).
+3. The patch does not eliminate the intended functionality of the code by prematurely terminating/returning from functions or removing necessary code paths.
+
+So you should keep this in mind while generating strategies to bypass the patch.
+
+You MUST craft a seed to reach the sink function from the harness.
+IMPORTANT:
+1. The Python script MUST write this crashing input to a file called `/work/crash.txt` using `f.write`.
+2. The Python script goal is to only emit the crashing input that we are gonna feed to a fuzzing Harness. DO NOT ATTEMPT CONNECTION OR ANYTHING ELSE. YOU MUST SIMPLY PROVIDE US THE INPUT.
+3. The Python script MUST NOT contain print statements and/or comments.
+4. The Python script MUST emit a string in binary format. The output string MUST NOT BE EMPTY.
+5. The final Python script MUST be placed in between the <python_script></python_script> tag.
+6. Also generate a very condensed summary of the approach you took to generate the exploit payload in the <summary></summary> tag.
+
+{% endif %}

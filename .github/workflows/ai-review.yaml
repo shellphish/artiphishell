@@ -1,0 +1,236 @@
+name: AI Code Review Bot
+
+on:
+  pull_request:
+    types: [ready_for_review]  # When draft is marked ready
+  issue_comment:
+    types: [created]  # Manual trigger with /ai-review
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  ai-code-review:
+    # Run on ready_for_review OR when someone comments /ai-review
+    if: github.event_name == 'pull_request' || (github.event.issue.pull_request && contains(github.event.comment.body, '/ai-review'))
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install llm CLI
+      run: |
+        pip install -U llm || pip install -U llm --break-system-packages
+
+        mkdir -p ~/.config/io.datasette.llm/
+
+        cat > ~/.config/io.datasette.llm/extra-openai-models.yaml <<EOF
+        - model_id: oai-gpt-o4-mini
+          model_name: oai-gpt-o4-mini
+          api_base: "http://wiseau.seclab.cs.ucsb.edu:666/"
+          api_key_name: mykey
+        - model_id: claude-3.7-sonnet
+          model_name: claude-3.7-sonnet
+          api_base: "http://wiseau.seclab.cs.ucsb.edu:666/"
+          api_key_name: mykey
+        - model_id: claude-3-opus
+          model_name: claude-3-opus
+          api_base: "http://wiseau.seclab.cs.ucsb.edu:666/"
+          api_key_name: mykey
+        - model_id: claude-3.5-sonnet
+          model_name: claude-3.5-sonnet
+          api_base: "http://wiseau.seclab.cs.ucsb.edu:666/"
+          api_key_name: mykey
+        - model_id: claude-4-sonnet
+          model_name: claude-4-sonnet
+          api_base: "http://wiseau.seclab.cs.ucsb.edu:666/"
+          api_key_name: mykey
+        - model_id: claude-4-opus
+          model_name: claude-4-opus
+          api_base: "http://wiseau.seclab.cs.ucsb.edu:666/"
+          api_key_name: mykey
+        EOF
+        llm keys set mykey '--value=sk-artiphishell-da-best!!!'
+
+    - name: Get PR diff and info
+      id: get_diff
+      run: |
+        # Handle both PR events and comment events
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          # Direct PR event
+          BASE_REF="${{ github.event.pull_request.base.ref }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+        else
+          # Comment event - get PR info
+          PR_NUMBER="${{ github.event.issue.number }}"
+          PR_INFO=$(gh pr view $PR_NUMBER --json baseRefName,headRefOid,number)
+          BASE_REF=$(echo "$PR_INFO" | jq -r '.baseRefName')
+          HEAD_SHA=$(echo "$PR_INFO" | jq -r '.headRefOid')
+        fi
+
+        # Save PR info for later steps
+        echo "BASE_REF=$BASE_REF" >> $GITHUB_OUTPUT
+        echo "HEAD_SHA=$HEAD_SHA" >> $GITHUB_OUTPUT
+        echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_OUTPUT
+
+        # Get the diff for this PR
+        git fetch origin $BASE_REF
+        DIFF=$(git diff origin/$BASE_REF...$HEAD_SHA)
+
+        # Truncate diff if too long (API limits)
+        if [ ${#DIFF} -gt 15000 ]; then
+          DIFF="${DIFF:0:15000}... [truncated due to length]"
+        fi
+
+        # Save diff to file for multiline handling
+        echo "$DIFF" > pr_diff.txt
+
+        echo "Retrieved diff for PR #$PR_NUMBER (SHA: $HEAD_SHA)"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Call Claude API
+      id: claude_review
+      run: |
+        # Safely construct prompt using file appending
+        echo "Are there any bugs or typos in this change?" > claude_prompt.txt
+        echo "" >> claude_prompt.txt
+        echo "" >> claude_prompt.txt
+        cat pr_diff.txt >> claude_prompt.txt
+
+        # Use llm to call Claude with error handling
+        if llm -m claude-4-opus < claude_prompt.txt > claude_result.txt 2>/dev/null; then
+          echo "Claude API call successful"
+        else
+          echo "Error: Unable to get response from Claude. Please check API key and connectivity." > claude_result.txt
+        fi
+
+        # Set output (truncated for GitHub output limits)
+        CLAUDE_OUTPUT=$(cat claude_result.txt)
+        echo "result<<EOF" >> $GITHUB_OUTPUT
+        echo "${CLAUDE_OUTPUT:0:1000}" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Call ChatGPT API
+      id: chatgpt_review
+      run: |
+        # Safely construct prompt using file appending
+        echo "Are there any bugs or typos in this change?" > chatgpt_prompt.txt
+        echo "" >> chatgpt_prompt.txt
+        echo "" >> chatgpt_prompt.txt
+        cat pr_diff.txt >> chatgpt_prompt.txt
+
+        # Use llm to call ChatGPT with error handling
+        if llm -m oai-gpt-o4-mini < chatgpt_prompt.txt > chatgpt_result.txt 2>/dev/null; then
+          echo "ChatGPT API call successful"
+        else
+          echo "Error: Unable to get response from ChatGPT. Please check API key and connectivity." > chatgpt_result.txt
+        fi
+
+        # Set output (truncated for GitHub output limits)
+        CHATGPT_OUTPUT=$(cat chatgpt_result.txt)
+        echo "result<<EOF" >> $GITHUB_OUTPUT
+        echo "${CHATGPT_OUTPUT:0:1000}" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Determine overall status
+      id: determine_status
+      run: |
+        CLAUDE_RESULT=$(cat claude_result.txt)
+        CHATGPT_RESULT=$(cat chatgpt_result.txt)
+
+        # Simple heuristic: if either mentions "bug" or "error" or "issue", mark as needs attention
+        if echo "$CLAUDE_RESULT $CHATGPT_RESULT" | grep -qi "bug\|error\|issue\|problem\|typo"; then
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "conclusion=Issues found by AI review" >> $GITHUB_OUTPUT
+        else
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "conclusion=No issues found by AI review" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Post PR Comment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const claudeResult = fs.readFileSync('claude_result.txt', 'utf8');
+          const chatgptResult = fs.readFileSync('chatgpt_result.txt', 'utf8');
+
+          // Get PR number from the previous step
+          const prNumber = '${{ steps.get_diff.outputs.PR_NUMBER }}';
+
+          const comment = `## 🤖 AI Code Review Results
+
+          ### Claude Analysis:
+          \`\`\`
+          ${claudeResult}
+          \`\`\`
+
+          ### ChatGPT Analysis:
+          \`\`\`
+          ${chatgptResult}
+          \`\`\`
+
+          ---
+          *This review was automatically generated by AI. Please use your judgment when considering these suggestions.*`;
+
+          await github.rest.issues.createComment({
+            issue_number: parseInt(prNumber),
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+    - name: Create Check Run
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const claudeResult = fs.readFileSync('claude_result.txt', 'utf8');
+          const chatgptResult = fs.readFileSync('chatgpt_result.txt', 'utf8');
+          const status = '${{ steps.determine_status.outputs.status }}';
+          const conclusion = '${{ steps.determine_status.outputs.conclusion }}';
+
+          // Get HEAD SHA from the previous step (works for both event types)
+          const headSha = '${{ steps.get_diff.outputs.HEAD_SHA }}';
+
+          console.log(`Creating check for SHA: ${headSha}`);
+
+          try {
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'AI Code Review',
+              head_sha: headSha,
+              status: 'completed',
+              conclusion: status === 'success' ? 'success' : 'failure',
+              output: {
+                title: conclusion,
+                summary: 'AI analysis of code changes',
+                text: `## Claude Analysis:\n${claudeResult}\n\n## ChatGPT Analysis:\n${chatgptResult}`
+              }
+            });
+            console.log('Check run created successfully');
+          } catch (error) {
+            console.error('Failed to create check run:', error);
+            console.log('This may be due to insufficient permissions or invalid SHA');
+            // Don't fail the workflow if check creation fails
+          }
+
+    - name: Clean up sensitive files
+      if: always()
+      run: |
+        # Remove temporary files containing potentially sensitive data
+        rm -f pr_diff.txt claude_prompt.txt chatgpt_prompt.txt
+        echo "Cleaned up temporary files"

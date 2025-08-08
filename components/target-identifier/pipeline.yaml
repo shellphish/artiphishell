@@ -1,0 +1,59 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+
+  crs_tasks_analysis_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  canonical_build_artifacts:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  crs_tasks_cancelled: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  augmented_project_metadatas: MetadataRepository
+
+tasks:
+  analyze_target:
+    require_success: true
+    job_quota:
+      cpu: 1
+      mem: 8Gi
+    links:
+      simple_metadata_path:
+        repo: base_project_metadatas
+        kind: InputFilepath
+      canonical_build_artifact:
+        repo: canonical_build_artifacts
+        kind: InputFilepath
+      project_analysis_sources:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+      metadata_path:
+        repo: augmented_project_metadatas
+        kind: OutputFilepath
+      project_id:
+        repo: base_project_metadatas
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+    executable:
+      cls: Container
+      args:
+        image: aixcc-target-identifier
+        template: |
+          set -ex
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          
+          python /shellphish/target-identifier/analyze_target.py \
+                  {{simple_metadata_path|shquote}} \
+                  {{canonical_build_artifact}} \
+                  {{project_analysis_sources | shquote}} \
+                  {{metadata_path | shquote}}

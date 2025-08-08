@@ -1,0 +1,24 @@
++ '[' '!' -v TESTCASE ']'
++ '[' '!' -f /work/pov_input ']'
++ export RUN_FUZZER_MODE=interactive
++ RUN_FUZZER_MODE=interactive
++ export FUZZING_ENGINE=libfuzzer
++ FUZZING_ENGINE=libfuzzer
++ export SKIP_SEED_CORPUS=1
++ SKIP_SEED_CORPUS=1
++ run_fuzzer assimp_fuzzer /work/pov_input
+vm.mmap_rnd_bits = 28
+/out/assimp_fuzzer -rss_limit_mb=2560 -timeout=25 /work/pov_input < /dev/null
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3576381732
+INFO: Loaded 1 modules   (235610 inline 8-bit counters): 235610 [0x555556fa54b8, 0x555556fded12), 
+INFO: Loaded 1 PC tables (235610 PCs): 235610 [0x555556fded18,0x5555573772b8), 
+/out/assimp_fuzzer: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+Info,  T0: Load $$$___magic___$$$.
+Info,  T0: Found a matching importer for this file format: Quake Mesh / 3D GameStudio Mesh Importer.
+Info,  T0: Import root directory is './'
+==16== ERROR: libFuzzer: out-of-memory (used: 2701Mb; limit: 2560Mb)
+   To change the out-of-memory limit use -rss_limit_mb=<N>
+
+SUMMARY: libFuzzer: out-of-memory

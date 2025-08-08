@@ -1,0 +1,50 @@
+{
+    "name": "Grammaroomba Dev Container",
+    "build": {
+      "dockerfile": "../Dockerfile",
+      "context": "../",
+      "args": {
+        "IMAGE_PREFIX": "ghcr.io/shellphish-support-syndicate/",
+        "SOURCE_REPO": "https://github.com/shellphish-support-syndicate/artiphishell"
+      }
+    },
+    "containerEnv": {
+      "LANGSMITH_TRACING": "true",
+      "LANGSMITH_ENDPOINT": "https://api.smith.langchain.com",
+      "LANGSMITH_API_KEY": "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",
+      "LANGSMITH_PROJECT": "grammaroomba",
+      "LITELLM_KEY": "sk-artiphishell-da-best!!!",
+      "AIXCC_LITELLM_HOSTNAME": "http://wiseau.seclab.cs.ucsb.edu:4000",
+      "SERVICE_FOLDER_COMMAND": "echo $(dirname $(dirname ${localWorkspaceFolder}))/services",
+      "FUNC_RESOLVER_URL": "http://172.17.0.8:4033",
+      "USE_LLM_API": "true"
+    },
+    "workspaceMount": "source=${localWorkspaceFolder}/,target=/shellphish/grammaroomba,type=bind,consistency=cached",
+    "workspaceFolder": "/shellphish/grammaroomba",
+    "mounts": [
+      "source=${localWorkspaceFolder}/../../libs/coveragelib,target=/shellphish/coveragelib,type=bind,consistency=cached",
+      "source=${localWorkspaceFolder}/../../libs,target=/shellphish/libs,type=bind,consistency=cached",
+      "source=${localWorkspaceFolder}/../../services/,target=${localWorkspaceFolder}/../../services/,type=bind,consistency=cached",
+      "source=${localWorkspaceFolder}/../../components/grammar-guy,target=/shellphish/grammar-guy,type=bind,consistency=cached",
+      "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+      "source=/shared/,target=/shared,type=bind,consistency=cached",
+      "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
+    "customizations": {
+      "vscode": {
+        "extensions": [
+      "github.copilot", 
+          "ms-azuretools.vscode-docker",
+          "ms-vscode.vscode-remote-extensionpack",
+          "ms-python.python"
+        ],
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash"
+        }
+      }
+    },
+    "forwardPorts": [
+      8050, 
+      8080, 
+    ]
+  }

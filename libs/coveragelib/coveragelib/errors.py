@@ -1,0 +1,3 @@
+
+class BuddyTracerDiedException(Exception):
+    pass

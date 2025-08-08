@@ -1,0 +1,62 @@
+focus_repo_path: "/src/nginx/"
+language: c
+sanitizer: address
+exit_code: 1
+expected_organizer_significance: 211 # RecognizedSanitizerCrash
+expected_organizer_crash_description: "LibFuzzer Sanitizer crash"
+expected_parser: 'asan'
+expected_summary: 'SUMMARY: AddressSanitizer: heap-buffer-overflow /src/PcapPlusPlus/Packet++/header/TcpLayer.h:235:27 in getTotalSize'
+expected_sanitizer: AddressSanitizer
+expected_crash_type: 'heap-buffer-overflow'
+expected_stack_trace_function_signatures:
+  main:
+    - source: getTotalSize
+    - source: getFirstTLVRecord
+    - source: 'pcpp::TLVRecordReader<pcpp::TcpOption>::getTLVRecord(unsigned int, unsigned char*, unsigned long) const'
+    - source: 'getTcpOption'
+    - source: 'pcpp::TcpLayer::addTcpOptionAfter(pcpp::TcpOptionBuilder const&, pcpp::TcpOptionType)'
+    - source: 'readParsedPacket(pcpp::Packet, pcpp::Layer*)'
+    - source: LLVMFuzzerTestOneInput
+    - source: "fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)"
+    - source: 'fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)'
+    - source: 'fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long))'
+    - source: main
+    - binary: __libc_start_main
+    - binary: _start
+  allocate:
+    - source: 'operator new[](unsigned long)'
+    - source: 'pcpp::Layer::Layer(pcpp::Layer const&)'
+    - source: 'pcpp::TcpLayer::TcpLayer(pcpp::TcpLayer const&)'
+    - source: 'readParsedPacket(pcpp::Packet, pcpp::Layer*)'
+    - source: LLVMFuzzerTestOneInput
+    - source: "fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)"
+    - source: 'fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)'
+    - source: 'fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long))'
+    - source: main
+    - binary: __libc_start_main
+expected_stack_trace_file_names:
+  main:
+    - source: TcpLayer.h
+    - source: TLVData.h
+    - source: TLVData.h
+    - source: TcpLayer.cpp
+    - source: TcpLayer.cpp
+    - source: ReadParsedPacket.h
+    - source: FuzzTarget.cpp
+    - source: FuzzerLoop.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerMain.cpp
+    - binary: libc.so.6
+    - binary: FuzzTarget
+  allocate:
+    - source: asan_new_delete.cpp
+    - source: Layer.cpp
+    - source: TcpLayer.cpp
+    - source: ReadParsedPacket.h
+    - source: FuzzTarget.cpp
+    - source: FuzzerLoop.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerMain.cpp
+    - binary: libc.so.6

@@ -1,0 +1,30 @@
+{% if existing %}
+<existing_model>
+Here is the existing pydantic model which may be outdated from the swagger schema.
+
+```python
+{{ existing }}
+```
+</existing_model>
+{% endif %}
+
+{% for schema_name, content in schema_files.items() %}
+<{{ schema_name }}>
+{{ content }}
+</{{ schema_name }}>
+{% endfor %}
+
+Please output the pydantic code. You can use the following imports to start out:
+
+```python
+from typing import Optional, List, Dict, Literal, Any
+from pydantic import Field, AnyUrl
+from shellphish_crs_utils.models.base import ShellphishBaseModel
+from uuid import UUID
+from enum import Enum
+
+```
+
+<output_format>
+{{ output_format }}
+</output_format>

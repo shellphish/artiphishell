@@ -1,0 +1,6 @@
+{
+    "output": {
+        "link_commands_output": "link_commands.json",
+        "ar_commands_output": "ar_commands.json"
+    }
+} 

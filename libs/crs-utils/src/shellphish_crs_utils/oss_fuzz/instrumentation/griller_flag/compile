@@ -1,0 +1,4 @@
+#!/bin/bash
+
+mkdir -p /grill/bin || true
+clang /grill/griller_prog.bc -o /grill/bin/final_bin $(cat /grill/griller_flags.txt)

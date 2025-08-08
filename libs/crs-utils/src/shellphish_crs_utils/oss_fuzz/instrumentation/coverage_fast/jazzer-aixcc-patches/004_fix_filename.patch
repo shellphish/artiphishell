@@ -1,0 +1,58 @@
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/Driver.java b/src/main/java/com/code_intelligence/jazzer/driver/Driver.java
+index 6902efdc..8c2925b8 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/Driver.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/Driver.java
+@@ -52,6 +52,7 @@ public class Driver {
+       if (file.isFile()){
+         //byte[] data = new byte[1024];
+         String filename = file.getAbsolutePath();
++        String input_name = Paths.get(filename).getFileName().toString();
+         System.out.printf("Tracing seed - %s\n", filename);
+         String inp_name = Paths.get(exec_dir, "seed.exec").toString();
+         try{
+@@ -60,7 +61,7 @@ public class Driver {
+           e.printStackTrace();
+           exit(1);
+         }
+-        FuzzTargetRunner.runOneDir(data,inp_name);
++        FuzzTargetRunner.runOneDir(data,inp_name,input_name);
+       }
+     }
+     // Create the lock file at /shellphish/myroco/.myroco.lock
+@@ -85,7 +86,9 @@ public class Driver {
+         if (kind == ENTRY_MODIFY){
+          //byte[] data = new byte[1024];
+          String filename = dir.resolve(event.context().toString()).toString();
+-         System.out.printf("Tracing seed - %s\n", filename);
++         // use getFileName to get the name of the file reliably
++         String input_name = Paths.get(filename).getFileName().toString();
++         System.out.printf("Tracing seed - %s\n", input_name);
+          String inp_name = Paths.get(exec_dir, "seed.exec").toString();
+          try{
+           data = Files.readAllBytes(Paths.get(filename));
+@@ -93,7 +96,7 @@ public class Driver {
+            e.printStackTrace();
+            exit(1);
+          }
+-         FuzzTargetRunner.runOneDir(data,inp_name);
++         FuzzTargetRunner.runOneDir(data,inp_name,input_name);
+         }
+       }
+       key.reset();
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+index 32b8b6ee..48b021eb 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+@@ -194,10 +194,10 @@ public final class FuzzTargetRunner {
+    * @param inpname
+    * @return
+    */
+-  static int runOneDir(byte[] data,String inpname) {
++  static int runOneDir(byte[] data,String inpname, String input_name) {
+     System.out.println("[PRE-RUN] Initial coverage array lenght : " + CoverageRecorder.getWholeCoverage().length);
+     long startTime = System.nanoTime();
+-    runOne(data,1,inpname);
++    runOne(data,1,input_name);
+     System.out.println("[POST-RUN] Coverage array length : " + CoverageRecorder.getWholeCoverage().length);
+     CoverageRecorder.dumpJacocoCoverage(inpname);
+     long endTime = System.nanoTime();

@@ -1,0 +1,981 @@
+repo_classes:
+  # cp_image_ready: MetadataRepository
+  # targets_with_sources: FilesystemRepository
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  project_metadatas: MetadataRepository
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+
+  fuzzers_started: BlobRepository
+  
+  aflpp_build_artifacts: FilesystemRepository
+  aflpp_cmplog_build_artifacts: {cls: FilesystemRepository, required: false}
+  # aflpp_fuzz_stdout_log: {cls: BlobRepository, required: false}
+  # aflpp_fuzz_stderr_log: {cls: BlobRepository, required: false}
+  
+  ################### OUTPUTS #####################
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  ################# INTERMEDIATES #################
+  
+  # raw_benign_harness_inputs:
+  #   cls: BlobRepository
+  #   required: false
+  # raw_crashing_harness_inputs:
+  #   cls: BlobRepository
+  #   required: false
+
+tasks:
+  aflpp_build:
+    require_success: true
+    timeout:
+      minutes: 180
+
+    priority: 150
+    job_quota:
+      cpu: 0.5
+      mem: "2Gi"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+      
+      # OUTPUTS
+      aflpp_build_artifacts:
+        repo: aflpp_build_artifacts
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation shellphish_aflpp $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          $BUILD_IMAGE_COMMAND
+          $BUILD_IMAGE_COMMAND --build-runner-image
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture {{build_configuration.architecture}} \
+            --sanitizer {{build_configuration.sanitizer}} \
+            --instrumentation shellphish_aflpp \
+            --priority 100 \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          # rsync nautilus grammars
+          mkdir -p "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/grammars/reference
+          rsync -ra /shellphish/libs/nautilus/grammars/reference/ "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/grammars/reference/
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{aflpp_build_artifacts | shquote}}/
+
+          touch /tmp/.nginx_upload
+
+  aflpp_build_cmplog:
+    require_success: true
+    timeout:
+      minutes: 180
+
+    priority: 150
+    job_quota:
+      cpu: 0.5
+      mem: "2Gi"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+      
+      # OUTPUTS
+      aflpp_cmplog_build_artifacts:
+        repo: aflpp_cmplog_build_artifacts
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-aflplusplus
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation shellphish_aflpp $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture {{build_configuration.architecture}} \
+            --sanitizer {{build_configuration.sanitizer}} \
+            --instrumentation shellphish_aflpp \
+            --extra-env=AFL_LLVM_CMPLOG=1 \
+            --priority 100 \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{aflpp_cmplog_build_artifacts | shquote}}/
+
+          touch /tmp/.nginx_upload
+
+
+  
+  aflpp_fuzz:
+    long_running: true
+    cache_dir: /pdt-per-node-cache
+
+    replicable: true
+    scale_replicas: true
+    # We limit how many total jobs for this task can be running at once
+    # It will scale up the node pool until it reaches this number
+    # TODO(FINALDEPLOY): increase this to a very large number!!!
+    max_concurrent_jobs: 3000
+    starting_replicas: 10
+    replicas_per_minute: 20
+    priority_addend: '{{ target_split_metadata.num_harness_infos }}'
+
+    max_spawn_jobs: 200
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # 1250$ of compute
+    # 1.5/2 = 937$ for fuzzing
+    # 234$ per hour for fuzzing
+
+    # ~77 nodes of 64 cpus => let's say 60
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    # To enable us to use the cheaper spot nodes
+    # But we only allow replicas because they may be evicted
+    replica_node_taints:
+      kubernetes.azure.com/scalesetpriority: "spot"
+    replica_node_affinity:
+      kubernetes.azure.com/scalesetpriority: "spot"
+
+
+    job_quota:
+      template: |
+        cpu: {% if replica == 0 %}100m{% else %}1{% endif %}
+        mem: {% if replica == 0 %}.8Gi{% else %}3.6Gi{% endif %}
+
+    timeout:
+      minutes: 3000
+
+    links:
+      # The project_id is provided by the run request
+
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      #project_sources:
+      #  repo: project_analysis_sources
+      #  kind: InputFilepath
+      #  key: build_configuration.project_id
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      # The /src/ /work/ and /out/ directories which will be mounted into the container
+      aflpp_build_artifacts_dir:
+        repo: aflpp_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "aflpp_build_artifacts-{{ harness_info.build_configuration_id }}"
+        use_cache_symlink: true
+
+      aflpp_cmplog_build_artifacts_dir:
+        repo: aflpp_cmplog_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "aflpp_cmplog_build_artifacts-{{ harness_info.build_configuration_id }}"
+        use_cache_symlink: true
+
+      # aflpp_fuzz_stdout:
+      #   repo: aflpp_fuzz_stdout_log
+      #   kind: OutputFilepath
+
+      # aflpp_fuzz_stderr:
+      #   repo: aflpp_fuzz_stderr_log
+      #   kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--shellphish_aflpp"
+        host_mounts:
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+          "/src/": "/tmp/src.{{ harness_info_id }}"
+          "/out/": "/tmp/out.{{ harness_info_id }}"
+          "/work/" : "/tmp/work.{{ harness_info_id }}"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          if [ "$REPLICA_ID" = "0" ]; then
+            echo "🙈  We are replica 0, so we will be very careful not to crash!"
+            while true; do
+              sleep 10
+              sleep infinity
+            done
+          fi
+
+          export SHELLPHISH_HARNESS_INFO_ID={{ harness_info_id | shquote}}
+          export SHELLPHISH_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export SHELLPHISH_PROJECT_ID={{ project_id }}
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ aflpp_build_artifacts_dir | shquote }}/artifacts/
+          export SHELLPHISH_CMPLOG_BUILD_ARTIFACTS_DIR={{ aflpp_cmplog_build_artifacts_dir | shquote }}/artifacts/
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_FUZZER_SYNC_DIR="/shared/fuzzer_sync/${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_DIR"
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME_FULL="{{project_id}}-${JOB_ID}-${REPLICA_ID}"
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME="secondary-$(echo $ARTIPHISHELL_FUZZER_INSTANCE_NAME_FULL | md5sum | cut -d' ' -f1)"
+          echo "secondary-$ARTIPHISHELL_FUZZER_INSTANCE_NAME_FULL" > "$ARTIPHISHELL_FUZZER_SYNC_DIR/$ARTIPHISHELL_FUZZER_INSTANCE_NAME.fullname"
+
+          export ARTIPHISHELL_INTER_HARNESS_SYNC_DIR="/shared/harness_sync/${SHELLPHISH_PROJECT_ID}/${ARTIPHISHELL_PROJECT_NAME}/"
+          mkdir -p "$ARTIPHISHELL_INTER_HARNESS_SYNC_DIR"
+
+          export FUZZING_LANGUAGE=$(yq -r '.language' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export SANITIZER=$(yq -r '.sanitizer' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export FUZZING_ENGINE=$(yq -r '.fuzzing_engine' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # We are going to use a lockfile to ensure that only one instance is copying the data per node
+          LOCKFILE="/src/.rsync.lock"
+          while true; do
+
+            if ( set -o noclobber; echo "$$" > "$LOCKFILE") 2> /dev/null; then
+              trap 'rm -f "$LOCKFILE"; exit $?' INT TERM EXIT
+
+              if [ -f /out/.rsync_complete ]; then
+                # Skip sync if we already have the files for this configuration on this node
+                rm -f "$LOCKFILE"
+                break
+              fi
+
+              # Copy the data over
+              # The target source gets copied over the source in current directory
+              for dir in src work out; do
+                if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+                  rm -rf /$dir/*
+                  rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+                fi
+              done
+              rsync -ra "$SHELLPHISH_CMPLOG_BUILD_ARTIFACTS_DIR"/out/ /out/shellphish_cmplog/
+              touch /out/.rsync_complete
+
+              rm -f "$LOCKFILE"
+              trap - INT TERM EXIT
+              break
+            else
+              sleep 1
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD
+
+          touch /out/aflpp_fuzz_${JOB_ID}_${REPLICA_ID}.stdout.log
+          touch /out/aflpp_fuzz_${JOB_ID}_${REPLICA_ID}.stderr.log
+
+          # Final bash command to run
+          (
+          set -e
+
+          run_fuzzer {{harness_info.cp_harness_name | shquote}}
+
+          if [ $? -eq 0 ]; then
+            touch /out/.run_success
+          fi
+          ) 2> /out/aflpp_fuzz_${JOB_ID}_${REPLICA_ID}.stderr.log | tee /out/aflpp_fuzz_${JOB_ID}_${REPLICA_ID}.stdout.log || true
+
+          echo "===== STDOUT ====="
+          cat /out/aflpp_fuzz_${JOB_ID}_${REPLICA_ID}.stdout.log
+          echo "===== STDERR ====="
+          cat /out/aflpp_fuzz_${JOB_ID}_${REPLICA_ID}.stderr.log
+          echo "=================="
+
+          touch /out/aflpp_fuzz_metadata_${JOB_ID}_${REPLICA_ID}.yaml
+          echo "harness_info_id: {{ harness_info_id }}" >> /out/aflpp_fuzz_metadata_${JOB_ID}_${REPLICA_ID}.yaml
+          echo "harness_name: {{ harness_info.cp_harness_name }}" >> /out/aflpp_fuzz_metadata_${JOB_ID}_${REPLICA_ID}.yaml
+          echo "project_id: {{ project_id }}" >> /out/aflpp_fuzz_metadata_${JOB_ID}_${REPLICA_ID}.yaml
+
+          if [ -f /out/.run_success ]; then
+            echo "run_success: true" >> /out/aflpp_fuzz_metadata_${JOB_ID}_${REPLICA_ID}.yaml
+          else
+            echo "run_success: false" >> /out/aflpp_fuzz_metadata_${JOB_ID}_${REPLICA_ID}.yaml
+          fi
+          echo "FUZZ METADATA: "
+          cat /out/aflpp_fuzz_metadata_${JOB_ID}_${REPLICA_ID}.yaml
+
+  aflpp_fuzz_main_replicant:
+    long_running: true
+    require_success: true
+    cache_dir: /pdt-per-node-cache
+    
+    job_quota:
+      cpu: '500m'
+      mem: "1Gi"
+    resource_limits:
+      cpu: '500m'
+      mem: "3Gi"
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      "support.shellphish.net/allow-fuzzing": "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      "support.shellphish.net/only-fuzzing": "true"
+      "kubernetes.azure.com/scalesetpriority": "spot"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      "support.shellphish.net/only-fuzzing": "true"
+
+    timeout:
+      minutes: 3000
+
+    links:
+      # The project_id is provided by the run request
+
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      #project_sources:
+      #  repo: project_analysis_sources
+      #  kind: InputFilepath
+      #  key: build_configuration.project_id
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      # The /src/ /work/ and /out/ directories which will be mounted into the container
+      aflpp_build_artifacts_dir:
+        repo: aflpp_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "aflpp_build_artifacts-{{ harness_info.build_configuration_id }}"
+        use_cache_symlink: true
+
+
+      aflpp_cmplog_build_artifacts_dir:
+        repo: aflpp_cmplog_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "aflpp_cmplog_build_artifacts-{{ harness_info.build_configuration_id }}"
+        use_cache_symlink: true
+
+    executable:
+      cls: ContainerSet
+      args:
+        privileged: true
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--shellphish_aflpp"
+        host_mounts:
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+          "/src/": "/tmp/src.{{ harness_info_id }}_main"
+          "/out/": "/tmp/out.{{ harness_info_id }}_main"
+        template: |
+          set -x
+          set -e
+
+          export SHELLPHISH_HARNESS_INFO_ID={{ harness_info_id | shquote}}
+          export SHELLPHISH_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export SHELLPHISH_PROJECT_ID={{ project_id }}
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ aflpp_build_artifacts_dir | shquote }}/artifacts/
+          export SHELLPHISH_CMPLOG_BUILD_ARTIFACTS_DIR={{ aflpp_cmplog_build_artifacts_dir | shquote }}/artifacts/
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_FUZZER_SYNC_DIR="/shared/fuzzer_sync/${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_DIR"
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME="main"
+
+          export ARTIPHISHELL_INTER_HARNESS_SYNC_DIR="/shared/harness_sync/${SHELLPHISH_PROJECT_ID}/${ARTIPHISHELL_PROJECT_NAME}/"
+          mkdir -p "$ARTIPHISHELL_INTER_HARNESS_SYNC_DIR"
+
+          export FUZZING_LANGUAGE=$(yq -r '.language' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export SANITIZER=$(yq -r '.sanitizer' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export FUZZING_ENGINE=$(yq -r '.fuzzing_engine' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # We are going to use a lockfile to ensure that only one instance is copying the data per node
+          LOCKFILE="/src/.rsync.lock"
+          while true; do
+            if ( set -o noclobber; echo "$$" > "$LOCKFILE") 2> /dev/null; then
+              trap 'rm -f "$LOCKFILE"; exit $?' INT TERM EXIT
+
+              if [ -f /out/.rsync_complete ]; then
+                # Skip sync if we already have the files for this configuration on this node
+                rm -f "$LOCKFILE"
+                break
+              fi
+
+              # The target source gets copied over the source in current directory
+              for dir in src work out; do
+                if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+                  rm -rf /$dir/*
+                  rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+                fi
+              done
+              rsync -ra "$SHELLPHISH_CMPLOG_BUILD_ARTIFACTS_DIR"/out/ /out/shellphish_cmplog/
+              touch /out/.rsync_complete
+
+              rm -f "$LOCKFILE"
+              trap - INT TERM EXIT
+              break
+            else
+              sleep 1
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD
+
+          touch /out/aflpp_fuzz.stdout.log
+          touch /out/aflpp_fuzz.stderr.log
+
+          (
+          set -e
+
+          run_fuzzer {{harness_info.cp_harness_name | shquote}}
+
+          if [ $? -eq 0 ]; then
+            touch /out/.run_success
+          fi
+          ) 2> /out/aflpp_fuzz.stderr.log | tee /out/aflpp_fuzz.stdout.log || true
+
+          echo "===== STDOUT ====="
+          cat /out/aflpp_fuzz.stdout.log
+          echo "===== STDERR ====="
+          cat /out/aflpp_fuzz.stderr.log
+          echo "=================="
+
+          touch /out/aflpp_fuzz_metadata.yaml
+          echo "harness_info_id: {{ harness_info_id }}" >> /out/aflpp_fuzz_metadata.yaml
+          echo "harness_name: {{ harness_info.cp_harness_name }}" >> /out/aflpp_fuzz_metadata.yaml
+          echo "project_id: {{ project_id }}" >> /out/aflpp_fuzz_metadata.yaml
+
+          if [ -f /out/.run_success ]; then
+            echo "run_success: true" >> /out/aflpp_fuzz_metadata.yaml
+          else
+            echo "run_success: false" >> /out/aflpp_fuzz_metadata.yaml
+          fi
+          echo "FUZZ METADATA: "
+          cat /out/aflpp_fuzz_metadata.yaml
+
+          # If we exit, that's not intended, just come back
+          exit 1
+
+  wait_for_fuzzers_aflpp:
+    long_running: false
+    job_quota:
+      cpu: "1"
+      mem: "1Gi"
+
+    require_success: true
+    failure_ok: true
+
+    priority: 1000
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      # Wait until we have afl artifacts before we schedule this task
+      aflpp_build_artifacts_dir:
+        repo: aflpp_build_artifacts
+        kind: InputId
+        key: harness_info.build_configuration_id
+      
+      aflpp_cmplog_build_artifacts_dir:
+        repo: aflpp_cmplog_build_artifacts
+        kind: InputId
+        key: harness_info.build_configuration_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      fuzzers_started:
+        repo: fuzzers_started
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-aflplusplus
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          sleep 120
+
+          echo "fuzzers_started: true" > {{fuzzers_started}}
+
+
+  aflpp_cross_node_sync:
+    long_running: true
+    require_success: true
+
+    priority: 10000
+    
+    job_quota:
+      cpu: "200m"
+      mem: "0.7Gi"
+    resource_limits:
+      cpu: "200m"
+      mem: "2Gi"
+
+    timeout:
+      minutes: 3000
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+      kubernetes.azure.com/scalesetpriority: "spot"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      # The project_id is provided by the run request
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+
+      #project_sources:
+      #  repo: project_analysis_sources
+      #  kind: InputFilepath
+      #  key: build_configuration.project_id
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+
+    executable:
+      cls: ContainerSet
+      args:
+        privileged: true
+        image: "aixcc-aflplusplus"
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export SHELLPHISH_PROJECT_ID={{ project_id }}
+          export TARGET_SPLIT_METADATA_PATH={{ target_split_metadata | shquote }}
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_INTER_HARNESS_SYNC_DIR="/shared/harness_sync/${SHELLPHISH_PROJECT_ID}/${ARTIPHISHELL_PROJECT_NAME}/"
+          mkdir -p "$ARTIPHISHELL_INTER_HARNESS_SYNC_DIR"
+          export SSH_KEY=/shared/sync-ssh-key
+
+          while true; do
+            yq -r '.harness_infos | to_entries[] | "\(.key) \(.value.cp_harness_name)"' "$TARGET_SPLIT_METADATA_PATH" | while read -r harness_info_id harness_name; do
+              echo "Syncing harness $harness_name with id $harness_info_id"
+  
+              start_time=$(date +%s)
+              export SHELLPHISH_HARNESS_INFO_ID="$harness_info_id"
+              export SHELLPHISH_HARNESS_NAME="$harness_name"
+              export ARTIPHISHELL_HARNESS_NAME="$harness_name"
+              export ARTIPHISHELL_HARNESS_INFO_ID="$harness_info_id"
+              export ARTIPHISHELL_FUZZER_SYNC_DIR="/shared/fuzzer_sync/${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/"
+              mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_DIR"
+  
+              main_node_rsync_shit.sh
+              end_time=$(date +%s)
+              echo "main_node_rsync_shit took $((end_time-start_time)) seconds"
+            done
+
+            echo "Sleeping for 2 minutes"
+            sleep 2m
+          done
+
+  aflpp_fuzz_merge:
+    long_running: true
+    require_success: true
+
+    priority: 10000
+    job_quota:
+      cpu: 0.5
+      mem: "1Gi"
+
+    resource_limits:
+      cpu: "2"
+      mem: "4Gi"
+
+    timeout:
+      minutes: 3000
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      # The project_id is provided by the run request
+
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      benigns_dir:
+        repo: benign_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: benign_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_info_id }}"
+          build_configuration_id: "{{ harness_info.build_configuration_id }}"
+          project_harness_metadata_id: "{{ harness_info.project_harness_metadata_id}}"
+          project_id: "{{ harness_info.project_id }}"
+          project_name: "{{ harness_info.project_name }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          architecture: "{{ harness_info.architecture }}"
+          sanitizer: "{{ harness_info.sanitizer }}"
+          fuzzer: aflplusplus
+      crashes:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_info_id }}"
+          build_configuration_id: "{{ harness_info.build_configuration_id }}"
+          project_harness_metadata_id: "{{ harness_info.project_harness_metadata_id }}"
+          project_id: "{{ harness_info.project_id }}"
+          project_name: "{{ harness_info.project_name }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          architecture: "{{ harness_info.architecture }}"
+          sanitizer: "{{ harness_info.sanitizer }}"
+          fuzzer: aflplusplus
+
+      # aflpp_fuzz_stdout:
+      #   repo: aflpp_fuzz_stdout_log
+      #   kind: OutputFilepath
+
+      # aflpp_fuzz_stderr:
+      #   repo: aflpp_fuzz_stderr_log
+      #   kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-aflplusplus
+        host_mounts:
+          "/shared/": "/shared/"
+          "/src/": "/tmp/src.{{ harness_info_id }}_merge"
+          "/out/": "/tmp/out.{{ harness_info_id }}_merge"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_BUILD_CONFIGURATION_ID={{ harness_info.build_configuration_id | shquote }}
+          export ARTIPHISHELL_HARNESS_BINARY_PATH={{ harness_info.cp_harness_binary_path | shquote }}
+          export SANITIZER_NAME={{ harness_info.sanitizer | shquote }}
+          export ARCHITECTURE={{ harness_info.architecture | shquote }}
+
+          export BENIGNS_DIR={{ benigns_dir | shquote }}
+          export CRASHES_DIR={{ crashes | shquote }}
+
+          /shellphish/aflpp/run_scripts/run_merge.sh

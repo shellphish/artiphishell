@@ -1,0 +1,7 @@
+import java
+
+from
+    VarAccess va
+where
+    va.getEnclosingCallable().toString() = "{{ function_name }}"
+select va, va.getType().toString() as type, va.getLocation() as location

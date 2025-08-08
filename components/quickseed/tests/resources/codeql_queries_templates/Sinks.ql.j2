@@ -1,0 +1,19 @@
+import java
+import semmle.code.java.frameworks.javaee.ejb.EJBRestrictions
+
+predicate is_target_function(Callable c) { 
+    {% for i, full_name in enumerate(sink_methods) %}
+     {% if i > 0 %}or {% endif %}c.getQualifiedName().matches("{{ full_name }}")
+    {% endfor %}
+    {% if sanitizer_name == "CommandInjection" %}
+    or c instanceof RuntimeExecMethod
+    {% endif %}
+}
+
+from Callable c
+where
+  is_target_function(c)
+select
+  c.getQualifiedName() as sink_qualified_name,
+  c.getLocation() as sink_location,
+  "{{ sanitizer_name }}"

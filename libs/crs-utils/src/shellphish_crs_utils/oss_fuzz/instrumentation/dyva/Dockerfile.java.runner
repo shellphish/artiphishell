@@ -1,0 +1,18 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE}
+
+RUN apt-get update && apt-get install -y net-tools
+# COPY jazzer_replacement /jazzer_replacement
+# COPY replace.sh /replace.sh
+
+# RUN chmod +x /replace.sh
+# RUN /replace.sh
+RUN mkdir -p /shellphish
+WORKDIR /shellphish
+ADD https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.24.0/jazzer-linux.tar.gz jazzer-linux.tar.gz
+RUN tar -xzf jazzer-linux.tar.gz jazzer_standalone.jar
+# COPY jazzer_standalone.jar /shellphish/
+
+COPY pyjdb /pyjdb
+RUN python -m pip install -e /pyjdb
+WORKDIR /out

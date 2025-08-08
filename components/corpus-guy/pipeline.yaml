@@ -1,0 +1,319 @@
+repo_classes:
+  ############################# DEPS   ⬇ ##############################
+  codeql_db_ready: MetadataRepository
+  ############################# INPUTS ⬇ ##############################
+  crs_tasks: MetadataRepository
+  crs_tasks_diffs: BlobRepository
+  crs_tasks_cancelled: MetadataRepository
+  canonical_build_artifacts: FilesystemRepository
+  coverage_build_artifacts: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  ##################
+  project_metadatas: MetadataRepository
+  project_harness_infos: MetadataRepository
+  target_split_metadatas: MetadataRepository
+
+
+  ############################# OUTPUTS ⬆ #############################
+  likely_input_formats_corpuses: FilesystemRepository
+  likely_input_formats_corpus_diffs: FilesystemRepository
+  likely_input_formats_dictionaries: FilesystemRepository
+  likely_input_formats_grammars: FilesystemRepository
+  likely_input_formats_metadatas: MetadataRepository
+
+tasks:
+  corpus_diff_splitter:
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      project_diff:
+        repo: crs_tasks_diffs
+        kind: InputFilepath
+        
+      corpus_output_diffs:
+        repo: likely_input_formats_corpuses
+        kind: OutputFilepath
+    
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-corpusguy"
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          # IMPORTANT: ENABLE BEFORE FINAL SUBMISSION
+          export CORPUSGUY_SYNC_TO_FUZZER=${CORPUSGUY_SYNC_TO_FUZZER:-1}
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          CRS_TASK_PATH={{ crs_task | shquote }}
+
+          export DIFF_FILE={{ project_diff | shquote }}
+          export OUTPUT_CORPUS_PATH={{ corpus_output_diffs | shquote }}
+
+          export ARTIPHISHELL_FUZZER_SYNC_BASE_DIR="/shared/fuzzer_sync"
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+
+          # split all diff chunks and write them as seeds to OUTPUT_CORPUS_PATH
+          python /shellphish/corpusguy/run_diff_splitter.py
+
+          CORPUSGUY_SYNC_TO_FUZZER=$(echo "$CORPUSGUY_SYNC_TO_FUZZER" | tr '[:upper:]' '[:lower:]')
+          if [ "${CORPUSGUY_SYNC_TO_FUZZER}" = "1" ] || [ "${CORPUSGUY_SYNC_TO_FUZZER}" = "true" ] || [ "${CORPUSGUY_SYNC_TO_FUZZER}" = "t" ] || [ "${CORPUSGUY_SYNC_TO_FUZZER}" = "yes" ] || [ "${CORPUSGUY_SYNC_TO_FUZZER}" = "y" ]; then
+            # then loop through all harness dirs and copy the seeds to the harness dirs
+            for fuzzer_sync in ${ARTIPHISHELL_FUZZER_SYNC_BASE_DIR}/${ARTIPHISHELL_PROJECT_NAME}-*; do
+              export ARTIPHISHELL_FUZZER_SYNC_QUEUE="${fuzzer_sync}/sync-corpusguy/queue"
+              mkdir -p "${ARTIPHISHELL_FUZZER_SYNC_QUEUE}"
+              echo "Copying corpus to ${ARTIPHISHELL_FUZZER_SYNC_QUEUE}"
+              rsync -a "${OUTPUT_CORPUS_PATH}/" "${ARTIPHISHELL_FUZZER_SYNC_QUEUE}/"
+            done
+          fi
+
+  corpus_inference_llm:
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    links:
+      project_harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+      project_harness_info_path:
+        repo: project_harness_infos
+        kind: InputFilepath
+      project_harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_info.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: project_harness_info.project_id
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+        key: project_harness_info.project_id
+
+      canonical_build_artifact:
+        repo: canonical_build_artifacts
+        kind: InputFilepath
+        key: project_harness_info.project_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: project_harness_info.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_info.project_id
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: project_harness_info.project_id
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: project_harness_info.project_id
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: project_harness_info.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_info.project_id
+
+      # keyed on project_harness_info
+      corpus_output:
+        repo: likely_input_formats_corpuses
+        kind: OutputFilepath
+      dictionaries_output:
+        repo: likely_input_formats_dictionaries
+        kind: OutputFilepath
+      grammars_output:
+        repo: likely_input_formats_grammars
+        kind: OutputFilepath
+      metadata_output:
+        repo: likely_input_formats_metadatas
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-corpusguy"
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          # IMPORTANT: ENABLE BEFORE FINAL SUBMISSION
+          export CORPUSGUY_SYNC_TO_FUZZER=${CORPUSGUY_SYNC_TO_FUZZER:-1}
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          CRS_TASK_PATH={{ crs_task | shquote }}
+
+          # IMPORTANT: TODO: FIX THE FINAL NUMBER BEFORE SUBMISSION
+          export LANGUAGE={{ project_metadata.language | shquote }}
+          if [ "$LANGUAGE" = "java" ] || [ "$LANGUAGE" = "jvm" ]; then
+            export ARTIPHISHELL_MAX_SEEDS_TOTAL=1000
+          elif [ "$LANGUAGE" = "c" ] || [ "$LANGUAGE" = "cpp" ] || [ "$LANGUAGE" = "c++" ]; then
+            export ARTIPHISHELL_MAX_SEEDS_TOTAL=1000
+          else
+            echo "----------------------------------------------------------------------"
+            echo "Error: Unsupported language: $LANGUAGE"
+            echo "Error: Unsupported language: $LANGUAGE"
+            echo "Error: Unsupported language: $LANGUAGE"
+            echo "----------------------------------------------------------------------"
+            exit 1
+          fi
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_PROJECT_ID={{ project_harness_info.project_id | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ project_harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ project_harness_info_id | shquote }}
+
+          export FUNCTIONS_INDEX_PATH={{ functions_index | shquote }}
+          export FUNCTIONS_JSONS_DIR_PATH={{ functions_jsons_dir | shquote }}
+
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export HARNESS_INFO_PATH={{ project_harness_info_path | shquote }}
+          export CANONICAL_BUILD_ARTIFACT={{ canonical_build_artifact | shquote }}
+
+          export OUTPUT_CORPUS_PATH={{ corpus_output | shquote }}
+          export OUTPUT_DICTIONARIES_PATH={{ dictionaries_output | shquote }}
+          export OUTPUT_GRAMMARS_PATH={{ grammars_output | shquote }}
+          export OUTPUT_METADATA_PATH={{ metadata_output | shquote }}
+
+          #######################################################################
+
+          export ARTIPHISHELL_PROJECT_NAME=$ARTIPHISHELL_PROJECT_NAME
+          export ARTIPHISHELL_PROJECT_ID=$ARTIPHISHELL_PROJECT_ID
+          export ARTIPHISHELL_HARNESS_NAME=$ARTIPHISHELL_HARNESS_NAME
+          export ARTIPHISHELL_HARNESS_INFO_ID=$ARTIPHISHELL_HARNESS_INFO_ID
+          export TARGET_SPLIT_METADATA_PATH={{ target_split_metadata | shquote }}
+          /shellphish/corpusguy/run_inference_llm.sh
+          
+
+  corpus_kickstart:
+    job_quota:
+      cpu: "1"
+      mem: "4Gi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: project_harness_info.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_info.project_id
+
+      project_harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+      project_harness_info_path:
+        repo: project_harness_infos
+        kind: InputFilepath
+      project_harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+
+      canonical_build_artifact:
+        repo: canonical_build_artifacts
+        kind: InputFilepath
+        key: project_harness_info.project_id
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_info.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: project_harness_info.project_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: project_harness_info.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_info.project_id
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ati
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "aixcc-corpusguy"
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          # IMPORTANT: ENABLE BEFORE FINAL SUBMISSION
+          export CORPUSGUY_SYNC_TO_FUZZER=${CORPUSGUY_SYNC_TO_FUZZER:-1}
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          CRS_TASK_PATH={{ crs_task | shquote }}
+
+          # IMPORTANT: TODO: FIX THE FINAL NUMBER BEFORE SUBMISSION
+          export LANGUAGE={{ project_metadata.language | shquote }}
+          if [ "$LANGUAGE" = "java" ] || [ "$LANGUAGE" = "jvm" ]; then
+            export ARTIPHISHELL_MAX_SEEDS_TOTAL=1000
+          elif [ "$LANGUAGE" = "c" ] || [ "$LANGUAGE" = "cpp" ] || [ "$LANGUAGE" = "c++" ]; then
+            export ARTIPHISHELL_MAX_SEEDS_TOTAL=1000
+          else
+            echo "----------------------------------------------------------------------"
+            echo "Error: Unsupported language: $LANGUAGE"
+            echo "Error: Unsupported language: $LANGUAGE"
+            echo "Error: Unsupported language: $LANGUAGE"
+            echo "----------------------------------------------------------------------"
+            exit 1
+          fi
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_PROJECT_ID={{ project_harness_info.project_id | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ project_harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ project_harness_info_id | shquote }}
+          export CANONICAL_BUILD_ARTIFACT={{ canonical_build_artifact | shquote }}
+
+          #######################################################################
+
+          export ARTIPHISHELL_PROJECT_NAME=$ARTIPHISHELL_PROJECT_NAME
+          export ARTIPHISHELL_PROJECT_ID=$ARTIPHISHELL_PROJECT_ID
+          export ARTIPHISHELL_HARNESS_NAME=$ARTIPHISHELL_HARNESS_NAME
+          export ARTIPHISHELL_HARNESS_INFO_ID=$ARTIPHISHELL_HARNESS_INFO_ID
+          export TARGET_SPLIT_METADATA_PATH={{ target_split_metadata | shquote }}
+          /shellphish/corpusguy/run_kickstart.sh

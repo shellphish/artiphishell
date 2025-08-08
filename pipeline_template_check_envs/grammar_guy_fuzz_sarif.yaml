@@ -1,0 +1,19 @@
+crs_task:
+  concurrent_target_num: 4
+  type: 'full'
+harness_info:
+  project_id: adsf
+  project_name: nginx
+  sanitizer: address
+  architecture: x86_64
+  cp_harness_name: pov_harness
+
+seeds_to_triage:
+  cokeyed:
+    harness_info_id: 1234
+    project_id: asdf
+    project_name: nginx
+    sanitizer: address
+    architecture: x86_64
+
+sarif_meta:

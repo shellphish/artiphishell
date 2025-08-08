@@ -1,0 +1,54 @@
+focus_repo_path: "/src/sqlite3/"
+language: c
+sanitizer: memory
+exit_code: 1
+expected_organizer_significance: 211 # RecognizedSanitizerCrash
+expected_organizer_crash_description: "LibFuzzer Sanitizer crash"
+expected_parser: 'asan'
+expected_summary: 'SUMMARY: MemorySanitizer: use-of-uninitialized-value gzwrite.o in gz_comp'
+expected_sanitizer: MemorySanitizer
+expected_crash_type: 'use-of-uninitialized-value'
+expected_stack_trace_function_signatures:
+  main:
+    - binary: gz_comp
+    - binary: gzclose_w
+    - source: xmlGzfileClose
+    - source: xmlOutputBufferClose
+    - source: xmlSaveFormatFileEnc
+    - source: parseAndPrintFile
+    - source: xmllintMain
+    - source: LLVMFuzzerTestOneInput
+    - source: "fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)"
+    - source: 'fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)'
+    - source: 'fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long))'
+    - source: main
+    - binary: __libc_start_main
+    - binary: _start
+  uninitialized-value-stored:
+    - source: __msan_memcpy
+    - binary: deflate.part.0
+  uninitialized-value-creation:
+    - source: malloc
+    - binary: deflateInit2_
+expected_stack_trace_file_names:
+  main:
+    - binary: gzwrite.o
+    - binary: lint
+    - source: xmlIO.c
+    - source: xmlIO.c
+    - source: xmlsave.c
+    - source: xmllint.c
+    - source: xmllint.c
+    - source: lint.c
+    - source: FuzzerLoop.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerMain.cpp
+    - binary: libc.so.6
+    - binary: lint
+  uninitialized-value-stored:
+    - source: msan_interceptors.cpp
+    - binary: deflate.o
+  uninitialized-value-creation:
+    - source: msan_interceptors.cpp
+    - binary: lint

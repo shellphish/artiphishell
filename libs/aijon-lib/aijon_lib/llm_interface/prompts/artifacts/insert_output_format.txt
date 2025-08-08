@@ -1,0 +1,15 @@
+After your thinking block, print out "RESULT" on its own line and then on future lines provide the instrumented code using the following format. Your output after "RESULT" should consist only of the inserted annotations in the correct format, and should not duplicate or rehash any of the work you did in the instrumentation strategy section or contain any reasoning. Like so:
+
+```
+RESULT
++ LINE_NUMBER_TO_INSERT_AFTER IJON_XXX(YYY, ZZZ, ...)
++ LINE_NUMBER_TO_INSERT_AFTER IJON_XXX(YYY, ZZZ, ...)
++ LINE_NUMBER_TO_INSERT_AFTER IJON_XXX(YYY, ZZZ, ...)
+```
+
+LINE_NUMBER_TO_INSERT_AFTER is whatever line number the macro should be inserted after. It should be a number followed by a space (e.g., `+ 13 ` to insert the macro after line 13. Keep all line numbers accurate to the original provided code; we'll handle any line drift as a result of changes.
+
+The annotation arguments (YYY, ZZZ, and so on) should be as simple as possible, ideally just variable accesses. DO NOT CALL FUNCTIONS; THEY WILL BE DISCARDED.
+
+Ensure that the syntax is correct: the + prefix, then a space, then a number, a space, and the IJON annotation call. No preamble, reasoning, etc. DO NOT SKIP THE SPACES OR MY PARSING WILL FAIL. `+ 10` is great, `+10` is USELESS AND DISGRACEFUL
+

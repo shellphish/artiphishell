@@ -1,0 +1,49 @@
++ FUZZER=lint
++ shift
++ '[' '!' -v TESTCASE ']'
++ '[' '!' -f /work/pov_input ']'
++ export RUN_FUZZER_MODE=interactive
++ RUN_FUZZER_MODE=interactive
++ export FUZZING_ENGINE=libfuzzer
++ FUZZING_ENGINE=libfuzzer
++ export SKIP_SEED_CORPUS=1
++ SKIP_SEED_CORPUS=1
++ run_fuzzer lint /work/pov_input
+vm.mmap_rnd_bits = 28
+/out/lint -rss_limit_mb=2560 -timeout=25 /work/pov_input < /dev/null
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 2129874967
+INFO: Loaded 1 modules   (52706 inline 8-bit counters): 52706 [0x555555d387b0, 0x555555d45592), 
+INFO: Loaded 1 PC tables (52706 PCs): 52706 [0x555555d45598,0x555555e133b8), 
+/out/lint: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+Uninitialized bytes in write at offset 0 inside [0x724000000000, 42)
+==16==WARNING: MemorySanitizer: use-of-uninitialized-value
+    #0 0x555555c66c09 in gz_comp gzwrite.o
+    #1 0x555555c67afd in gzclose_w (/out/lint+0x713afd)
+    #2 0x555555992fe1 in xmlGzfileClose /src/libxml2/xmlIO.c:935:13
+    #3 0x55555598b109 in xmlOutputBufferClose /src/libxml2/xmlIO.c:1527:20
+    #4 0x555555a0c2a5 in xmlSaveFormatFileEnc /src/libxml2/xmlsave.c:2927:11
+    #5 0x55555581d1ed in parseAndPrintFile /src/libxml2/fuzz/./../xmllint.c:2613:3
+    #6 0x55555580c49e in xmllintMain /src/libxml2/fuzz/./../xmllint.c:3730:17
+    #7 0x55555580c49e in LLVMFuzzerTestOneInput /src/libxml2/fuzz/lint.c:206:5
+    #8 0x5555556fc210 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #9 0x5555556e7485 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #10 0x5555556ecf1f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #11 0x5555557181c2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #12 0x7ffff7c3a082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+    #13 0x5555556df66d in _start (/out/lint+0x18b66d)
+
+DEDUP_TOKEN: gz_comp--gzclose_w--xmlGzfileClose
+  Uninitialized value was stored to memory at
+    #0 0x55555579f3ad in __msan_memcpy /src/llvm-project/compiler-rt/lib/msan/msan_interceptors.cpp:1729:3
+    #1 0x555555c6b56d in deflate.part.0 deflate.o
+
+DEDUP_TOKEN: __msan_memcpy--deflate.part.0
+  Uninitialized value was created by a heap allocation
+    #0 0x5555557a96a2 in malloc /src/llvm-project/compiler-rt/lib/msan/msan_interceptors.cpp:1021:3
+    #1 0x555555c6c966 in deflateInit2_ (/out/lint+0x718966)
+
+DEDUP_TOKEN: __interceptor_malloc--deflateInit2_
+SUMMARY: MemorySanitizer: use-of-uninitialized-value gzwrite.o in gz_comp
+Exiting

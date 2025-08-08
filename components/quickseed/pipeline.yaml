@@ -1,0 +1,630 @@
+repo_classes:
+  ###### INPUTS ######
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks_analysis_sources: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  project_metadatas: { cls: MetadataRepository }
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_indices: BlobRepository
+  coverage_build_artifacts: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  debug_build_artifacts: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  codeql_db_ready: MetadataRepository
+  codeswipe_rankings: BlobRepository
+  quickseed_codeql_reports: BlobRepository
+  delta_mode_tasks: MetadataRepository
+  crs_tasks: MetadataRepository
+  java_crs_tasks: MetadataRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+  full_mode_tasks: MetadataRepository
+  sarif_reports: BlobRepository
+  sarif_metadatas: MetadataRepository
+  codeql_analysis_ready: MetadataRepository
+  sarif_heartbeat_paths: MetadataRepository
+
+  codeswipe_rankings: BlobRepository
+  target_split_metadatas: MetadataRepository
+  # ###### Intermediates ######
+  # aggregated_harness_infos: MetadataRepository
+  # aggregated_build_configurations: MetadataRepository
+
+  ###### OUTPUTS ######
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  quickseed_log: FilesystemRepository
+  sarif_retry_metadatas: MetadataRepository
+  
+  ###### This is only for CI backup purposes ######
+  quickseed_path_backup: { cls: BlobRepository, required: false }
+  quickseed_crashing_seed_backup: {cls: FilesystemRepository, compress_backend: True, compress_backup: True, required: false}
+
+tasks:
+  quick_seed:
+    priority: 100
+    require_success: true
+    job_quota:
+      cpu: 4
+      mem: 12Gi
+    # Make sure QuickSeed work without coverage report
+
+    links:
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+
+      java_crs_tasks:
+        repo: java_crs_tasks
+        kind: InputMetadata
+
+      aggregated_harness_info_meta:
+        repo: target_split_metadatas
+        kind: InputMetadata
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+      
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+
+      
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+
+      debug_build_artifacts:
+        repo: debug_build_artifacts
+        kind: StreamingInputFilepath
+
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      crs_tasks_oss_fuzz_repos:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      quickseed_codeql_report:
+        repo: quickseed_codeql_reports
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      full_mode_tasks:
+        repo: full_mode_tasks
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+        key: crs_task.pdt_task_id
+
+      # Backup
+      quickseed_path_backup:
+        repo: quickseed_path_backup
+        kind: OutputFilepath
+
+      crashing_seed_backup:
+        repo: quickseed_crashing_seed_backup
+        kind: OutputFilepath
+
+      # Outputs
+      quickseed_log:
+        repo: quickseed_log
+        kind: OutputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: quickseed
+      codeswipe_ranking:
+        repo: codeswipe_rankings
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-quickseed
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export OSS_FUZZ_REPO={{ crs_tasks_oss_fuzz_repos | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          # export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export COVERAGE_BUILD_ARTIFACTS={{ coverage_build_artifacts | shquote }}
+          export DEBUG_BUILD_ARTIFACTS={{ debug_build_artifacts.main_dir | shquote }}
+          export DEBUG_BUILD_ARTIFACTS_LOCKS={{ debug_build_artifacts.lock_dir | shquote }}
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export QUICKSEED_CODEQL_REPORT={{ quickseed_codeql_report | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+          export QUICKSEED_LOG={{ quickseed_log | shquote }}
+          export QUICKSEED_PATH_BACKUP_REPORT={{ quickseed_path_backup | shquote }}
+          export QUICKSEED_CRASHING_SEED_BACKUP={{ crashing_seed_backup | shquote }}
+          export QUICKSEED_CODESWIPE_REPORT={{ codeswipe_ranking | shquote }}
+
+          echo "===================== COPY FROM DG ====================="
+          sleep 5
+          
+          while [ "$(ls -A "$DEBUG_BUILD_ARTIFACTS_LOCKS")" ]; do
+              echo "Waiting for DEBUG_BUILD_ARTIFACTS_LOCKS to become empty..."
+              sleep 5  # sleep for 5 seconds before checking again
+          done
+
+          echo "This is in the DEBUG locked dir"
+          ls -la $DEBUG_BUILD_ARTIFACTS_LOCKS
+          echo "This is in the DEBUG main dir"
+          ls -la $DEBUG_BUILD_ARTIFACTS
+          DEBUG_BUILD_ARTIFACTS=$(find $DEBUG_BUILD_ARTIFACTS -mindepth 1 -maxdepth 1 | sort | head -n 1)
+          echo "DEBUG_BUILD_ARTIFACTS SET TO: $DEBUG_BUILD_ARTIFACTS"
+          echo "====================================================="
+
+          ./scripts/run_quickseed.sh
+
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+          set +e
+          if [ -f /tmp/.pdt_upload_lock ]; then
+              echo "Upload lock file exists, waiting for it to be removed..."
+              for i in $(seq 1 60); do
+                  if [ ! -f /tmp/.pdt_upload_lock ]; then
+                      echo "Upload lock file removed after $i seconds"
+                      break
+                  fi
+                  sleep 5
+              done
+              if [ -f /tmp/.pdt_upload_lock ]; then
+                  echo "Upload lock file still exists after 5 minutes, proceeding anyway"
+              fi
+          fi
+
+  quick_seed_delta:
+    priority: 100
+    require_success: true
+    job_quota:
+      cpu: 4
+      mem: 12Gi
+    # Make sure QuickSeed work without coverage report
+
+    links:
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+      
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+
+      java_crs_tasks:
+        repo: java_crs_tasks
+        kind: InputMetadata
+
+      aggregated_harness_info_meta:
+        repo: target_split_metadatas
+        kind: InputMetadata
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+      
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+
+      
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+
+      debug_build_artifacts:
+        repo: debug_build_artifacts
+        kind: StreamingInputFilepath
+
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      crs_tasks_oss_fuzz_repos:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      quickseed_codeql_report:
+        repo: quickseed_codeql_reports
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      commit_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      delta_mode_tasks:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+      
+      codeswipe_ranking:
+        repo: codeswipe_rankings
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+        key: crs_task.pdt_task_id
+      # Backup
+      quickseed_path_backup:
+        repo: quickseed_path_backup
+        kind: OutputFilepath
+
+      # Outputs
+      quickseed_log:
+        repo: quickseed_log
+        kind: OutputFilepath
+      crashing_seed_backup:
+        repo: quickseed_crashing_seed_backup
+        kind: OutputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: quickseed
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-quickseed
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ java_crs_tasks.concurrent_target_num | default('1') }}
+
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export OSS_FUZZ_REPO={{ crs_tasks_oss_fuzz_repos | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export COVERAGE_BUILD_ARTIFACTS={{ coverage_build_artifacts | shquote }}
+          export DEBUG_BUILD_ARTIFACTS={{ debug_build_artifacts.main_dir | shquote }}
+          export DEBUG_BUILD_ARTIFACTS_LOCKS={{ debug_build_artifacts.lock_dir | shquote }}
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export QUICKSEED_CODEQL_REPORT={{ quickseed_codeql_report | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+          export COMMIT_FUNCTIONS_JSONS_DIR={{ commit_functions_jsons_dir | shquote }}
+          export QUICKSEED_LOG={{ quickseed_log | shquote }}
+          export QUICKSEED_PATH_BACKUP_REPORT={{ quickseed_path_backup | shquote }}
+          export QUICKSEED_CRASHING_SEED_BACKUP={{ crashing_seed_backup | shquote }}
+          export QUICKSEED_CODESWIPE_REPORT={{ codeswipe_ranking | shquote }}
+
+          echo "===================== COPY FROM DG ====================="
+          sleep 5
+          
+          while [ "$(ls -A "$DEBUG_BUILD_ARTIFACTS_LOCKS")" ]; do
+              echo "Waiting for DEBUG_BUILD_ARTIFACTS_LOCKS to become empty..."
+              sleep 5  # sleep for 5 seconds before checking again
+          done
+
+          echo "This is in the DEBUG locked dir"
+          ls -la $DEBUG_BUILD_ARTIFACTS_LOCKS
+          echo "This is in the DEBUG main dir"
+          ls -la $DEBUG_BUILD_ARTIFACTS
+          DEBUG_BUILD_ARTIFACTS=$(find $DEBUG_BUILD_ARTIFACTS -mindepth 1 -maxdepth 1 | sort | head -n 1)
+          echo "DEBUG_BUILD_ARTIFACTS SET TO: $DEBUG_BUILD_ARTIFACTS"
+          echo "====================================================="
+
+          ./scripts/run_quickseed.sh
+          
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+          set +e
+          if [ -f /tmp/.pdt_upload_lock ]; then
+              echo "Upload lock file exists, waiting for it to be removed..."
+              for i in $(seq 1 60); do
+                  if [ ! -f /tmp/.pdt_upload_lock ]; then
+                      echo "Upload lock file removed after $i seconds"
+                      break
+                  fi
+                  sleep 5
+              done
+              if [ -f /tmp/.pdt_upload_lock ]; then
+                  echo "Upload lock file still exists after 5 minutes, proceeding anyway"
+              fi
+          fi
+
+  quick_seed_sarif:
+    priority: 100
+    require_success: true
+    job_quota:
+      cpu: 4
+      mem: 8Gi
+    # Make sure QuickSeed work without coverage report
+
+    links:   
+      sarif_report:
+        repo: sarif_reports
+        kind: InputFilepath
+      
+      sarif_meta:
+        repo: sarif_metadatas
+        kind: InputMetadata
+
+      sarif_meta_path:
+        repo: sarif_metadatas
+        kind: InputFilepath
+      
+      sarif_heartbeat_path:
+        repo: sarif_heartbeat_paths
+        kind: InputFilepath
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+      
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: sarif_meta.pdt_task_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      java_crs_tasks:
+        repo: java_crs_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      aggregated_harness_info_meta:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+
+      debug_build_artifacts:
+        repo: debug_build_artifacts
+        kind: StreamingInputFilepath
+
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      crs_tasks_oss_fuzz_repos:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      quickseed_log:
+        repo: quickseed_log
+        kind: OutputFilepath
+
+      sarif_retry_metadata:
+        repo: sarif_retry_metadatas
+        kind: OutputFilepath
+        content_keyed_md5: true
+      
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          generated_by_sarif: "{{ sarif_meta.sarif_id | shquote }}"
+          fuzzer: quickseed
+
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-quickseed
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ java_crs_tasks.concurrent_target_num | default('1') }}
+          
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export OSS_FUZZ_REPO={{ crs_tasks_oss_fuzz_repos | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export COVERAGE_BUILD_ARTIFACTS={{ coverage_build_artifacts | shquote }}
+          export DEBUG_BUILD_ARTIFACTS={{ debug_build_artifacts.main_dir | shquote }}
+          export DEBUG_BUILD_ARTIFACTS_LOCKS={{ debug_build_artifacts.lock_dir | shquote }}
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+          export SARIF_REPORT={{ sarif_report | shquote }}
+          export SARIF_METADATA_PATH={{ sarif_meta_path | shquote }}
+          export QUICKSEED_LOG={{ quickseed_log | shquote }}
+          export SARIF_RETRY_METADATA={{ sarif_retry_metadata | shquote }}
+
+
+          echo "===================== COPY FROM DG ====================="
+          sleep 5
+          
+          while [ "$(ls -A "$DEBUG_BUILD_ARTIFACTS_LOCKS")" ]; do
+              echo "Waiting for DEBUG_BUILD_ARTIFACTS_LOCKS to become empty..."
+              sleep 5  # sleep for 5 seconds before checking again
+          done
+
+          echo "This is in the DEBUG locked dir"
+          ls -la $DEBUG_BUILD_ARTIFACTS_LOCKS
+          echo "This is in the DEBUG main dir"
+          ls -la $DEBUG_BUILD_ARTIFACTS
+          DEBUG_BUILD_ARTIFACTS=$(find $DEBUG_BUILD_ARTIFACTS -mindepth 1 -maxdepth 1 | sort | head -n 1)
+          echo "DEBUG_BUILD_ARTIFACTS SET TO: $DEBUG_BUILD_ARTIFACTS"
+          echo "====================================================="
+
+          ./scripts/run_quickseed.sh
+          
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+          set +e
+          if [ -f /tmp/.pdt_upload_lock ]; then
+              echo "Upload lock file exists, waiting for it to be removed..."
+              for i in $(seq 1 60); do
+                  if [ ! -f /tmp/.pdt_upload_lock ]; then
+                      echo "Upload lock file removed after $i seconds"
+                      break
+                  fi
+                  sleep 5
+              done
+              if [ -f /tmp/.pdt_upload_lock ]; then
+                  echo "Upload lock file still exists after 5 minutes, proceeding anyway"
+              fi
+          fi

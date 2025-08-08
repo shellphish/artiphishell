@@ -1,0 +1,13 @@
+rules:
+  - id: jazzer-strings
+    patterns:
+      - pattern-either:
+          # Case-insensitive regex for Jazzer
+          - pattern-regex: "(?i)jazze.*"
+    message: "[jazzer string] found. Severity infinite!"
+    severity: ERROR
+    metadata:
+      cwe: jazzer
+      vuln_type: jazzer
+    languages:
+    - generic

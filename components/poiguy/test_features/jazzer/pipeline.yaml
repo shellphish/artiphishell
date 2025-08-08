@@ -1,0 +1,19 @@
+repo_classes: 
+  crs_tasks_cancelled: MetadataRepository
+  target_metadatas: MetadataRepository
+  harness_infos: MetadataRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  points_of_interest: MetadataRepository
+
+imports:
+  poiguy_jazzer:
+    path: ../../pipeline_poiguy_jazzer.yaml
+    repos: 
+      crs_tasks_cancelled: crs_tasks_cancelled
+      target_metadatas: target_metadatas
+      harness_infos: harness_infos
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+
+      points_of_interest: points_of_interest
+  

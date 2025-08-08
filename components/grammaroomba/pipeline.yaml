@@ -1,0 +1,243 @@
+repo_classes:
+  ##################### INPUTS #####################
+  project_harness_infos: MetadataRepository
+  project_harness_only_metadatas: MetadataRepository
+  project_metadatas: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  coverage_build_artifacts: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks: MetadataRepository
+  commit_functions_indices: BlobRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+  target_split_metadatas: MetadataRepository
+
+  ##################### INTERMEDIATES #####################
+  event_logs: { "cls": "MetadataRepository", "required": false }
+  roomba_event_logs: { "cls": "MetadataRepository", "required": false }
+
+tasks:
+  grammarroomba:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    max_spawn_jobs: 4
+    # priority: 100
+    # cache_dir: /pdt-per-node-cache
+    # replicable: true
+    # starting_replicas: 1
+    # replicas_per_minute: 1
+    # max_replicas: 1
+    # max_concurrent_jobs: 5
+    # priority_addend: '{{ target_split_metadata.num_harness_infos }}'
+    # TODO(FINALDEPLOY)
+    # Avoid spamming pull requests when we launch many instances of this task
+    # wait_for_image_pull: true
+
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    require_success: true
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      project_harness_metadata: # can only be dereferenced as project_harness_metadata.* because it is interpreted as inputmetadata and metadatarepo
+        repo: project_harness_only_metadatas
+        kind: InputMetadata
+      project_harness_metadata_fp:
+        repo: project_harness_only_metadatas
+        kind: InputFilepath
+      project_harness_metadata_id:
+        repo: project_harness_only_metadatas
+        kind: InputId
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: project_harness_metadata.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_metadata.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: project_harness_metadata.project_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+        template_cache_key: "coverage_build_artifacts-{{ project_harness_metadata.project_id }}"
+        use_cache_symlink: true
+
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputId
+        key: project_harness_metadata.project_id
+
+      events_dir:
+        repo: roomba_event_logs
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-grammaroomba
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+            set -e
+            set -x
+
+            export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+            # --- paths & metadata ---
+            export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+
+            export PROJECT_METADATA_FILE={{ project_metadata_path | shquote }}
+            export TARGET_SPLIT_METADATA={{ target_split_metadata | shquote }}
+            export PROJECT_HARNESS_METADATA_ID={{ project_harness_metadata_id | shquote }}
+            export PROJECT_HARNESS_METADATA_FILE={{ project_harness_metadata_fp | shquote }}
+
+            export EVENTS_DIR={{ events_dir | shquote }}
+            
+            /shellphish/grammaroomba/run-roomba.sh
+          
+  grammarroomba_delta:
+    priority: 100
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    # TODO(FINALDEPLOY)
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    require_success: true
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      project_harness_metadata: # can only be dereferenced as project_harness_metadata.* because it is interpreted as inputmetadata and metadatarepo
+        repo: project_harness_only_metadatas
+        kind: InputMetadata
+      project_harness_metadata_fp:
+        repo: project_harness_only_metadatas
+        kind: InputFilepath
+      project_harness_metadata_id:
+        repo: project_harness_only_metadatas
+        kind: InputId
+
+      # Wait until the fuzzers are ready before we schedule this task
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: project_harness_metadata.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_metadata.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: project_harness_metadata.project_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+        template_cache_key: "coverage_build_artifacts-{{ project_harness_metadata.project_id }}"
+        use_cache_symlink: true
+
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputId
+        key: project_harness_metadata.project_id
+      
+      commit_functions_indices:
+        repo: commit_functions_indices
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      events_dir:
+        repo: roomba_event_logs
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-grammaroomba
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          # --- paths & metadata ---
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+
+          export PROJECT_METADATA_FILE={{ project_metadata_path | shquote }}
+          export TARGET_SPLIT_METADATA={{ target_split_metadata | shquote }}
+          export PROJECT_HARNESS_METADATA_ID={{ project_harness_metadata_id | shquote }}
+          export PROJECT_HARNESS_METADATA_FILE={{ project_harness_metadata_fp | shquote }}
+
+          export EVENTS_DIR={{ events_dir | shquote }}
+
+          # --- delta-mode extras ---
+          export DELTA_MODE=True
+          export COMMIT_FUNCTIONS_INDEX={{ commit_functions_indices | shquote }}
+
+          /shellphish/grammaroomba/run-roomba.sh

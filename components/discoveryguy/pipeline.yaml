@@ -1,0 +1,1213 @@
+repo_classes:
+
+  ##################### INPUTS #####################
+  crs_tasks: MetadataRepository
+  java_crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  crs_tasks_diffs: BlobRepository
+  delta_mode_tasks: MetadataRepository
+  full_mode_tasks: MetadataRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  project_metadatas: MetadataRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  discovery_vuln_reports: BlobRepository
+  codeql_db_ready: MetadataRepository
+  sarif_reports: BlobRepository
+  sarif_metadatas: MetadataRepository
+  codeswipe_rankings: BlobRepository
+  codeql_analysis_ready: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+  commit_functions_indices: BlobRepository
+  discovery_guy_output_seeds: BlobRepository
+  discovery_guy_output_reports: BlobRepository
+  patch_bypass_requests: MetadataRepository
+  # patched_artifacts_dirs: FilesystemRepository
+  discovery_guy_bypass_results: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  project_build_artifacts: FilesystemRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+  sarif_retry_metadatas: MetadataRepository
+  sarif_heartbeat_paths: MetadataRepository
+  suspicious_functions: BlobRepository
+  debug_build_artifacts: FilesystemRepository
+
+  disco_fuzz_requests: { cls : MetadataRepository, required: false }
+
+tasks:
+  discovery_guy_from_ranking_full:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      full_mode_tasks:
+        repo: full_mode_tasks
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+        key: crs_task.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_analysis_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      discovery_guy_codeql_result:
+        repo: discovery_vuln_reports
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      codeswipe_ranking:
+        repo: codeswipe_rankings
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      # Wait condition
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+        key: crs_task.pdt_task_id
+
+      discovery_guy_output_seeds:
+        repo: discovery_guy_output_seeds
+        kind: StreamingOutputFilepath
+
+      discovery_guy_output_reports:
+        repo: discovery_guy_output_reports
+        kind: StreamingOutputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: discoveryguy
+
+      disco_fuzz_request:
+        repo: disco_fuzz_requests
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-discovery-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+
+          export LOCAL_RUN=False
+          export DISCO_GUY_FROM=POIS
+          export DELTA_MODE=False
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ project_analysis_sources | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ functions_by_file_index_json | shquote }}
+          export TARGET_METADATA=$PROJECT_METADATA_PATH
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export FUNC_RANKING={{ codeswipe_ranking | shquote }}
+          export POIS={{ discovery_guy_codeql_result | shquote }}
+          export BACKUP_SEEDS_VAULT={{ discovery_guy_output_seeds | shquote }}
+          export REPORT_DIR={{ discovery_guy_output_reports | shquote }}
+
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+
+          # Fill up the optional variables
+          export CHANGED_FUNCTIONS_JSONS_DIR=""
+          export CHANGED_FUNCTIONS_INDEX=""
+          export DIFF_FILE=""
+
+          export FUNC_RANKING={{ codeswipe_ranking | shquote }}
+          export DISCO_FUZZ_REQUEST={{ disco_fuzz_request | shquote }}
+          /src/run_from_ranking_parallel.sh
+
+
+  discovery_guy_from_ranking_delta:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      crs_task_diff:
+        repo: crs_tasks_diffs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+        key: crs_task.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_analysis_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      commit_functions_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      discovery_guy_codeql_result:
+        repo: discovery_vuln_reports
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      codeswipe_ranking:
+        repo: codeswipe_rankings
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      # Wait condition
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+        key: crs_task.pdt_task_id
+
+      discovery_guy_output_seeds:
+        repo: discovery_guy_output_seeds
+        kind: StreamingOutputFilepath
+
+      discovery_guy_output_reports:
+        repo: discovery_guy_output_reports
+        kind: StreamingOutputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: discoveryguy
+
+      disco_fuzz_request:
+        repo: disco_fuzz_requests
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-discovery-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+
+          export LOCAL_RUN=False
+          export DISCO_GUY_FROM=POIS
+          export DELTA_MODE=True
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ project_analysis_sources | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ functions_by_file_index_json | shquote }}
+          export TARGET_METADATA=$PROJECT_METADATA_PATH
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export FUNC_RANKING={{ codeswipe_ranking | shquote }}
+          export BACKUP_SEEDS_VAULT={{ discovery_guy_output_seeds | shquote }}
+          export REPORT_DIR={{ discovery_guy_output_reports | shquote }}
+
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+
+          # These are needed for the delta mode
+          export DIFF_FILE={{ crs_task_diff | shquote }}
+          export CHANGED_FUNCTIONS_INDEX={{ commit_functions_index | shquote }}
+          export CHANGED_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+
+          export POIS={{ discovery_guy_codeql_result | shquote }}
+
+          export FUNC_RANKING={{ codeswipe_ranking | shquote }}
+          export DISCO_FUZZ_REQUEST={{ disco_fuzz_request | shquote }}
+
+          /src/run_from_ranking_parallel.sh
+
+
+  discovery_guy_from_sarif_full:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    links:
+
+      sarif_path:
+        repo: sarif_reports
+        kind: InputFilepath
+
+      sarif_meta:
+        repo: sarif_metadatas
+        kind: InputMetadata
+
+      sarif_meta_path:
+        repo: sarif_metadatas
+        kind: InputFilepath
+
+      sarif_heartbeat_path:
+        repo: sarif_heartbeat_paths
+        kind: InputFilepath
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      full_mode_tasks:
+        repo: full_mode_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: sarif_meta.pdt_task_id
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      project_analysis_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      discovery_guy_codeql_result:
+        repo: discovery_vuln_reports
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      # Wait condition
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      discovery_guy_output_seeds:
+        repo: discovery_guy_output_seeds
+        kind: StreamingOutputFilepath
+
+      discovery_guy_output_reports:
+        repo: discovery_guy_output_reports
+        kind: StreamingOutputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: discoveryguy
+
+      sarif_retry_metadata:
+        repo: sarif_retry_metadatas
+        kind: OutputFilepath
+        content_keyed_md5: true
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-discovery-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+
+          export LOCAL_RUN=False
+          export DISCO_GUY_FROM=SARIF
+          export DELTA_MODE=False
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ project_analysis_sources | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ functions_by_file_index_json | shquote }}
+          export TARGET_METADATA=$PROJECT_METADATA_PATH
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export POIS={{ discovery_guy_codeql_result | shquote }}
+          export BACKUP_SEEDS_VAULT={{ discovery_guy_output_seeds | shquote }}
+          export REPORT_DIR={{ discovery_guy_output_reports | shquote }}
+          export SARIF_META={{ sarif_meta_path | shquote }}
+          export SARIF_PATH={{ sarif_path | shquote }}
+
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+
+          # Fill up the optional variables
+          export CHANGED_FUNCTIONS_JSONS_DIR=""
+          export CHANGED_FUNCTIONS_INDEX=""
+          export DIFF_FILE=""
+
+          export OUT_SARIF_PATH={{ sarif_retry_metadata | shquote }}
+
+          /src/run_from_sarif.sh
+
+
+  discovery_guy_from_sarif_delta:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    links:
+
+      sarif_path:
+        repo: sarif_reports
+        kind: InputFilepath
+
+      sarif_meta:
+        repo: sarif_metadatas
+        kind: InputMetadata
+
+      sarif_meta_path:
+        repo: sarif_metadatas
+        kind: InputFilepath
+
+      sarif_heartbeat_path:
+        repo: sarif_heartbeat_paths
+        kind: InputFilepath
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      crs_task_diff:
+        repo: crs_tasks_diffs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: sarif_meta.pdt_task_id
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      project_analysis_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      commit_functions_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      discovery_guy_codeql_result:
+        repo: discovery_vuln_reports
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      # Wait condition
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      discovery_guy_output_seeds:
+        repo: discovery_guy_output_seeds
+        kind: StreamingOutputFilepath
+
+      discovery_guy_output_reports:
+        repo: discovery_guy_output_reports
+        kind: StreamingOutputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: discoveryguy
+
+      sarif_retry_metadata:
+        repo: sarif_retry_metadatas
+        kind: OutputFilepath
+        content_keyed_md5: true
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-discovery-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+
+          export LOCAL_RUN=False
+          export DISCO_GUY_FROM=SARIF
+          export DELTA_MODE=True
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ project_analysis_sources | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ functions_by_file_index_json | shquote }}
+          export TARGET_METADATA=$PROJECT_METADATA_PATH
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export SARIF_META={{ sarif_meta_path | shquote }}
+          export SARIF_PATH={{ sarif_path | shquote }}
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+
+          export BACKUP_SEEDS_VAULT={{ discovery_guy_output_seeds | shquote }}
+          export REPORT_DIR={{ discovery_guy_output_reports | shquote }}
+
+          # These are needed for the delta mode
+          export DIFF_FILE={{ crs_task_diff | shquote }}
+          export CHANGED_FUNCTIONS_INDEX={{ commit_functions_index | shquote }}
+          export CHANGED_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+
+          export POIS={{ discovery_guy_codeql_result | shquote }}
+
+          export OUT_SARIF_PATH={{ sarif_retry_metadata | shquote }}
+
+          /src/run_from_sarif.sh
+
+  discovery_guy_from_bypass_request:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    links:
+      patch_bypass_request:
+        repo: patch_bypass_requests
+        kind: InputFilepath
+
+      patch_bypass_request_meta:
+        repo: patch_bypass_requests
+        kind: InputMetadata
+
+      patched_artifact:
+        repo: project_build_artifacts
+        kind: InputFilepath
+        key: patch_bypass_request_meta.build_request_id
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: patch_bypass_request_meta.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: patch_bypass_request_meta.project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: patch_bypass_request_meta.project_id
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: patch_bypass_request_meta.project_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: patch_bypass_request_meta.project_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: patch_bypass_request_meta.project_id
+
+      project_analysis_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: patch_bypass_request_meta.project_id
+      
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      points_of_interest_meta:
+        repo: dedup_pov_report_representative_metadatas
+        kind: InputMetadata
+        key: patch_bypass_request_meta.mitigated_poi_report_id
+
+      debug_build_artifacts:
+        repo: debug_build_artifacts
+        kind: InputFilepath
+        key: points_of_interest_meta.build_configuration_id
+
+      # ==========
+      # 📤 Outputs
+      # ==========
+      discovery_guy_bypass_result:
+        repo: discovery_guy_bypass_results
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: discoveryguy
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-discovery-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export LOCAL_RUN=False
+          export DISCO_GUY_FROM=BYPASS
+          export DELTA_MODE=False
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ project_analysis_sources | shquote }}
+          export PATCHED_BUILD_ARTIFACT={{ patched_artifact | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export TARGET_METADATA=$PROJECT_METADATA_PATH
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export PATCH_BYPASS_META={{ patch_bypass_request | shquote }}
+          export PATCH_ID={{ patch_bypass_request_meta.patch_id | shquote }}
+          export BYPASS_RESULT_DIR={{ discovery_guy_bypass_result | shquote }}
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+
+          export DEBUG_BUILD_ARTIFACT={{ debug_build_artifacts | shquote }}
+          /src/run_from_bypass.sh
+
+  discovery_guy_from_backdoorguy:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      full_mode_tasks:
+        repo: full_mode_tasks
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+        key: crs_task.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_analysis_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      suspicious_functions:
+        repo: suspicious_functions
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      # Wait condition
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+        key: crs_task.pdt_task_id
+
+      discovery_guy_output_seeds:
+        repo: discovery_guy_output_seeds
+        kind: StreamingOutputFilepath
+
+      discovery_guy_output_reports:
+        repo: discovery_guy_output_reports
+        kind: StreamingOutputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: discoveryguy
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-discovery-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+
+          export LOCAL_RUN=False
+          export DISCO_GUY_FROM=POISBACKDOOR
+          export DELTA_MODE=False
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ project_analysis_sources | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ functions_by_file_index_json | shquote }}
+          export TARGET_METADATA=$PROJECT_METADATA_PATH
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export FUNC_RANKING={{ suspicious_functions | shquote }}
+          export BACKUP_SEEDS_VAULT={{ discovery_guy_output_seeds | shquote }}
+          export REPORT_DIR={{ discovery_guy_output_reports | shquote }}
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+
+          # Fill up the optional variables
+          export CHANGED_FUNCTIONS_JSONS_DIR=""
+          export CHANGED_FUNCTIONS_INDEX=""
+          export DIFF_FILE=""
+
+          /src/run_from_backdoors.sh
+
+
+  discovery_guy_from_diff_delta:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      crs_task_diff:
+        repo: crs_tasks_diffs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      project_analysis_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      commit_functions_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+
+      discovery_guy_output_seeds:
+        repo: discovery_guy_output_seeds
+        kind: StreamingOutputFilepath
+
+      discovery_guy_output_reports:
+        repo: discovery_guy_output_reports
+        kind: StreamingOutputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: discoveryguy
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-discovery-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+
+          export LOCAL_RUN=False
+          export DISCO_GUY_FROM=DIFFONLY
+          export DELTA_MODE=True
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export CRS_TASK_ANALYSIS_SOURCE={{ project_analysis_sources | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ functions_by_file_index_json | shquote }}
+          export TARGET_METADATA=$PROJECT_METADATA_PATH
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export BACKUP_SEEDS_VAULT={{ discovery_guy_output_seeds | shquote }}
+          export REPORT_DIR={{ discovery_guy_output_reports | shquote }}
+
+          export CRASH_DIR_PASS_TO_POV={{ crashing_harness_inputs | shquote }}
+          export CRASH_METADATA_DIR_PASS_TO_POV={{ crashing_harness_inputs.cokeyed_dirs.meta | shquote }}
+
+          # These are needed for the delta mode
+          export DIFF_FILE={{ crs_task_diff | shquote }}
+          export CHANGED_FUNCTIONS_INDEX={{ commit_functions_index | shquote }}
+          export CHANGED_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+
+          /src/run_from_diff.sh
+
+  discoverry_fuzz:
+    priority: 2
+    max_concurrent_jobs: 2
+    timeout: 
+      minutes: 10
+    job_quota:
+      cpu: 4
+      mem: 8Gi
+    links:
+      disco_fuzz_request:
+        repo: disco_fuzz_requests
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: disco_fuzz_request.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: disco_fuzz_request.project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: disco_fuzz_request.project_id
+
+      debug_build_artifact:
+        repo: debug_build_artifacts
+        kind: InputFilepath
+        key: disco_fuzz_request.build_configuration_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: disco_fuzz_request.project_id
+
+      discovery_guy_output_seeds:
+        repo: discovery_guy_output_seeds
+        kind: StreamingInputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          project_id: "{{ project_id | shquote }}"
+          project_name: "{{ project_metadata.shellphish.project_name | shquote }}"
+          fuzzer: discoveryguy
+
+    executable:
+      cls: Container
+      args:
+        image: shellphish-oss-fuzz-runner-{{crs_task.project_name}}
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export DEBUG_BUILD_ARTIFACT={{ debug_build_artifact | shquote }}
+          export DISCO_FUZZ_REQUEST={{ disco_fuzz_request | shquote }}
+          export DISCO_GUY_START_SEEDS={{ discovery_guy_output_seeds | shquote }}
+          export DISCO_FUZZ_CRASHES={{ crashing_harness_inputs | shquote }}
+          export HARNESSES_IN_SCOPE="{{ disco_fuzz_request.harnesses_in_scope | shquote }}"
+          export SEED_HASHES="{{ disco_fuzz_request.seed_hashes | shquote }}"
+          export FUZZING_ENGINE="libfuzzer"
+          export RUN_FUZZER_MODE="interactive"
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+          WD=$(pwd)
+          cd /
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d "$DEBUG_BUILD_ARTIFACT"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$DEBUG_BUILD_ARTIFACT"/$dir/ /$dir/
+            fi
+          done
+          export MODE="fuzz"
+          
+          export FUZZ_PAYLOAD={{ disco_fuzz_request.fuzz_payload | shquote }}
+          export HARNESS_PAYLOAD={{ disco_fuzz_request.harness_payload | shquote }}
+          echo "$FUZZ_PAYLOAD" | base64 -d > "/tmp/fuzz.py"
+          echo "$HARNESS_PAYLOAD" | base64 -d > "/tmp/harness"
+          chmod +x /tmp/fuzz.py
+          python3 /tmp/fuzz.py

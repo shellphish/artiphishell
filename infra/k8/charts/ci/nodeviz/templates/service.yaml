@@ -1,0 +1,19 @@
+{{- if .Values.global.include_node_viz.value }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "node-viz.fullname" . }}
+  labels:
+    {{- include "node-viz.labels" . | nindent 4 }}
+  annotations:
+    service.beta.kubernetes.io/azure-pip-name: {{ .Values.global.api_dns_name.value }}-ip-nodeviz
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "node-viz.selectorLabels" . | nindent 4 }} 
+{{- end }} 

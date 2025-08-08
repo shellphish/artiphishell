@@ -1,0 +1,27 @@
+{{- range $i := until (.Values.global.num_concurrent_tasks.value | int) }}
+{{- $taskid := add $i 1 }}
+{{- with $ }}
+---
+{{- if .Values.global.enable_public_ip.value }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "agent.fullname" . }}-debug-{{ $taskid }}
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agent.name" . }}-{{ $taskid }}
+  #annotations:
+    #service.beta.kubernetes.io/azure-pip-name: {{ .Values.global.api_dns_name.value }}-ip-viz
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 5555
+      targetPort: debug
+      protocol: TCP
+      name: debug
+  selector:
+    {{- include "agent.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agent.name" . }}-{{ $taskid }}
+{{- end }} 
+{{- end }} 
+{{- end }} 

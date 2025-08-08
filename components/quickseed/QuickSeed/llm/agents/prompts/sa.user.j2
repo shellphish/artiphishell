@@ -1,0 +1,35 @@
+# Current Task
+Right now we are working on the following specific task:
+Think step by step and you must do a good job other wise my career is in danger
+{{ current_step.description }}
+{% if current_step.name == "summarize_harness" %}
+    ## Harness code
+    {{ harness_code }}
+{% endif %}
+{% if current_step.name == "refine_seed" or current_step.name=="review_script" %}
+    {{ jazzer_sanitizer_description }}
+{% endif %}
+{% if current_step.name == "summarize_script" %}
+    ## Script
+    {{ previous_script }}
+{% endif %}
+{% if current_step.name == "summarize_source_code" %}
+    {{ source_and_traces }}
+{% endif %}
+
+
+{# If we are retrying because we failed this attempt #}
+{% if last_attempt %}
+    # Previous Attempt Review
+    {% if last_attempt.critic_review %}
+        The last attempt failed with the following feedback.
+        ```
+        {{ last_attempt.critic_review.feedback }}
+        ```
+
+        Please take that feedback into consideration and try again to complete the task again!
+    {% endif %}
+{% endif %}
+
+# Output Format
+{{ output_format }}

@@ -1,0 +1,22 @@
+repo_classes: 
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+  target_metadatas: MetadataRepository
+  target_harness_infos: MetadataRepository
+
+imports:
+  crs-utils:
+    path: ../../../../../common/base/crs-utils/pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      target_harness_infos: target_harness_infos
+
+  symcts:
+    path: ../../../pipeline.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      target_harness_infos: target_harness_infos

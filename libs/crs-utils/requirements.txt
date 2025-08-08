@@ -1,0 +1,5 @@
+jinja2
+defusedxml
+gitpython
+influxdb-client[ciso]
+tqdm

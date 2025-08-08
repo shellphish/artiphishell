@@ -1,0 +1,46 @@
+<!-- 
+This prompt is designed to generate patches for buggy code using a structured XML-like format. 
+Ensure the output adheres strictly to the schema below.
+-->
+
+```
+<patch_report>
+<change>
+<file>...</file>
+<line>
+<start>...</start>
+<end>...</end>
+</line>
+<original>...</original>
+<patched>...</patched>
+</change>
+ ...
+</patch_report>
+```
+
+<!-- Guidelines for output generation: -->
+1. For <file>, replace the "..." with the path to the file requiring modification.
+2. For <start> and <end>, replace the "..." with numeric values indicating the affected line range in the original code.
+3. For <original>, replace the "..." with the exact buggy code snippet, maintaining its formatting and indentation.
+4. The <original> snippet MUST correspond exactly to the code between the specified <start> and <end> line numbers in the identified <file>. 
+   - The number of lines in the <original> block MUST equal the difference between <end> and <start> plus one.
+   - Each line of the <original> code MUST match exactly the content from the corresponding line in the file, including whitespace, indentation, and formatting.
+   - The <patched> block MUST have the same indentation structure as the <original> block unless explicitly changed as part of the fix.
+5. For <patched>, replace the "..." with the updated (patched) code snippet, preserving proper formatting and indentation.
+6. If multiple non-contiguous sections in the same file require fixes, include multiple <change> blocks for the same <file>.
+7. If a single line requires a fix, set <start> and <end> to the same numeric value.
+
+
+<!-- Important -->
+1. JUST OUTPUT THE CODE THAT NEEDS TO BE REPLACED, NOT THE ENTIRE FUNCTION CODE! 
+   - Include only the exact lines that correspond to the <start> and <end> range in the <file>.
+2. NEVER OUTPUT THE LINE NUMBERS WITHIN <original> AND <patched> TAGS! 
+   - Ensure that only the code content is present in these tags, without any line numbers.
+3. IF YOU ARE DOING A MULTI-LINE PATCH, DO NOT ESCAPE \n, (I.E., DO NOT USE \\n) TO SEPARATE LINES!
+   - Each line in the code must appear on its own line in the XML structure.
+4. THE LINE NUMBER YOU PUT WITHIN <start></start> MUST BE CONSISTENT WITH THE CODE YOU PUT IN <original></original>
+   - The content of the file
+
+
+<!-- Example: -->
+<PLACEHOLDER_FOR_EXAMPLE_REPORTS_BY_LANGUAGE>

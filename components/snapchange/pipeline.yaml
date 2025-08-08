@@ -1,0 +1,229 @@
+repo_classes:
+  ######################## INPUTS ########################
+  crs_tasks_cancelled: MetadataRepository
+  cp_image_ready: MetadataRepository
+  linux_targets_with_sources: FilesystemRepository
+  linux_harness_infos: MetadataRepository
+  target_metadatas: MetadataRepository
+  syzlang_grammar: BlobRepository
+
+  ######################## OUTPUTS ########################
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  crashing_harness_inputs_coverages: BlobRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs_coverages: BlobRepository
+
+  ###################### INTERMEDIATES ######################
+  snapchange_built_targets:
+    cls: FilesystemRepository
+    required: false
+
+  snapshot_snapchange_dirs:
+    cls: FilesystemRepository
+    required: false
+
+tasks:
+  snapchange_build:
+    annotations:
+      maturity: inProgress
+      authors:
+        - 4rbit3r
+    require_success: true
+    job_quota:
+      max: 0.45
+    links:
+      project_id:
+        repo: cp_image_ready
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      target_with_sources:
+        repo: linux_targets_with_sources
+        kind: InputFilepath
+      target_metadata:
+        repo: target_metadatas
+        kind: InputMetadata
+      snapchange_built_target:
+        repo: snapchange_built_targets
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-snapchange-fuzz
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export TARGET_WITH_SOURCES={{ target_with_sources | shquote }}
+          export KERNEL_RELPATH={{ target_metadata.shellphish.known_sources.linux_kernel[0].relative_path | shquote }}
+          export SNAPCHANGE_BUILT_TARGET={{snapchange_built_target | shquote}}
+          /snapchange/run-snapchange_build.sh
+          
+
+  snapchange_take_snapshot:
+    annotations:
+      maturity: inProgress
+      authors:
+        - 4rbit3r
+    require_success: true
+    job_quota:
+      cpu: 2
+      mem: "10Gi"
+    links:
+      harness_info:
+        repo: linux_harness_infos
+        kind: InputMetadata
+      harness_info_id:
+        repo: linux_harness_infos
+        kind: InputId
+
+      snapchange_built_target:
+        repo: snapchange_built_targets
+        kind: InputFilepath
+        key: harness_info.project_id
+
+      project_id:
+        repo: cp_image_ready
+        kind: InputId
+        key: harness_info.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: harness_info.project_id
+
+      target_metadata:
+        repo: target_metadatas
+        kind: InputMetadata
+        key: harness_info.project_id
+
+      snapshot_snapchange_dir:
+        repo: snapshot_snapchange_dirs
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-snapchange-fuzz
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export PROJECT_ID={{ harness_info.project_id | shquote }}
+          export SNAPCHANGE_BUILT_TARGET={{ snapchange_built_target | shquote }}
+          export CP_HARNESS_ID={{ harness_info.cp_harness_id | shquote }}
+          export KERNEL_RELPATH={{ target_metadata.shellphish.known_sources.linux_kernel[0].relative_path | shquote }}
+
+          export SNAPSHOT_SNAPCHANGE_DIR={{ snapshot_snapchange_dir | shquote }}
+          /snapchange/run-snapchange_take_snapshot.sh
+
+
+  snapchange_fuzz:
+    annotations:
+      maturity: inProgress
+      authors:
+        - 4rbit3r
+    replicable: true
+    priority_addend: 1
+    long_running: true
+    require_success: true
+    job_quota:
+      cpu: 8
+      mem: "12Gi"
+    links:
+      harness_info_id:
+        repo: linux_harness_infos
+        kind: InputId
+      harness_info:
+        repo: linux_harness_infos
+        kind: InputMetadata
+
+      project_id:
+        repo: cp_image_ready
+        kind: InputId
+        key: harness_info.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: harness_info.project_id
+
+      snapshot_snapchange_dir:
+        repo: snapshot_snapchange_dirs
+        kind: InputFilepath
+      syzlang_grammar_input:
+        repo: syzlang_grammar
+        kind: InputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/snapchange/corpus-{job}/crash_corpus/
+        auto_meta: meta
+        auto_values:
+          harness_info_id: '{{ harness_info_id }}'
+          project_id: '{{ harness_info.project_id }}'
+          cp_harness_id: '{{ harness_info.cp_harness_id }}'
+          cp_harness_name: '{{ harness_info.cp_harness_name }}'
+          cp_harness_source_path: "{{ harness_info.cp_harness_source_path }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          fuzzer: snapchange
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: benign_harness_inputs_metadatas
+        force_path: /shared/snapchange/corpus-{job}/benign_corpus
+        auto_meta: meta
+        DANGEROUS_filename_is_key: true
+        auto_values:
+          harness_info_id: '{{ harness_info_id }}'
+          project_id: '{{ harness_info.project_id }}'
+          cp_harness_id: '{{ harness_info.cp_harness_id }}'
+          cp_harness_name: '{{ harness_info.cp_harness_name }}'
+          cp_harness_source_path: "{{ harness_info.cp_harness_source_path }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          fuzzer: snapchange
+      benign_coverage_dir:
+        repo: benign_harness_inputs_coverages
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/snapchange/corpus-{job}/benign_coverage
+      crash_coverage_dir:
+        repo: crashing_harness_inputs_coverages
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/snapchange/corpus-{job}/crash_coverage/
+
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-snapchange-fuzz
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          # INPUTS
+          export SNAPSHOT_SNAPCHANGE_DIR={{ snapshot_snapchange_dir | shquote }}
+          export SYZLANG_GRAMMAR_INPUT={{ syzlang_grammar_input | shquote }}
+
+          # OUTPUTS
+          export OUTPUTS="/shared/snapchange"
+          /snapchange/run-snapchange_fuzz.sh

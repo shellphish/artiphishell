@@ -1,0 +1,68 @@
+nameOverride: "functionresolver"
+fullnameOverride: "functionresolver"
+
+image:
+  repository: aixcc-functionresolver-server
+  tag: latest
+  imagePullPolicy: Always
+# Set the chosen port below
+service:
+  type: ClusterIP
+  port: 4033
+
+resources:
+  limits:
+    cpu: 10000m
+    memory: 10Gi
+  requests:
+    cpu: 5000m
+    memory: 6Gi
+
+volumeMounts:
+- name: host-shared
+  mountPath: /shared
+
+nodeSelector:
+  "support.shellphish.net/pool": "services"
+
+tolerations:
+  - key: "support.shellphish.net/only-services"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+affinity: {}
+
+replicaCount: 1
+imagePullSecrets:
+  - name: acr-docker-secret
+  - name: ci-acr-pull-secret
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "functionresolver-sa"
+
+podAnnotations: {}
+podLabels:
+  support.shellphish.net/packing-group: any
+podSecurityContext: {}
+securityContext: {}
+
+
+livenessProbe: {} # TODO this should be setup
+readinessProbe: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+volumes:
+- name: host-shared
+  hostPath:
+    path: /shared
+    type: DirectoryOrCreate
+
+env: {}

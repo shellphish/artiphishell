@@ -1,0 +1,5 @@
+project_id: "1"
+name: 'jenkins'
+
+target_functions:
+  - doexecCommandUtils

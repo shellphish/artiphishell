@@ -1,0 +1,13 @@
+After completing the analysis, you MUST output a list in the specified format.
+
+<harnesses>
+<harness_index>...</harness_index>
+<harness_index>...</harness_index>
+<harness_index>...</harness_index>
+<harness_index>...</harness_index>
+<harness_index>...</harness_index>
+</harnesses>
+
+<!-- Guidelines for output generation: -->
+1. Replace "..." with a harness index
+2. The harness index should be excactly the same as the index in the harness list.

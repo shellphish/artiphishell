@@ -1,0 +1,35 @@
+<task>
+Your task is to generate a Flask server implementation based on the provided swagger API schema. This server will handle competition-related endpoints and should be designed to be easily extensible.
+{% if existing %}
+You will be given the existing state of the server implementation, which may be outdated from the swagger schema. You must update the existing code to match the swagger schema, using as much of the existing code as possible (fewest changes possible to get it to match the swagger schema). Do not change formatting or spacing of existing code.
+{% endif %}
+<requirements>
+Please follow these guidelines:
+- Use Flask as the web framework for this API
+- For endpoints with multiple HTTP methods, each method should be a different function
+- Each endpoint should call the associated method (or methods) on the impl_class to perform the action
+- Endpoints which take a type should use the `shellphish_crs_utils.models.aixcc_api` module to deserialize the request body and then call the impl_class method with the deserialized type
+- Endpoints which return a type should serialize the response using the appropriate type from `shellphish_crs_utils.models.aixcc_api`
+- Exceptions with deserialization should be caught and a 400 status returned
+- Exceptions during processing should be caught and a 500 status returned
+- All endpoints require a docstring comment describing the endpoint based on the swagger schema{% if existing %} If the endpoint already has a docstring comment, make sure not to change the comment unless it is incorrect{% endif %}
+- Include proper type hints for all methods
+- Include proper error handling and status codes as specified in the swagger schema
+- IMPORTANT: Before you start writing the updated code, you should spend some time thinking about what actually does not match the swagger schema. Please use <thinking></thinking> tags to think about what needs to be updated for at least 5 paragraphs! Try to be exaustive with all discrepancies with the swagger schema. Inside <thinking> tags, you cannot use ` code blocks, only for the final output code.
+</requirements>
+</task>
+
+{% if instructions %}
+<additional-user-instructions>
+{{ instructions }}
+</additional-user-instructions>
+{% endif %}
+
+<context>
+This server will handle the competition-specific endpoints for the AIxCyberChallenge. The competition server needs to:
+In general, the competition server will need to:
+- Process submissions from a team
+- Reject duplicate submissions
+
+The implementation should be flexible enough to accommodate different competition requirements while maintaining a consistent interface.
+</context> 

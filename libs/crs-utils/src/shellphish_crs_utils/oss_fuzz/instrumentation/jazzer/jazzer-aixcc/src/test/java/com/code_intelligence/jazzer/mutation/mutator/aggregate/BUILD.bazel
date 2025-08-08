@@ -1,0 +1,73 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_junit5_test", "java_test_suite")
+
+java_test_suite(
+    name = "AggregateTests",
+    size = "small",
+    srcs = glob(
+        ["*.java"],
+        exclude = [
+            "RecordMutatorTest.java",
+            "ConstructorBasedBeanMutatorTest.java",
+        ],
+    ),
+    env = {"JAZZER_MOCK_LIBFUZZER_MUTATOR": "true"},
+    runner = "junit5",
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/mutation/annotation",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/api",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/engine",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/mutator",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/mutator/aggregate",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/support",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/utils",
+        "//src/test/java/com/code_intelligence/jazzer/mutation/support:test_support",
+    ],
+)
+
+[
+    java_junit5_test(
+        name = "ConstructorBasedBeanMutatorTest" + PARAMETERS,
+        srcs = ["ConstructorBasedBeanMutatorTest.java"],
+        env = {"JAZZER_MOCK_LIBFUZZER_MUTATOR": "true"},
+        javacopts = [PARAMETERS],
+        test_class = "com.code_intelligence.jazzer.mutation.mutator.aggregate.ConstructorBasedBeanMutatorTest",
+        deps = [
+            "//src/main/java/com/code_intelligence/jazzer/mutation/annotation",
+            "//src/main/java/com/code_intelligence/jazzer/mutation/api",
+            "//src/main/java/com/code_intelligence/jazzer/mutation/engine",
+            "//src/main/java/com/code_intelligence/jazzer/mutation/mutator",
+            "//src/main/java/com/code_intelligence/jazzer/mutation/mutator/aggregate",
+            "//src/main/java/com/code_intelligence/jazzer/mutation/support",
+            "//src/main/java/com/code_intelligence/jazzer/mutation/utils",
+            "//src/test/java/com/code_intelligence/jazzer/mutation/support:test_support",
+        ],
+    )
+    for PARAMETERS in [
+        "",
+        # Disable method parameter names.
+        # See https://github.com/bazelbuild/bazel/blob/master/src/java_tools/buildjar/java/com/google/devtools/build/buildjar/javac/JavacOptions.java#L365
+        "-XDnoparameters",
+    ]
+]
+
+java_junit5_test(
+    name = "RecordMutatorTest",
+    size = "small",
+    srcs = ["RecordMutatorTest.java"],
+    env = {"JAZZER_MOCK_LIBFUZZER_MUTATOR": "true"},
+    javacopts = [
+        "--release",
+        "17",
+    ],
+    tags = [
+        "no-jdk8",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/mutation/annotation",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/api",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/mutator",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/support",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/utils",
+        "//src/test/java/com/code_intelligence/jazzer/mutation/support:test_support",
+    ],
+)

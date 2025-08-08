@@ -1,0 +1,13 @@
+[project]
+name = "libcodeql"
+version = "0.1.0"
+requires-python = ">=3.8"
+dependencies = [
+    "httpx",
+]
+
+[project.scripts]
+codeql-upload-db = "libcodeql.client:codeql_upload_db_cli"
+codeql-upload-backup = "libcodeql.client:codeql_upload_backup_cli"
+codeql-query = "libcodeql.client:codeql_query_cli"
+codeql-analyze = "libcodeql.client:codeql_analyze_cli"

@@ -1,0 +1,140 @@
+{{- range $i := until (.Values.global.num_concurrent_tasks.value | int) }}
+{{- $taskid := add $i 1 }}
+{{- with $ }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "analysisgraph.fullname" . }}-{{ $taskid }}
+  labels:
+    {{- include "analysisgraph.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "analysisgraph.name" . }}-{{ $taskid }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "analysisgraph.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "analysisgraph.name" . }}-{{ $taskid }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "analysisgraph.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "analysisgraph.name" . }}-{{ $taskid }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "analysisgraph.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.global.deployment_registry.value }}/neo4j:latest"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: AGENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: agent-secret
+                  key: AGENT_SECRET
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CRS_IMAGE_REGISTRY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "analysisgraph.fullname" . }}-acr-creds
+                  key: crs_image_registry
+            - name: NEO4J_AUTH
+              value: "neo4j/{{ .Values.global.agentSecret.value }}"
+          {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: artiphishell-global-env
+          {{- with .Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: neo4j
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+      - name: host-shared
+        hostPath:
+          path: /shared
+          type: DirectoryOrCreate
+      {{- if .Values.persistence.enabled }}
+      - name: neo4j-data
+        persistentVolumeClaim:
+          claimName: {{ include "analysisgraph.fullname" . }}-{{ .Values.persistence.name }}-{{ $taskid }}
+      {{- else }}
+      - name: neo4j-data
+        hostPath:
+          path: /shared/analysisgraph-{{ $taskid }}/neo4j/data
+          type: DirectoryOrCreate
+      {{- end }}
+      - name: neo4j-logs
+        hostPath:
+          path: /shared/analysisgraph-{{ $taskid }}/neo4j/logs
+          type: DirectoryOrCreate
+      - name: neo4j-plugins
+        hostPath:
+          path: /shared/analysisgraph-{{ $taskid }}/neo4j/plugins
+          type: DirectoryOrCreate
+      - name: neo4j-import
+        hostPath:
+          path: /shared/analysisgraph-{{ $taskid }}/neo4j/import
+          type: DirectoryOrCreate
+      nodeSelector:
+        support.shellphish.net/pool: "critical-task"
+        support.shellphish.net/task-pool: "task{{ $taskid }}"
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

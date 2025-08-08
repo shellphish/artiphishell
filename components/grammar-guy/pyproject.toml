@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grammar-guy"
+version = "0.0.1"
+authors = [
+        {name = "Wil Gibbs", email = "wfgibbs@asu.edu"}, 
+        {name = "Lukas Dresel", email = "friend@you.com"},
+        {name = "Fish", email = "fishw@asu.edu"}
+    ]
+description = "Just a guy and his grammars"
+readme="README.md"
+requires-python=">=3.10"
+
+dependencies = [
+    "PyYaml",
+    "watchdog",
+    "intervaltree",
+    "commentjson",
+    "tiktoken",
+    "lxml",
+    "jq",
+]
+
+
+[project.scripts]
+

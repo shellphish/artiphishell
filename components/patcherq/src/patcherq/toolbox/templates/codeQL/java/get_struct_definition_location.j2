@@ -1,0 +1,11 @@
+import java
+
+from Class c
+where
+  c.hasName("{{ struct_name }}") and
+  c.fromSource()
+select
+  c,
+  c.getLocation().getFile().getAbsolutePath() as filename,
+  c.getLocation().getStartLine() as startline,
+  "Definition of class " + c.getName() + " found in " + c.getLocation().getFile()

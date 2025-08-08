@@ -1,0 +1,64 @@
+crs_task:
+  concurrent_target_num: 4
+  type: 'full'
+  project_name: 'nginx'
+
+harness_info:
+  project_id: adsf
+  project_name: nginx
+  sanitizer: address
+  architecture: x86_64
+  cp_harness_name: pov_harness
+
+crashing_input_metadata:
+  cp_harness_name: pov_harness
+  crash_report_id: '12345'
+  project_id: '6666'
+  project_name: 'nginx'
+
+target_split_metadata:
+  num_harness_infos: 10
+
+point_of_interest_meta:
+  project_id: '6666'
+  project_name: 'nginx'
+  sanitizer: address
+  architecture: x86_64
+  cp_harness_name: pov_harness
+  crash_report_id: '12345'
+
+patch_requests_meta_metadata:
+  project_id: '6666'
+  project_name: 'nginx'
+  patcher_name: 'PatcherY'
+  poi_report_id: '12345'
+
+poi_report_meta:
+  project_id: '6666'
+  project_name: 'nginx'
+  sanitizer: address
+  architecture: x86_64
+  cp_harness_name: pov_harness
+  crash_report_id: '12345'
+  consistent_sanitizers:
+    - id_1
+    - id_2
+
+project_metadata:
+  project_id: '6666'
+  project_name: 'nginx'
+  shellphish:
+    project_name: 'nginx'
+
+full_mode_tasks:
+  task_id: '6666'
+  task_sanitizer: address
+  task_uuid: '6666-6666'
+  type: full
+
+java_crs_tasks:
+  task_id: '6666'
+  task_sanitizer: address
+  task_uuid: '6666-6666'
+  type: delta
+

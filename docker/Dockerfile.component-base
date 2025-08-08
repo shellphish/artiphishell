@@ -1,0 +1,96 @@
+# aixcc-build: aixcc-component-base
+ARG IMAGE_PREFIX=
+ARG SOURCE_REPO=https://github.com/shellphish-support-syndicate/artiphishell
+FROM ${IMAGE_PREFIX}aixcc-dependencies-base:latest
+LABEL org.opencontainers.image.source=${SOURCE_REPO}
+
+######################### MISC #############################
+COPY libs/c-instrumentation /shellphish/libs/c-instrumentation
+RUN mkdir /shellphish/blobs
+RUN wget https://software.intel.com/sites/landingpage/pintool/downloads/pin-external-3.31-98869-gfa6f126a8-gcc-linux.tar.gz -O /shellphish/blobs/pin.tar.gz
+RUN mkdir -p /shellphish/libs/nautilus/grammars/reference && \
+    curl http://beatty.unfiltered.seclab.cs.ucsb.edu:8000/corpus-grammars-v4.tar -o /shellphish/libs/nautilus/grammars/reference.tar && \
+    tar -xf /shellphish/libs/nautilus/grammars/reference.tar -C /shellphish/libs/nautilus/grammars/reference && \
+    rm /shellphish/libs/nautilus/grammars/reference.tar
+###################### END MISC ############################
+
+###################### SNAPCHANGE QEMU #######################
+# Install QEMU
+#COPY components/snapchange/qemu_stuff/setup_qemu.sh /snapchange/qemu_stuff/setup_qemu.sh
+#COPY components/snapchange/qemu_stuff/0001-Snapchange-kvm-patches.patch /snapchange/qemu_stuff/0001-Snapchange-kvm-patches.patch
+#RUN /snapchange/qemu_stuff/setup_qemu.sh
+#################### END SNAPCHANGE QEMU #####################
+
+# ###################### SYZLANG-BRIDGE ########################
+# COPY libs/syzlang-bridge /shellphish/libs/syzlang-bridge/
+# RUN pip3 install -e /shellphish/libs/syzlang-bridge
+# #################### END SYZLANG-BRIDGE ######################
+
+# ######################## SYZLANGRS ###########################
+# COPY libs/syzlangrs /shellphish/libs/syzlangrs
+# RUN cd /shellphish/libs/syzlangrs && ./build.sh
+# ####################### END SYZLANGRS ########################
+
+######################### AGENTLIB ###########################
+COPY libs/agentlib /shellphish/libs/agentlib
+RUN pip3 install --ignore-installed -e /shellphish/libs/agentlib
+####################### END AGENTLIB #########################
+
+###################### OPENLIT ##########################
+COPY libs/openlit /shellphish/libs/openlit/
+RUN pip3 install --ignore-installed -e /shellphish/libs/openlit
+#################### END OPENLIT ##########################
+
+###################### CRS-TELEMETRY ########################
+COPY libs/crs-telemetry /shellphish/libs/crs-telemetry
+RUN pip3 install -e /shellphish/libs/crs-telemetry
+#################### END CRS-TELEMETRY ######################
+
+###################### LIBCODEQL ########################
+COPY libs/libcodeql /shellphish/libs/libcodeql/
+RUN pip3 install -e /shellphish/libs/libcodeql
+#################### END LIBCODEQL ######################
+
+####################### COVERAGELIB #########################
+COPY libs/coveragelib /shellphish/libs/coveragelib/
+RUN pip3 install -e /shellphish/libs/coveragelib
+RUN wget http://beatty.unfiltered.seclab.cs.ucsb.edu:8000/llvm-dwarfdump -O /shellphish/libs/coveragelib/coveragelib/utils/llvm-dwarfdump
+RUN chmod +x /shellphish/libs/coveragelib/coveragelib/utils/llvm-dwarfdump
+##################### END COVERAGELIB #######################
+
+###################### NAUTILUS ########################
+COPY libs/nautilus /shellphish/libs/nautilus
+RUN cd /shellphish/libs/nautilus && ./build.sh
+##################### END NAUTILUS #####################
+
+###################### ANALYSIS-GRAPH ########################
+COPY libs/analysis-graph /shellphish/libs/analysis-graph
+RUN pip3 install -e /shellphish/libs/analysis-graph
+#################### END ANALYSIS-GRAPH ######################
+
+###################### PERMANENCE ########################
+COPY libs/permanence /shellphish/libs/permanence
+RUN pip3 install -e /shellphish/libs/permanence
+#################### END PERMANENCE ######################
+
+
+######################## CRS-UTILS ########################
+COPY libs/crs-utils /shellphish/libs/crs-utils
+RUN pip3 install -e /shellphish/libs/crs-utils
+###################### END CRS-UTILS ######################
+
+######################## ORGANIZERS ##########################
+COPY libs/organizers /shellphish/libs/organizers
+RUN cd /shellphish/libs/organizers/ && ./preinstall.sh
+###################### END ORGANIZERS ########################
+
+COPY libs/ /shellphish/libs/
+
+
+############ These are needed for the coverage_fast instrumentation
+COPY components/antlr4-guy/ /shellphish/components/antlr4-guy/
+COPY components/function-index-generator/ /shellphish/components/function-index-generator/
+COPY components/jazzer/ /shellphish/components/jazzer/
+############
+
+WORKDIR /

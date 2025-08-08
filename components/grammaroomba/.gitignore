@@ -1,0 +1,11 @@
+events/
+*.egg-info/
+__pycache__/
+.ipynb_checkpoints/
+.vscode/
+.env
+.venv/
+volumes/
+build/
+.history/
+*.history/ 

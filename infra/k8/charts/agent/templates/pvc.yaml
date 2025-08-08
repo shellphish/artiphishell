@@ -1,0 +1,40 @@
+{{- range $i := until (.Values.global.num_concurrent_tasks.value | int) }}
+{{- $taskid := add $i 1 }}
+{{- with $ }}
+---
+{{- if .Values.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "agent.fullname" . }}-{{ .Values.persistence.name }}-{{ $taskid }}
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agent.name" . }}-{{ $taskid }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+{{- end }}
+
+{{- if .Values.backupPersistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "agent.fullname" . }}-{{ .Values.backupPersistence.name }}-{{ $taskid }}
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agent.name" . }}-{{ $taskid }}
+spec:
+  accessModes:
+    - {{ .Values.backupPersistence.accessMode }}
+  storageClassName: {{ .Values.backupPersistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.backupPersistence.size }}
+{{- end }} 
+{{- end }} 
+{{- end }} 

@@ -1,0 +1,14 @@
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  QUICK REFERENCE (insert exactly as shown with the propery variable(s))                                           │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ IJON_CTX((unsigned long long) variable)        – state change occured and all subsequent edges should be          │
+|                                                  considered new coverage (use sparingly)                          │
+│ IJON_INC((int) variable)                       – reward coverage when variable changes                            │
+│ IJON_SET((int) variable)                       – reward coverage for unique values of variable                    │
+│ IJON_MAX((unsigned long long) variable)        – reward coverage for maximizing value of variable                 │
+│ IJON_MIN((unsigned long long) variable)        – reward coverage for minimizing value of variable                 │
+│ IJON_CMP((unsigned long long) x, (unsigned long long) y)   – reward coverage for integer x satisfying integer magic           │
+|                                                  value y (such as header ints)                                    │
+│ IJON_DIST((long long) var_x, (long long) var_y)            – reward coverage for making var_x closer to var_y                 │
+│ IJON_STRDIST((const char *) str_x, (const char *) str_y)   – reward coverage for string str_x getting closer to string str_y  │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

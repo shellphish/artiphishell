@@ -1,0 +1,24 @@
+[package]
+name = "revolver_mutator"
+version = "0.1.0"
+authors = ["mzakocs <mzakocs@asu.edu>", "zolutal <jmill@asu.edu>"]
+edition = "2018"
+
+[dependencies]
+regex-syntax = "0.6.17"
+ron = "*"
+serde_derive = "1.0"
+serde = "1.0"
+lazy_static = "1.5.0"
+pyo3 = "0.21.2"
+fuzzer = { path = "../fuzzer" }
+grammartec = { path = "../grammartec" }
+rand = "0.9.1"
+
+[features]
+afl_internals=[] # leftover from copying out AFL rust interface, can be supported in the future by adding support for the AFL bindgen bindings
+
+[lib]
+name = "revolver_mutator"
+path = "./src/lib.rs"
+crate-type = ["cdylib", "rlib"]

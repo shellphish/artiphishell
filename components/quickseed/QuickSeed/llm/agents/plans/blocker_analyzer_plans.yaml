@@ -1,0 +1,110 @@
+1:
+  name: "summarize_poi_funciton"
+  description: "Read the source code of the two functions we provide. Summarize their code and their relationship."
+
+2:
+  name: "trigger_next_function"
+  description: "In this function, we want to trigger the second function {{ next_function_name }} or the vulnerability in the first function {{ stuck_function_name }}. 
+    Can you provide or guess possible inputs that might trigger it? 
+    Use the tool we provided as you see necessary. You can use tool run_python_code to verify your hypothesis. Try to avoid brute force method if it can take too long. There is probably a vulnerability in the function of {{ stuck_function_name }}, which means there potentially is an easy way to trigger it.
+    Proceed to next step only when you have confidence you find a way to trigger the function {{ next_function_name }} from {{ stuck_funtion_name }}.
+    You should not need to use the brute force to find it.
+    If there is encoding  that is blocking us from triggering the {{ next_function_name }}, and you cannot reverse it, think about some common strings that might be used here or look for clues in the code.
+    Make sure use our tool to test your guess."
+
+3:
+  name: "previous_script"
+  description: "We already have a script that tries to trigger the function {{ next_function_name }} or the vulnerability in the function {{ stuck_function_name }} here: 
+    {{ script }}
+
+    But unfortunately, this script does not generate the correct input. Specifically, it fails at the function {{ stuck_function_name }} when it tries to trigger the second function or the vulnerability.
+
+    We will provide you the full source codes of the call chain we want this script to generate inputs for. We will also provide the harness code and the codes we want the input to trigger from harness.
+    The triggering input always starts with the method fuzzerTestOneInput and tries to triggers the last method we provide.
+    
+    The source code is provided in the order of triggering.
+    For example, if we provide source code of function f1, f2 and f3, then the call chain is f1 calls f2, and f2 calls f3.
+    Review the script and the source codes we provide, and based on the analysis you did before,
+    tell us why the script failed to generate the input to trigger the function {{ next_function_name }}."
+
+4:
+  name: "try_and_error"
+  description: "If you have some hypothesis how the {{ next_function_name}} can be triggered from {{ stuck_function_name }},
+    you can use the tool we provided to test your hypothesis. We can run any python script you provide us or retrieve source code of the java class you want.
+    If there is any encoding that is blocking us, you can either guess them or look for clues as to what they might be.
+    You can test your guess with the tools we provide.
+    But please use retrieve_java_source only when you think it is necessary.
+    Try not to use brute force if it can take too long. 
+    There probably is a vulnerability in the code, which means there potentially is a relatively easy way to trigger it.
+    If you have some potential inputs, use tool run_python_code to verify them before proceeding.
+    Focus on the source code of {{ stuck_function_name }}. That is probably the key to solve this challenge."
+
+5:
+  name: "generate_script"
+  description:
+    "Based on the previous analysis, please write a python script that will generate the input that will trigger the function {{ next_function_name }}.
+    You should use the script we provided as an example, and like what that script did, in your script, you should save the generated input at file `output.bin` or a directory `output`.
+    You need to create the directory `output` in the script if you want to generate multiple inputs.
+    PLEASE USE Python and output the script in the following format. Avoid assertion or ValueError in the script.
+
+    ```python
+      {script}
+    ```
+        
+    ONLY change the part that you think will help generate input that trigger {{ next_function_name }}. 
+    If you see magic string like 'jazze' or similar strings in the original script, absolutely DO NOT change them, because we are using jazzer to trigger the crash. Those strings are REQUIRED by jazzer to trigger the crash.
+    The following is a json that describes magic strings to trigger jazzer's sanitizers.
+    In the given json, there is a list of dictrionary.
+    Each dictionary represents a vulnerability type, and have three fields: `Vulnerability Classs`, `Sink Class or Method` and `Magic String`.
+    Jazzer requires a specific input to the sink function or class to trigger the crash.
+    We provide two examples here:
+
+    exmaple 1:
+    If you identify the sink class is a call to class `File` and the vulnerability type is file read and write.
+    Accoring to the json we provide you, the magic string to file read and write should be `jazzer`
+    Then you should pass `jazzer` as the file name to `File`, so if you identify the vulnerability is file read and write, the constructer of File should be File('jazzer') .
+    And if you identify the vulnerability is File path traversal, the constructer of File should look like `File('../../jazzer-traversal')`.
+    In your script, you might need to adjust the number of `../` to make sure the `../../jazzer-traversal` is the input path to the file operation.
+
+    example 2:
+    Another example is if you identigy the sink class is a call to class `ProcessBuilder`, then the magic string is `jazze`.
+    Then you should pass `jazze` to `ProcessBuilder` like ProcessBuiler('jazze'). 
+
+    A special case is deserialization, what we provide as a magic string is the hex format of the actually magic string.
+    All the other magic string are string literal and can directly pass to sink.
+    Only for deserialization, you should pass a hex decoding the magic string to `ObjectStreamInput`.
+    You MUST pass the correct magic string to the sink method or class, if there is any, to trigger the sink correctl. 
+    We only need to pass it once. Do not pass it multiple times.
+    And for those sink method does not have a corresponding magic string, just pass an input that can trigger the vulnerability.
+    Please find the magic string of this vulneraability if there is any and put it in the correct part of the input.
+    
+    But if you do not see any magic string in the original script, then it is probable that the inputs cannot trigger the crash is because they do not put the magic string there.
+    For example, if the sink class is ObjectInputStream, then the input should exactly be the magic string which is special serialized object in jazzer to help trigger the crash.
+    You will be provided the full sink functions and classes with their magic strings.
+    If the vulnerability here is not within the list you are provided, then you can use any string you want to trigger the crash.
+
+    Also if you do not see any the provided sink classes or methods are called in the {{ stuck_function_name}} or {{ next_function_name }},
+    It can be two cases:
+    1. the vulnerable sink is called in the downstream code
+    2. the vulnerability is not in the provided json list.
+
+    For case 1, for example, if the sink class is ProcessBuilder, then probably the provided function calls function b and function b calls function c, and in function c, the ProcessBuilder is called.
+    You can use the tool retrieve_java_source to look around some suspicious functions that called by the provided functions if the provided functions do not directly call sink classes or methods.
+    And also in the scenario that the provided functions DO NOT directly call any of the sink method and class, then you should put magic string to those you think most likely to go into the sink function or class.
+    This is super important, or you will never trigger the crash.
+    If you are unsure about where to put magic string, your script can generate multiple inputs, and in this way, you can output some mutations by replacing some field in the original input to the magic string.
+    If your script is generating multiple inputs, please put them all under the directory named `output`. You need to create the directory `output` in the script if you want to generate multiple inputs.
+
+    # Example for writing a repetetive patterns in strings
+    If you want to craft a string that contains simple repetetive patterns, instead of writing the literal string, use string concatenation with repetition.
+
+    ## Simple example
+    ```python
+    payload = '0'* 40
+    ```
+    A special case is XXE injection, you should prioritize generating an xml file that can trigger the SSRF.
+
+    Besides the vulnerability listed here, there is also DoS attack, like infinite loop that causes the fuzzer to time out or out of memory
+    There are many reasons that can cause the DoS attack and there are no specific sink for that.
+    There are many ways to make a service unavailable for legitimate users by manipulating network packets, programming, logical, or resources handling vulnerabilities, among others
+    "

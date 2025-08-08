@@ -1,0 +1,17 @@
+[project]
+name = "dyva"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "agentlib",
+    "debug-lib",
+    "ipdb>=0.13.13",
+    "shellphish-crs-utils",
+]
+
+[tool.uv.sources]
+agentlib = { path = "../shellphish/libs/agentlib" }
+shellphish-crs-utils = { path = "../shellphish/libs/crs-utils" }
+debug-lib = { path = "../shellphish/libs/debug-lib" }

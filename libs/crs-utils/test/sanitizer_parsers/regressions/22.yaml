@@ -1,0 +1,56 @@
+
+# == Java Exception: java.lang.IndexOutOfBoundsException
+# 	at java.base/java.nio.Buffer.checkIndex(Buffer.java:745)
+# 	at java.base/java.nio.HeapByteBuffer.getInt(HeapByteBuffer.java:440)
+# 	at com.google.flatbuffers.Table.__vector_len(Table.java:124)
+# 	at org.apache.arrow.flatbuf.Footer.dictionariesLength(Footer.java:54)
+# 	at org.apache.arrow.vector.ipc.message.ArrowFooter.dictionaries(ArrowFooter.java:113)
+# 	at org.apache.arrow.vector.ipc.message.ArrowFooter.<init>(ArrowFooter.java:92)
+# 	at org.apache.arrow.vector.ipc.ArrowFileReader.readSchema(ArrowFileReader.java:114)
+# 	at org.apache.arrow.vector.ipc.ArrowReader.initialize(ArrowReader.java:178)
+# 	at org.apache.arrow.vector.ipc.ArrowFileReader.initialize(ArrowFileReader.java:135)
+# 	at org.apache.arrow.vector.ipc.ArrowReader.ensureInitialized(ArrowReader.java:171)
+# 	at org.apache.arrow.vector.ipc.ArrowReader.getVectorSchemaRoot(ArrowReader.java:68)
+# 	at FuzzIpcFile.fuzzerTestOneInput(FuzzIpcFile.java:34)
+# DEDUP_TOKEN: 13a9276b2434055e
+# == libFuzzer crashing input ==
+# reproducer_path='.'; Java reproducer written to ./Crash_28f707a2b5567b87c2ca064198271b1f57c5a230.java
+
+focus_repo_path: "/src/arrow-java/"
+language: jvm
+sanitizer: address
+exit_code: 77
+expected_organizer_significance: 212 # RecognizedNonSanitizerNotableCrash
+expected_organizer_crash_description: "LibFuzzer Generic crash and/or Jazzer Sanitizer Crash"
+expected_parser: 'jazzer'
+expected_summary: '== Java Exception: java.lang.IndexOutOfBoundsException'
+expected_sanitizer: java.lang.IndexOutOfBoundsException
+expected_crash_type: 'unspecified'
+expected_stack_trace_file_names:
+  main:
+    - source: "Buffer.java"
+    - source: "HeapByteBuffer.java"
+    - source: "Table.java"
+    - source: "Footer.java"
+    - source: "ArrowFooter.java"
+    - source: "ArrowFooter.java"
+    - source: "ArrowFileReader.java"
+    - source: "ArrowReader.java"
+    - source: "ArrowFileReader.java"
+    - source: "ArrowReader.java"
+    - source: "ArrowReader.java"
+    - source: "FuzzIpcFile.java"
+expected_stack_trace_function_signatures:
+  main:
+    - source: 'java.nio.Buffer.checkIndex'
+    - source: 'java.nio.HeapByteBuffer.getInt'
+    - source: 'com.google.flatbuffers.Table.__vector_len'
+    - source: 'org.apache.arrow.flatbuf.Footer.dictionariesLength'
+    - source: 'org.apache.arrow.vector.ipc.message.ArrowFooter.dictionaries'
+    - source: 'org.apache.arrow.vector.ipc.message.ArrowFooter.<init>'
+    - source: 'org.apache.arrow.vector.ipc.ArrowFileReader.readSchema'
+    - source: 'org.apache.arrow.vector.ipc.ArrowReader.initialize'
+    - source: 'org.apache.arrow.vector.ipc.ArrowFileReader.initialize'
+    - source: 'org.apache.arrow.vector.ipc.ArrowReader.ensureInitialized'
+    - source: 'org.apache.arrow.vector.ipc.ArrowReader.getVectorSchemaRoot'
+    - source: 'FuzzIpcFile.fuzzerTestOneInput'

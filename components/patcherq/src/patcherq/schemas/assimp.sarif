@@ -1,0 +1,122 @@
+{
+    "$schema": "https://json.schemastore.org/sarif-2.1.0",
+    "version": "2.1.0",
+    "runs": [
+        {
+            "tool": {
+                "driver": {
+                    "name": "Shellphish-Artiphishell",
+                    "informationUri": "http://artiphishell.com/",
+                    "version": "1.0.0",
+                    "rules": [
+                        {
+                            "id": "ASSIMP_MDL_Validation",
+                            "name": "Insufficient Validation in MDL File Parsing",
+                            "fullDescription": {
+                                "text": "Segmentation violation due to insufficient validation of MDL file headers and buffer positions in the Assimp library."
+                            },
+                            "properties": {
+                                "tags": [
+                                    "security"
+                                ],
+                                "precision": "high"
+                            }
+                        }
+                    ]
+                }
+            },
+            "results": [
+                {
+                    "ruleId": "ASSIMP_MDL_Validation",
+                    "level": "error",
+                    "message": {
+                        "text": "Segmentation violation due to insufficient validation of MDL file headers and buffer positions in the Assimp library."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "code/AssetLib/MDL/MDLLoader.cpp"
+                                },
+                                "region": {
+                                    "startLine": 676
+                                }
+                            }
+                        }
+                    ],
+                    "codeFlows": [
+                        {
+                            "threadFlows": [
+                                {
+                                    "locations": [
+                                        
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "fuzz/assimp_fuzzer.cc"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 53
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "code/Common/Importer.cpp"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 512
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "code/Common/Importer.cpp"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 675
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "code/Common/BaseImporter.cpp"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 125
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "code/AssetLib/MDL/MDLLoader.cpp"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 676
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+vm.mmap_rnd_bits = 28
+/out/assimp_fuzzer -rss_limit_mb=2560 -timeout=25 /work/pov_input < /dev/null
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3579838942
+INFO: Loaded 1 modules   (194474 inline 8-bit counters): 194474 [0x555557018878, 0x555557048022), 
+INFO: Loaded 1 PC tables (194474 PCs): 194474 [0x555557048028,0x55555733fac8), 
+/out/assimp_fuzzer: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+Info,  T0: Load $$$___magic___$$$.
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+Warn,  T0: Ignored file of unsupported type CONTENT_TYPES_ARCHIVES[Content_Types].xml
+==16==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000000 (pc 0x000000000000 bp 0x7fffffffdb80 sp 0x7fffffffdb58 T0)
+==16==Hint: pc points to the zero page.
+==16==The signal is caused by a READ memory access.
+==16==Hint: address points to the zero page.
+SCARINESS: 10 (null-deref)
+    #0 0x0  (<unknown module>)
+    #1 0x555556a6d747 in unzGoToNextDisk unzip.c
+    #2 0x555556a6c867 in unzCheckCurrentFileCoherencyHeader unzip.c
+    #3 0x555556a6c25c in unzOpenCurrentFile3 (/out/assimp_fuzzer+0x151825c)
+    #4 0x555556a6cc41 in unzOpenCurrentFile (/out/assimp_fuzzer+0x1518c41)
+    #5 0x555556af5e08 in Assimp::ZipFileInfo::Extract(void*) const /src/assimp/code/Common/ZipArchiveIOSystem.cpp:215:9
+    #6 0x555556af9716 in OpenFile /src/assimp/code/Common/ZipArchiveIOSystem.cpp:426:21
+    #7 0x555556af9716 in Assimp::ZipArchiveIOSystem::Open(char const*, char const*) /src/assimp/code/Common/ZipArchiveIOSystem.cpp:510:19
+    #8 0x555556a2ec3f in Assimp::D3MF::D3MFOpcPackage::D3MFOpcPackage(Assimp::IOSystem*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&) /src/assimp/code/AssetLib/3MF/D3MFOpcPackage.cpp:137:49
+    #9 0x555556a1f4fd in Assimp::D3MFImporter::CanRead(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, Assimp::IOSystem*, bool) const /src/assimp/code/AssetLib/3MF/D3MFImporter.cpp:600:30
+    #10 0x555555df23ea in Assimp::Importer::ReadFile(char const*, unsigned int) /src/assimp/code/Common/Importer.cpp:625:38
+    #11 0x555555df1249 in Assimp::Importer::ReadFileFromMemory(void const*, unsigned long, unsigned int, char const*) /src/assimp/code/Common/Importer.cpp:512:5
+    #12 0x555555dc4066 in LLVMFuzzerTestOneInput /src/assimp/fuzz/assimp_fuzzer.cc:53:34
+    #13 0x555555c78ad0 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #14 0x555555c63d45 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #15 0x555555c697df in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #16 0x555555c94a82 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #17 0x7ffff7c3a082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+
+DEDUP_TOKEN: unzGoToNextDisk--unzCheckCurrentFileCoherencyHeader
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV (<unknown module>) 
+==16==ABORTING

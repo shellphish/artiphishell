@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "repo_classes": {
+        "type": "object",
+        "additionalProperties": { "$ref": "repo_class.json" }
+      },
+      "lockstep": {
+        "type": "string"
+      },
+      "imports": {
+        "type": "object",
+        "additionalProperties": { "$ref": "import.json" }
+      },
+      "tasks": { "$ref": "task.json"}
+    },
+    "required": ["repo_classes"]
+  }

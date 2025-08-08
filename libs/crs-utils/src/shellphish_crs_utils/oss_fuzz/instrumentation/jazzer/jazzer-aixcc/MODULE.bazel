@@ -1,0 +1,428 @@
+module(name = "jazzer")
+
+################################################################################
+# Bazel module dependencies
+# See https://registry.bazel.build for all available modules.
+# Kept up-to-date by Renovate
+################################################################################
+
+bazel_dep(name = "abseil-cpp", version = "20230802.1")
+bazel_dep(name = "apple_support", version = "1.11.1")
+bazel_dep(name = "bazel_jar_jar", version = "0.1.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "buildifier_prebuilt", version = "6.4.0")
+bazel_dep(name = "contrib_rules_jvm", version = "0.24.0")
+bazel_dep(name = "googletest", version = "1.14.0.bcr.1")
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "protobuf")
+bazel_dep(name = "rules_android", version = "0.1.1")
+bazel_dep(name = "rules_android_ndk", version = "0.1.2")
+bazel_dep(name = "rules_foreign_cc", version = "0.11.1")
+bazel_dep(name = "rules_java", version = "7.12.2")
+bazel_dep(name = "rules_jni", version = "0.9.1")
+bazel_dep(name = "rules_jvm_external")
+
+# TODO: Remove after the next release.
+archive_override(
+    module_name = "rules_jvm_external",
+    integrity = "sha256-7AerLOLhQ+oIDH2id7OE8WJmbH01MqBWV4CbqJ6Nh68=",
+    strip_prefix = "rules_jvm_external-a1d4e4f4267c1797b686719aa385e707b732c541",
+    urls = ["https://github.com/bazelbuild/rules_jvm_external/archive/a1d4e4f4267c1797b686719aa385e707b732c541.tar.gz"],
+)
+
+bazel_dep(name = "rules_kotlin", version = "1.9.6")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_pkg", version = "0.9.1")
+bazel_dep(name = "toolchains_llvm", version = "0.10.3")
+
+# TODO: Remove after a release that includes https://github.com/protocolbuffers/protobuf/commit/a7b0421c78412baa48704d727601a17ac0f451d1.
+single_version_override(
+    module_name = "protobuf",
+    patch_strip = 1,
+    patches = [
+        # https://github.com/protocolbuffers/protobuf/pull/15332
+        "//third_party:protobuf-disable-layering_check.patch",
+    ],
+    version = "23.1",
+)
+
+################################################################################
+# Maven dependencies
+################################################################################
+
+# Runtime dependencies of Jazzer that are shaded to prevent classpath pollution.
+# Keep these versions up-to-date (automated by Renovate).
+SHADED_RUNTIME_MAVEN_ARTIFACTS = [
+    # keep sorted
+    # renovate: keep updated
+    "com.github.jsqlparser:jsqlparser:4.9",
+    "com.google.errorprone:error_prone_annotations:2.26.1",
+    "com.google.errorprone:error_prone_type_annotations:2.26.1",
+    "io.github.classgraph:classgraph:jar:4.8.170",
+    "net.bytebuddy:byte-buddy-agent:1.14.13",
+    "net.jodah:typetools:jar:0.6.3",
+    "org.ow2.asm:asm:9.7",
+    "org.ow2.asm:asm-commons:9.7",
+    "org.ow2.asm:asm-tree:9.7",
+]
+
+# Runtime dependencies of Jazzer that are expected to be provided by the fuzzed project.
+# Keep these versions as low as possible for maximum compatibility with user setups.
+PROVIDED_RUNTIME_MAVEN_ARTIFACTS = [
+    # keep sorted
+    "org.junit.jupiter:junit-jupiter-api:5.9.0",
+    "org.junit.jupiter:junit-jupiter-engine:5.9.0",
+    "org.junit.jupiter:junit-jupiter-params:5.9.0",
+    "org.junit.platform:junit-platform-commons:1.9.0",
+    "org.junit.platform:junit-platform-engine:1.9.0",
+    "org.junit.platform:junit-platform-launcher:1.9.0",
+    "org.opentest4j:opentest4j:1.2.0",
+]
+
+# Runtime dependencies of Jazzer that should not be included in the generated pom.
+# Keep these versions as low as possible for maximum compatibility with user setups.
+HIDDEN_RUNTIME_MAVEN_ARTIFACTS = [
+    # keep sorted
+    "jakarta.servlet:jakarta.servlet-api:6.0.0",
+    "org.springframework:spring-test:6.1.4",
+    "org.springframework:spring-web:6.1.4",
+    "org.springframework:spring-webmvc:6.1.4",
+]
+
+# Dependencies used to support Jazzer's own tests.
+# Keep these versions in sync with the ones in PROVIDED_RUNTIME_MAVEN_ARTIFACTS,
+# as Bazel would use "Minimal Version Selection" and choose a different version
+# than the ones defined above.
+TEST_MAVEN_ARTIFACTS_FIXED = [
+    "org.junit.platform:junit-platform-reporting:1.9.0",
+    "org.junit.platform:junit-platform-testkit:1.9.0",
+]
+
+# Dependencies used to support Jazzer's own tests.
+# Keep these versions up-to-date (automated by Renovate).
+TEST_MAVEN_ARTIFACTS = [
+    # keep sorted
+    # renovate: keep updated
+    "com.google.truth.extensions:truth-java8-extension:1.4.2",
+    "com.google.truth.extensions:truth-liteproto-extension:1.4.2",
+    "com.google.truth.extensions:truth-proto-extension:1.4.2",
+    "com.google.truth:truth:1.4.2",
+    "junit:junit:4.13.2",
+    "org.assertj:assertj-core:3.25.3",
+    "org.jacoco:org.jacoco.core:0.8.12",
+    "org.mockito:mockito-core:5.11.0",
+    "org.openjdk.jmh:jmh-core:1.37",
+    "org.openjdk.jmh:jmh-generator-annprocess:1.37",
+]
+
+# **WARNING**: These Maven dependencies may have known vulnerabilities that Jazzer is supposed to
+# find and are only used in tests. DO NOT USE.
+# Do not update these deps as doing so may fix the vulnerability that Jazzer is supposed to detect.
+VULNERABLE_TEST_MAVEN_ARTIFACTS = [
+    # keep sorted
+    "com.alibaba:fastjson:1.2.75",
+    "com.beust:klaxon:5.5",
+    "com.fasterxml.jackson.core:jackson-core:2.12.1",
+    "com.fasterxml.jackson.core:jackson-databind:2.12.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.12.1",
+    "com.google.code.gson:gson:2.8.6",
+    "com.h2database:h2:2.1.212",
+    "com.mikesamuel:json-sanitizer:1.2.1",
+    "com.unboundid:unboundid-ldapsdk:6.0.3",
+    "javax.el:javax.el-api:3.0.1-b06",
+    "javax.validation:validation-api:2.0.1.Final",
+    "javax.xml.bind:jaxb-api:2.3.1",
+    "org.apache.commons:commons-imaging:1.0-alpha2",
+    "org.apache.commons:commons-text:1.9",
+    "org.apache.logging.log4j:log4j-api:2.14.1",
+    "org.apache.logging.log4j:log4j-core:2.14.1",
+    "org.apache.xmlgraphics:batik-anim:1.14",
+    "org.apache.xmlgraphics:batik-awt-util:1.14",
+    "org.apache.xmlgraphics:batik-bridge:1.14",
+    "org.apache.xmlgraphics:batik-css:1.14",
+    "org.apache.xmlgraphics:batik-dom:1.14",
+    "org.apache.xmlgraphics:batik-gvt:1.14",
+    "org.apache.xmlgraphics:batik-parser:1.14",
+    "org.apache.xmlgraphics:batik-script:1.14",
+    "org.apache.xmlgraphics:batik-svg-dom:1.14",
+    "org.apache.xmlgraphics:batik-svggen:1.14",
+    "org.apache.xmlgraphics:batik-transcoder:1.14",
+    "org.apache.xmlgraphics:batik-util:1.14",
+    "org.apache.xmlgraphics:batik-xml:1.14",
+    "org.glassfish:javax.el:3.0.1-b06",
+    "org.hibernate:hibernate-validator:5.2.4.Final",
+]
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.override(
+    coordinates = "org.jetbrains.kotlin:kotlin-reflect",
+    target = "@rules_kotlin//kotlin/compiler:kotlin-reflect",
+)
+maven.override(
+    coordinates = "org.jetbrains.kotlin:kotlin-stdlib",
+    target = "@rules_kotlin//kotlin/compiler:kotlin-stdlib",
+)
+maven.override(
+    coordinates = "com.google.protobuf:protobuf-java",
+    target = "@protobuf//java/core",
+)
+
+[
+    maven.artifact(
+        testonly = True,
+        artifact = coordinate.split(":")[1],
+        group = coordinate.split(":")[0],
+        version = coordinate.split(":")[2],
+    )
+    for coordinate in TEST_MAVEN_ARTIFACTS + TEST_MAVEN_ARTIFACTS_FIXED + VULNERABLE_TEST_MAVEN_ARTIFACTS
+]
+
+[
+    maven.artifact(
+        artifact = coordinate.split(":")[1],
+        group = coordinate.split(":")[0],
+        neverlink = True,
+        version = coordinate.split(":")[2],
+    )
+    for coordinate in HIDDEN_RUNTIME_MAVEN_ARTIFACTS
+]
+
+maven.install(
+    artifacts = SHADED_RUNTIME_MAVEN_ARTIFACTS + PROVIDED_RUNTIME_MAVEN_ARTIFACTS,
+    fail_if_repin_required = True,
+    lock_file = "//:maven_install.json",
+    repositories = ["https://repo1.maven.org/maven2"],
+    strict_visibility = True,
+)
+use_repo(maven, "maven")
+
+################################################################################
+# Other dependencies that aren't Bazel-aware
+################################################################################
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
+
+git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+http_archive(
+    name = "jazzer_jacoco",
+    build_file = "//third_party:jacoco_internal.BUILD",
+    patches = [
+        "//third_party:jacoco-make-probe-adapter-subclassable.patch",
+        "//third_party:jacoco-make-probe-inserter-subclassable.patch",
+        "//third_party:jacoco-ignore-offline-instrumentation.patch",
+    ],
+    sha256 = "5c72dea2d13eef33a4d972d157186fc12d85149bc042186953efe1be50c220ee",
+    strip_prefix = "jacoco-0.8.10",
+    url = "https://github.com/jacoco/jacoco/archive/refs/tags/v0.8.10.tar.gz",
+)
+
+http_archive(
+    name = "jazzer_libfuzzer",
+    build_file = "//third_party:libFuzzer.BUILD",
+    sha256 = "200b32c897b1171824462706f577d7f1d6175da602eccfe570d2dceeac11d490",
+    strip_prefix = "llvm-project-jazzer-2023-04-25/compiler-rt/lib/fuzzer",
+    url = "https://github.com/CodeIntelligenceTesting/llvm-project-jazzer/archive/refs/tags/2023-04-25.tar.gz",
+)
+
+git_repository(
+    name = "jazzer_slicer",
+    build_file = "//third_party:slicer.BUILD",
+    commit = "0fe35538da107ff48da6e9f9b92b55b014973bf8",
+    remote = "https://android.googlesource.com/platform/tools/dexter",
+)
+
+http_file(
+    name = "android_jvmti",
+    downloaded_file_path = "jvmti.encoded",
+    sha256 = "95bd6fb4f296ff1c49b893c1d3a665de3c2b1beaa3cc8fc570dea992202daa35",
+    url = "https://android.googlesource.com/platform/art/+/1cff8449bac0fdab6e84dc9255c3cccd504c1705/openjdkjvmti/include/jvmti.h?format=TEXT",
+)
+
+http_archive(
+    name = "org_chromium_sysroot_linux_x64",
+    build_file_content = """
+filegroup(
+  name = "sysroot",
+  srcs = glob(["*/**"]),
+  visibility = ["//visibility:public"],
+)
+""",
+    sha256 = "84656a6df544ecef62169cfe3ab6e41bb4346a62d3ba2a045dc5a0a2ecea94a3",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/2202c161310ffde63729f29d27fe7bb24a0bc540/debian_stretch_amd64_sysroot.tar.xz"],
+)
+
+http_file(
+    name = "genhtml",
+    downloaded_file_path = "genhtml",
+    executable = True,
+    sha256 = "4120cc9186a0687db218520a2d0dc9bae75d15faf41d87448b6b6c5140c19156",
+    urls = ["https://raw.githubusercontent.com/linux-test-project/lcov/6da8399c7a7a3370de2c69b16b092e945442ffcd/bin/genhtml"],
+)
+
+http_file(
+    name = "jacocoagent",
+    downloaded_file_path = "jacocoagent.jar",
+    sha256 = "40d25997de4c625769bf5d1283eb855b87c9caef4ca1fa03b8ef0b752ba4b54a",
+    urls = ["https://repo1.maven.org/maven2/org/jacoco/org.jacoco.agent/0.8.10/org.jacoco.agent-0.8.10-runtime.jar"],
+)
+
+http_file(
+    name = "jacococli",
+    downloaded_file_path = "jacococli.jar",
+    sha256 = "c821fe4f59dc5c1bb29341a259b6c9e49d6425f200f4ac0e373bf46bbfa54cf2",
+    urls = ["https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.10/org.jacoco.cli-0.8.10-nodeps.jar"],
+)
+
+http_jar(
+    name = "clojure_jar",
+    sha256 = "2381b6e9423ab465151455944903d13a56243d6006b9194afc1bf4f8710cb4de",
+    url = "https://repo1.maven.org/maven2/org/clojure/clojure/1.11.1/clojure-1.11.1.jar",
+)
+
+http_jar(
+    name = "clojure_spec_alpha_jar",
+    sha256 = "67ec898eb55c66a957a55279dd85d1376bb994bd87668b2b0de1eb3b97e8aae0",
+    url = "https://repo1.maven.org/maven2/org/clojure/spec.alpha/0.3.218/spec.alpha-0.3.218.jar",
+)
+
+http_jar(
+    name = "clojure_core_specs_alpha_jar",
+    sha256 = "06eea8c070bbe45c158567e443439681bc8c46e9123414f81bfa32ba42d6cbc8",
+    url = "https://repo1.maven.org/maven2/org/clojure/core.specs.alpha/0.2.62/core.specs.alpha-0.2.62.jar",
+)
+
+http_jar(
+    name = "google-java-format",
+    sha256 = "1e69f8b63c39a5124a8efb7bad213eb9ac03944339eb9580ae210b0c60565d9b",
+    urls = [
+        "https://github.com/google/google-java-format/releases/download/v1.21.0/google-java-format-1.21.0-all-deps.jar",
+    ],
+)
+
+http_file(
+    name = "clang-format-15-darwin-x64",
+    downloaded_file_path = "clang-format",
+    executable = True,
+    sha256 = "97116f64d97fb2870b4aa29758bba8fb0fe7f3b1ed8a4bc12faa927ecfdec196",
+    urls = [
+        "https://github.com/angular/clang-format/raw/master/bin/darwin_x64/clang-format",
+    ],
+)
+
+http_file(
+    name = "clang-format-15-linux-x64",
+    downloaded_file_path = "clang-format",
+    executable = True,
+    sha256 = "050c600256e225eabe9608d28f492fe8673c6e7f5deac59c6da973223c764d6c",
+    urls = [
+        "https://github.com/angular/clang-format/raw/master/bin/linux_x64/clang-format",
+    ],
+)
+
+http_file(
+    name = "addlicense-darwin-universal",
+    downloaded_file_path = "addlicense",
+    executable = True,
+    sha256 = "9c08964e15d6ed0568c4e8a5f861bcc2122498419586fbe87e08add56d18762d",
+    urls = [
+        "https://github.com/CodeIntelligenceTesting/addlicense/releases/download/v1.1.1/addlicense-darwin-universal",
+    ],
+)
+
+http_file(
+    name = "addlicense-linux-amd64",
+    downloaded_file_path = "addlicense",
+    executable = True,
+    sha256 = "521e680ff085f511d760aa139a0e869238ab4c936e89d258ac3432147d9e8be9",
+    urls = [
+        "https://github.com/CodeIntelligenceTesting/addlicense/releases/download/v1.1.1/addlicense-linux-amd64",
+    ],
+)
+
+http_archive(
+    name = "libjpeg_turbo",
+    build_file = "//third_party:libjpeg_turbo.BUILD",
+    sha256 = "6a965adb02ad898b2ae48214244618fe342baea79db97157fdc70d8844ac6f09",
+    strip_prefix = "libjpeg-turbo-2.0.90",
+    url = "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/2.0.90.tar.gz",
+)
+
+http_archive(
+    name = "libprotobuf-mutator",
+    build_file_content = """
+cc_library(
+    name = "libprotobuf-mutator",
+    srcs = glob([
+        "src/*.cc",
+        "src/*.h",
+        "src/libfuzzer/*.cc",
+        "src/libfuzzer/*.h",
+        "port/protobuf.h",
+    ], exclude = [
+        "**/*_test.cc",
+    ]),
+    hdrs = ["src/libfuzzer/libfuzzer_macro.h"],
+    deps = ["@protobuf"],
+    visibility = ["//visibility:public"],
+)
+""",
+    sha256 = "21bfdfef25554fa2e30aec2a9f9b58f4a17c1d8c8593763fa94a6dd74b226594",
+    strip_prefix = "libprotobuf-mutator-3b28530531b154a748fe9884bc9219b4966f0754",
+    urls = ["https://github.com/google/libprotobuf-mutator/archive/3b28530531b154a748fe9884bc9219b4966f0754.tar.gz"],
+)
+
+################################################################################
+# Toolchain repos and registrations
+################################################################################
+
+# rules_java doesn't ship remote JDK 8s anymore.
+remote_jdk8_repos = use_extension("//third_party:jdk_8.bzl", "remote_jdk8_repos")
+
+REMOTE_JDK8 = [
+    "remote_jdk8_linux",
+    "remote_jdk8_macos",
+    "remote_jdk8_macos_aarch64",
+    "remote_jdk8_windows",
+]
+
+[
+    use_repo(remote_jdk8_repos, "{}_toolchain_config_repo".format(jdk))
+    for jdk in REMOTE_JDK8
+]
+
+[
+    register_toolchains("@{}_toolchain_config_repo//:all".format(jdk))
+    for jdk in REMOTE_JDK8
+]
+
+register_toolchains("//bazel/toolchains:kotlin_toolchain")
+
+# Used in CI.
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(
+    llvm_version = "15.0.6",
+    sysroot = {
+        # The extension doesn't handle labels to external repositories correctly: It does not map
+        # apparent names such as @org_chromium_sysroot_linux_x64 to the correct Bazel-internal
+        # canonical repository name. As a workaround, specify the canonical name directly.
+        # TODO: Get rid on this dependency of Bazel implementation details when toolchains_llvm
+        #       offers an attribute of type label rather than string.
+        # https://github.com/grailbio/bazel-toolchain/issues/234
+        # https://github.com/grailbio/bazel-toolchain/pull/235
+        "linux-x86_64": "@@_main~_repo_rules~org_chromium_sysroot_linux_x64//:sysroot",
+    },
+)
+use_repo(llvm, "llvm_toolchain")
+
+# Required by the reference to the Windows toolchain in @local_config_cc from .bazelrc.
+cc_configure = use_extension("@bazel_tools//tools/cpp:cc_configure.bzl", "cc_configure_extension")
+use_repo(cc_configure, "local_config_cc")
+
+# Referenced in BUILD files.
+java_toolchains = use_extension("@rules_java//java:extensions.bzl", "toolchains")
+use_repo(java_toolchains, "local_jdk")

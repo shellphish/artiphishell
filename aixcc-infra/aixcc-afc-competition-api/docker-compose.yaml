@@ -1,0 +1,14 @@
+services:
+  aixcc-afc-competition-api:
+    image: shellphish/aixcc-afc-competition-api:latest
+    container_name: aixcc-afc-competition-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: bridge
+    restart: always
+    environment:
+      - API_PORT=1337
+
+    ports:
+      - "1337:1337" # Accessible from the host

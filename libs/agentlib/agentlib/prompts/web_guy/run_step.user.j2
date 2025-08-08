@@ -1,0 +1,25 @@
+{% if last_attempt %}
+
+# Task Review
+
+{% if last_attempt.critic_review %}
+{% if not last_attempt.critic_review.is_success() %}
+Result: Failure
+Feedback: {{ last_attempt.critic_review.feedback }}
+
+Please take that feedback into consideration and try again to complete the task.
+{% else %}
+Result: Success
+Good Job! Here is a tip for you: $200
+{% endif %}
+{% endif %}
+
+{% else %}
+# Current Task
+Right now we are working on the following specific task:
+{{ current_step.description }}
+{% endif %}
+
+# Tips
+- You can run multiple tools at once to perform multiple actions at the same time. You should do this to improve the chance of success given an unknown environment.
+- If you are unable to do what the feedback states, please use the give_up_on_task tool. Only do this if the feedback is telling you to do something that is not very feasible given your tools.

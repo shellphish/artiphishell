@@ -1,0 +1,19 @@
+# Generate Signatures
+You are an expert in python. You need to generate a python3 function signature which would be used for a function that performs the given task.
+
+# Examples
+{% for p in example_programs %}
+## Example Description
+{{p.description}}
+## Example Output
+```python
+{{p.get_code().get_function_main_prototype()}}
+```
+{% endfor %}
+
+# Requirements
+- The function must take self as the first argument
+- All indents should be 4 spaces `    `
+- Only use type annotations for primitive types like dict, list, str etc
+- function_name_should_be_in_snake_case
+- Keep the arguments straightforward

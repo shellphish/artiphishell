@@ -1,0 +1,14 @@
+#
+# AFL dictionary for SMTP requests
+# --------------------------------
+"HELO"
+"EHLO"
+"MAIL FROM:"
+"RCPT TO:"
+"DATA"
+"RSET"
+"VRFY"
+"EXPN"
+"HELP"
+"NOOP"
+"QUIT"

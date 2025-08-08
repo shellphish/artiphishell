@@ -1,0 +1,30 @@
+## Output format
+After completing the analysis, you MUST output a report in the specified format.
+
+<reasoning_process>Some reasoning process..</reasoning_process>
+<vuln_detect>
+## Final Answer
+#judge: <yes/no>
+#type: <vulnerability type>
+</vuln_detect>
+
+## Additional Constraint:
+- If `#judge: yes`, then `#type:` **must contain exactly one CWE**.
+- If `#judge: yes`, the model must output **only the most probable CWE** related to the given code snippet.
+
+## Example
+- If the target function is vulnerable to a CWE-79, you should finally output:
+<reasoning_process>Some reasoning process..</reasoning_process>
+<vuln_detect>
+## Final Answer
+#judge: yes
+#type: CWE-79
+</vuln_detect>
+
+- If the target function does not contain vulnerabilities related to the given CWE, you should finally output:
+<reasoning_process>Some reasoning process..</reasoning_process>
+<vuln_detect>
+## Final Answer
+#judge: no
+#type: N/A
+</vuln_detect>

@@ -1,0 +1,19 @@
+[project]
+name = "competition-api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "flask>=3.1.0",
+    "gunicorn>=23.0.0",
+    "requests>=2.32.3",
+    "shellphish-crs-utils",
+    "yappi>=1.6.10",
+]
+
+[project.scripts]
+serve-competition-api = "competition_api.server:app"
+
+[tool.uv.sources]
+shellphish-crs-utils = { path = "../../libs/crs-utils", editable = true }

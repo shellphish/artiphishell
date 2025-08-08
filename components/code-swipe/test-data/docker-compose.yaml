@@ -1,0 +1,29 @@
+services:
+  analysis-graph:
+    image: neo4j
+    container_name: aixcc-analysis-graph
+    network_mode: bridge
+    restart: always
+    environment:
+      - NEO4J_AUTH=neo4j/artiphishell
+      - NEO4J_AUTH=none    # temporarily disable auth
+      - NEO4J_dbms_allow__upgrade=true  # might help with existing data
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ./analysisgraph/analysisgraph/var/lib/neo4j/data:/data
+      - ./analysisgraph/analysisgraph/var/lib/neo4j/logs:/logs
+      - ./analysisgraph/analysisgraph/var/lib/neo4j/import:/var/lib/neo4j/import
+      - ./analysisgraph/analysisgraph/var/lib/neo4j/plugins:/plugins
+
+  functionresolver-server:
+    build: ../../../services/functionresolver_server
+    container_name: aixcc-functionresolver-server
+    network_mode: bridge
+    restart: always
+    ports:
+      - "4033:4033" # Accessible from the host
+    volumes:
+      - "../../../services/functionresolver_server:/app/aixcc-functionresolver-server"
+      - "../../../libs/crs-utils:/shellphish/libs/crs-utils"

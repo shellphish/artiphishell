@@ -1,0 +1,293 @@
+repo_classes:
+  ############################# INPUTS ⬇ ##############################
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  coverage_build_artifacts: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  fuzzers_started: BlobRepository
+  ##################
+  project_metadatas: MetadataRepository
+  project_harness_infos: MetadataRepository
+  target_split_metadatas: MetadataRepository
+
+  ############################# OUTPUTS ⬆ #############################
+
+tasks:
+  grammar_composer_run:
+    require_success: true
+    job_quota:
+      cpu: "500m"
+      mem: "2Gi"
+    resource_limits:
+      cpu: 1
+      mem: "5Gi"
+    long_running: true 
+
+    cache_dir: /pdt-per-node-cache
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      project_harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+      project_harness_info_path:
+        repo: project_harness_infos
+        kind: InputFilepath
+      project_harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_info.project_id
+
+      # Wait until the fuzzers are ready before we schedule this task
+      fuzzers_started:
+        repo: fuzzers_started
+        kind: InputId
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: project_harness_info.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_info.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: project_harness_info.project_id
+
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: project_harness_info.project_id
+        template_cache_key: "coverage_build_artifacts-{{ project_harness_info.project_id }}"
+        use_cache_symlink: true
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: project_harness_info.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_info.project_id
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: project_harness_info.project_id
+        template_cache_key: "full_functions_indices-{{ project_harness_info.project_id }}"
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: project_harness_info.project_id
+        template_cache_key: "full_functions_jsons_dirs-{{ project_harness_info.project_id }}"
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ruaronicola
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "aixcc-grammar-composer"
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          CRS_TASK_PATH={{ crs_task | shquote }}
+          
+          export LANGUAGE={{ project_metadata.language | shquote }}
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ project_harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ project_harness_info_id | shquote }}
+
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export HARNESS_INFO_PATH={{ project_harness_info_path | shquote }}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+
+          export FUNCTIONS_INDEX_PATH={{ functions_index | shquote }}
+          export FUNCTIONS_JSONS_DIR_PATH={{ functions_jsons_dir | shquote }}
+
+          #######################################################################
+
+          export ARTIPHISHELL_PROJECT_NAME=$ARTIPHISHELL_PROJECT_NAME
+          export ARTIPHISHELL_PROJECT_ID={{ project_id }}
+          export ARTIPHISHELL_HARNESS_NAME=$ARTIPHISHELL_HARNESS_NAME
+          export ARTIPHISHELL_HARNESS_INFO_ID=$ARTIPHISHELL_HARNESS_INFO_ID
+          export TARGET_SPLIT_METADATA_PATH={{ target_split_metadata | shquote }}
+          # Skip the main task if this is not the first harness_info_key for the current harness name
+          (
+            set +e
+            python /shellphish/grammar-composer/error_if_not_first_in_sorted_harness_info_keys.py
+            EXIT_STATUS=$?
+            set -e
+            if [ $EXIT_STATUS -ne 0 ]; then
+              echo "Skipping this harness info. This is OK!"
+            else
+               /shellphish/grammar-composer/run_grammar_composer.sh
+            fi
+          )
+
+  ron_composer_run:
+    require_success: true
+    job_quota:
+      cpu: "500m"
+      mem: "2Gi"
+    resource_limits:
+      cpu: 1
+      mem: "5Gi"
+    long_running: true 
+
+    cache_dir: /pdt-per-node-cache
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: project_harness_info.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_info.project_id
+
+      project_harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+      project_harness_info_path:
+        repo: project_harness_infos
+        kind: InputFilepath
+      project_harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_info.project_id
+
+      # Wait until the fuzzers are ready before we schedule this task
+      fuzzers_started:
+        repo: fuzzers_started
+        kind: InputId
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: project_harness_info.project_id
+
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: project_harness_info.project_id
+        template_cache_key: "coverage_build_artifacts-{{ project_harness_info.project_id }}"
+        use_cache_symlink: true
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: project_harness_info.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_info.project_id
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: project_harness_info.project_id
+        template_cache_key: "full_functions_indices-{{ project_harness_info.project_id }}"
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: project_harness_info.project_id
+        template_cache_key: "full_functions_jsons_dirs-{{ project_harness_info.project_id }}"
+
+    annotations:
+      maturity: inProgress
+      authors:
+        - ruaronicola
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "aixcc-grammar-composer"
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          CRS_TASK_PATH={{ crs_task | shquote }}
+          
+          export LANGUAGE={{ project_metadata.language | shquote }}
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ project_harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ project_harness_info_id | shquote }}
+
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export HARNESS_INFO_PATH={{ project_harness_info_path | shquote }}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+
+          export FUNCTIONS_INDEX_PATH={{ functions_index | shquote }}
+          export FUNCTIONS_JSONS_DIR_PATH={{ functions_jsons_dir | shquote }}
+
+          #######################################################################
+
+          export ARTIPHISHELL_PROJECT_NAME=$ARTIPHISHELL_PROJECT_NAME
+          export ARTIPHISHELL_PROJECT_ID={{ project_id }}
+          export ARTIPHISHELL_HARNESS_NAME=$ARTIPHISHELL_HARNESS_NAME
+          export ARTIPHISHELL_HARNESS_INFO_ID=$ARTIPHISHELL_HARNESS_INFO_ID
+          export TARGET_SPLIT_METADATA_PATH={{ target_split_metadata | shquote }}
+          # Skip the main task if this is not the first harness_info_key for the current harness name
+          (
+            set +e
+            python /shellphish/grammar-composer/error_if_not_first_in_sorted_harness_info_keys.py
+            EXIT_STATUS=$?
+            set -e
+            if [ $EXIT_STATUS -ne 0 ]; then
+              echo "Skipping this harness info. This is OK!"
+            else
+               /shellphish/grammar-composer/run_ron_composer.sh
+            fi
+          )

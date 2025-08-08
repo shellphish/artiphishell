@@ -1,0 +1,25 @@
+/**
+ * @id cpp/kernel_reaching_files
+ * @kind problem
+ * @name Finds filepaths involved with reaching a given set of target functions
+ * @severity information
+ */
+
+
+import kernel_calls_analysis
+
+
+predicate is_target_function(Function f) {
+{% for i, name in enumerate(target_functions) %}
+  {% if i > 0 %}or {% endif %}f.hasGlobalName({{ json.dumps(name) }})
+{% endfor %}
+}
+
+from CallGraph::PathNode source, CallGraph::PathNode intermediate, CallGraph::PathNode reachable
+where
+  CallGraph::edges+(source, intermediate)
+  and
+  CallGraph::edges+(intermediate, reachable)
+  and
+  is_target_function(reachable.asFunction())
+select intermediate.getLocation().getFile().getRelativePath()

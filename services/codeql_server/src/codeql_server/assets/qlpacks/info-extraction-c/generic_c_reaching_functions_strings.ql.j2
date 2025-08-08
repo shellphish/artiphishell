@@ -1,0 +1,49 @@
+/**
+ * @id cpp/generic_c_reaching_functions_strings
+ * @kind problem
+ * @name Finds string literals in functions involved with reaching a given set of target functions
+ * @severity information
+ */
+
+
+import generic_c_calls_analysis
+
+
+predicate is_target_function(Function f) {
+{% for i, name in enumerate(target_functions) %}
+  {% if i > 0 %}or {% endif %}f.hasGlobalName({{ json.dumps(name) }})
+{% endfor %}
+}
+predicate is_source_function(Function f) {
+  f.hasGlobalName("LLVMFuzzerTestOneInput")
+}
+
+from StringLiteral s, CallGraph::PathNode source, CallGraph::PathNode intermediate, CallGraph::PathNode reachable
+where
+  is_source_function(source.asFunction())
+  and
+  is_target_function(reachable.asFunction())
+  and
+  CallGraph::edges+(source, intermediate)
+  and
+  CallGraph::edges+(intermediate, reachable)
+  and
+  (s.getEnclosingFunction() = intermediate.asFunction() or s.getEnclosingFunction() = source.asFunction() or s.getEnclosingFunction() = reachable.asFunction())
+  and
+  s.getValue().length() > 1
+  // TODO: filter out assignments to `err` variable and filter out usages in `*_log_*` function calls
+  and
+  not exists(FunctionCall call |
+    (call.getAnArgument() = s or call.getAnArgument().getAChild() = s)
+    and
+    call.getTarget().getName().matches("%_log_%")
+  )
+  and
+  not exists(Assignment ass, VariableAccess va |
+    va.getTarget().getName() = "err"
+    and
+    (ass.getLValue().getAChild() = va or ass.getLValue() = va)
+    and
+    (ass.getRValue().getAChild() = s or ass.getRValue() = s)
+  )
+select s.getValue()

@@ -1,0 +1,6 @@
+# total_cores: 24
+
+# Number of harnesses: 1 => each harness has 24 cores
+cores_per_harness:
+  fuzz_msg_parser: 24
+  fuzz_uri_parser: 24

@@ -1,0 +1,29 @@
+1:
+  name: "summarize_harness_code"
+  description: "Read harness_code and think step by step to summarize the code. 
+    Give a detailed breakdown of the input structure that will trigger the harness.
+    Also tell me what kind of functions this harness is going to trigger"
+
+2:
+  name: "generate_seed_script"
+  description:
+    "Based on the summarization of the harness and the functions' source code. 
+    please write a python script that will output the fuzzing seeds.
+    Save all seeds in a directory called `output`. You need to create the directory `output` in the script.
+    This script should generate some valid seeds to reach functions that are reachable from the harness.
+    You should use big-endian format if needed.
+    ```python
+      {script}
+    ```"
+3:
+  name: "review_script"
+  description:
+    "Review the script you generated in the last step. Make sure the script is correct and will generate the correct input seed. 
+    For example, if the harness expects a http request, you can try to generate a request that can trigger as many endpoints on the path with more headers and parameters as long as they are valid.
+    Or if the harness expect a file format, you can try to generate files that can trigger as many file parsing functions as possible.
+    If you find any issues, please fix them and generate the script again. PLEASE USE Python and output the script in the following format.
+    If the input you need to generate contains file format, you can use corresponsing or suitable python library to help you generate it instead of constructing the whole input directly.
+    ```python
+      {script}
+    ```
+    Please do not generate more than 10 inputs in the script."

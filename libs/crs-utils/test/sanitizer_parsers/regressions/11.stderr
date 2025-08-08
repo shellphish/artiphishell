@@ -1,0 +1,85 @@
++ export RUN_FUZZER_MODE=interactive
++ RUN_FUZZER_MODE=interactive
++ export FUZZING_ENGINE=libfuzzer
++ FUZZING_ENGINE=libfuzzer
++ export SKIP_SEED_CORPUS=1
++ SKIP_SEED_CORPUS=1
++ run_fuzzer pov_harness /work/pov_input
+vm.mmap_rnd_bits = 28
+/out/pov_harness -rss_limit_mb=2560 -timeout=25 /work/pov_input < /dev/null
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 2557947429
+INFO: Loaded 1 modules   (29677 inline 8-bit counters): 29677 [0x555555be2238, 0x555555be9625), 
+INFO: Loaded 1 PC tables (29677 PCs): 29677 [0x555555be9628,0x555555c5d4f8), 
+/out/pov_harness: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+=================================================================
+==20==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x519000005ec8 at pc 0x5555557e82a2 bp 0x7fffffffda30 sp 0x7fffffffd1f0
+READ of size 22 at 0x519000005ec8 thread T0
+SCARINESS: 36 (multi-byte-read-heap-buffer-overflow-far-from-bounds)
+    #0 0x5555557e82a1 in __asan_memcpy /src/llvm-project/compiler-rt/lib/asan/asan_interceptors_memintrinsics.cpp:63:3
+    #1 0x5555559c8056 in ngx_http_userid_set_uid /src/harnesses/bld/src/http/modules/ngx_http_userid_filter_module.c:446:13
+    #2 0x5555559c8056 in ngx_http_userid_filter /src/harnesses/bld/src/http/modules/ngx_http_userid_filter_module.c:248:9
+    #3 0x5555559c93c2 in ngx_http_headers_filter /src/harnesses/bld/src/http/modules/ngx_http_headers_filter_module.c
+    #4 0x55555590efce in ngx_http_send_special_response /src/harnesses/bld/src/http/ngx_http_special_response.c:727:10
+    #5 0x55555590da44 in ngx_http_special_response_handler /src/harnesses/bld/src/http/ngx_http_special_response.c:523:12
+    #6 0x55555591a4f4 in ngx_http_finalize_request /src/harnesses/bld/src/http/ngx_http_request.c:2560:38
+    #7 0x5555558f9a05 in ngx_http_core_content_phase /src/harnesses/bld/src/http/ngx_http_core_module.c
+    #8 0x5555558f6539 in ngx_http_core_run_phases /src/harnesses/bld/src/http/ngx_http_core_module.c:875:14
+    #9 0x5555558f6539 in ngx_http_handler /src/harnesses/bld/src/http/ngx_http_core_module.c:858:5
+    #10 0x55555591d81d in ngx_http_process_request /src/harnesses/bld/src/http/ngx_http_request.c:2133:5
+    #11 0x555555922ce7 in ngx_http_process_request_headers /src/harnesses/bld/src/http/ngx_http_request.c:1529:13
+    #12 0x5555558a4329 in ngx_event_process_posted /src/harnesses/bld/src/event/ngx_event_posted.c:34:9
+    #13 0x55555582a6a4 in LLVMFuzzerTestOneInput /src/harnesses/bld/src/harnesses/pov_harness.cc:325:5
+    #14 0x5555556de5e0 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #15 0x5555556c9855 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #16 0x5555556cf2ef in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #17 0x5555556fa592 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #18 0x7ffff7806082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+    #19 0x5555556c1a3d in _start (/out/pov_harness+0x16da3d)
+
+DEDUP_TOKEN: __asan_memcpy--ngx_http_userid_set_uid--ngx_http_userid_filter
+0x519000005ec8 is located 72 bytes after 1024-byte region [0x519000005a80,0x519000005e80)
+freed by thread T0 here:
+    #0 0x5555557ea79c in realloc /src/llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:82:3
+    #1 0x7ffff7d01e93 in OPENSSL_LH_insert (/lib/x86_64-linux-gnu/libcrypto.so.1.1+0x179e93) (BuildId: 6ca0e5126699c71d4f42c7a41d61bd4b3d214a6d)
+
+DEDUP_TOKEN: __interceptor_realloc--OPENSSL_LH_insert
+previously allocated by thread T0 here:
+    #0 0x5555557ea79c in realloc /src/llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:82:3
+    #1 0x7ffff7d01e93 in OPENSSL_LH_insert (/lib/x86_64-linux-gnu/libcrypto.so.1.1+0x179e93) (BuildId: 6ca0e5126699c71d4f42c7a41d61bd4b3d214a6d)
+
+DEDUP_TOKEN: __interceptor_realloc--OPENSSL_LH_insert
+SUMMARY: AddressSanitizer: heap-buffer-overflow /src/harnesses/bld/src/http/modules/ngx_http_userid_filter_module.c:446:13 in ngx_http_userid_set_uid
+Shadow bytes around the buggy address:
+  0x519000005c00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x519000005c80: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x519000005d00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x519000005d80: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x519000005e00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+=>0x519000005e80: fa fa fa fa fa fa fa fa fa[fa]fa fa fa fa fa fa
+  0x519000005f00: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x519000005f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x519000006000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x519000006080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x519000006100: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==20==ABORTING

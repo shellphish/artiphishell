@@ -1,0 +1,28 @@
+After completing the analysis, you MUST output a root cause report in the specified format.
+
+```
+<root_cause_report>
+ <description>...</description>
+ <changes>
+ <change>
+   <file>...</file>
+   <fix>...</fix> 
+ </change>
+ <change>
+   <file>...</file>
+   <fix>...</fix>
+ </change>
+ </changes>
+ ...
+</root_cause_report>
+```
+
+<!-- Guidelines for output generation: -->
+1. For <description>, replace the "..." with a detailed root-cause analysis explaining the cause of the bug or issue. This section should summarize the problem clearly and concisely.
+2. For <file>, replace the "..." with the file name requiring modifications to fix the issue.
+3. For <fix>, replace ... with a detailed description of the specific fix or improvement needed for that file.
+4. You can include multiple <change> sections for each file that requires a fix.
+5. DO NOT duplicate <file> entries. If a file requires multiple fixes, they MUST be combined into a single <change> section with multiple <fix> tags.
+
+<!-- Example: -->
+<PLACEHOLDER_FOR_EXAMPLE_REPORTS_BY_LANGUAGE>

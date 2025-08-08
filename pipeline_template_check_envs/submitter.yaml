@@ -1,0 +1,3 @@
+crs_task_metadata:
+  concurrent_target_num: 4
+  type: 'full'

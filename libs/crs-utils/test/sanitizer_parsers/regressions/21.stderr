@@ -1,0 +1,52 @@
++ FUZZER=assimp_fuzzer
++ shift
++ '[' '!' -v TESTCASE ']'
++ '[' '!' -f /work/pov_input ']'
++ export RUN_FUZZER_MODE=interactive
++ RUN_FUZZER_MODE=interactive
++ export FUZZING_ENGINE=libfuzzer
++ FUZZING_ENGINE=libfuzzer
++ export SKIP_SEED_CORPUS=1
++ SKIP_SEED_CORPUS=1
++ run_fuzzer assimp_fuzzer /work/pov_input
+vm.mmap_rnd_bits = 28
+/out/assimp_fuzzer -rss_limit_mb=2560 -timeout=25 /work/pov_input < /dev/null
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 993595385
+INFO: Loaded 1 modules   (235609 inline 8-bit counters): 235609 [0x555556fa54b8, 0x555556fded11), 
+INFO: Loaded 1 PC tables (235609 PCs): 235609 [0x555556fded18,0x5555573772a8), 
+/out/assimp_fuzzer: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+Info,  T0: Load $$$___magic___$$$.
+Info,  T0: Found a matching importer for this file format: 3D GameStudio Heightmap (HMP) Importer.
+Info,  T0: Import root directory is './'
+ALARM: working on the last Unit for 25 seconds
+       and the timeout value is 25 (use -timeout=N to change)
+==15== ERROR: libFuzzer: timeout after 25 seconds
+    #0 0x55555606ea24 in __sanitizer_print_stack_trace /src/llvm-project/compiler-rt/lib/ubsan/ubsan_diag_standalone.cpp:31:3
+    #1 0x555555feda78 in fuzzer::PrintStackTrace() /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerUtil.cpp:210:5
+    #2 0x555555fd0d87 in fuzzer::Fuzzer::AlarmCallback() /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:304:5
+    #3 0x7ffff7e6541f  (/lib/x86_64-linux-gnu/libpthread.so.0+0x1441f) (BuildId: 9753720502573b97dbac595b61fd72c2df18e078)
+    #4 0x555555feb46f in AddValue /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerValueBitMap.h:38:33
+    #5 0x555555feb46f in HandleCmp<unsigned char> /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerTracePC.cpp:392:19
+    #6 0x555555feb46f in __sanitizer_cov_trace_cmp1 /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerTracePC.cpp:537:15
+    #7 0x5555562e9a95 in operator!= /src/assimp/include/assimp/texture.h:104:18
+    #8 0x5555562e9a95 in Assimp::MDLImporter::ReplaceTextureWithColor(aiTexture const*) /src/assimp/code/AssetLib/MDL/MDLMaterialLoader.cpp:108:22
+    #9 0x5555562ee280 in Assimp::MDLImporter::ParseSkinLump_3DGS_MDL7(unsigned char const*, unsigned char const**, aiMaterial*, unsigned int, unsigned int, unsigned int) /src/assimp/code/AssetLib/MDL/MDLMaterialLoader.cpp:532:22
+    #10 0x555556222541 in Assimp::HMPImporter::ReadFirstSkin(unsigned int, unsigned char const*, unsigned char const**) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:453:5
+    #11 0x5555562205aa in Assimp::HMPImporter::CreateMaterial(unsigned char const*, unsigned char const**) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:340:9
+    #12 0x55555621e391 in Assimp::HMPImporter::InternReadFile_HMP5() /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:220:5
+    #13 0x55555621d268 in Assimp::HMPImporter::InternReadFile(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, aiScene*, Assimp::IOSystem*) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:145:9
+    #14 0x555556083ef0 in Assimp::BaseImporter::ReadFile(Assimp::Importer*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, Assimp::IOSystem*) /src/assimp/code/Common/BaseImporter.cpp:125:9
+    #15 0x55555609e20b in Assimp::Importer::ReadFile(char const*, unsigned int) /src/assimp/code/Common/Importer.cpp:675:30
+    #16 0x55555609ceb8 in Assimp::Importer::ReadFileFromMemory(void const*, unsigned long, unsigned int, char const*) /src/assimp/code/Common/Importer.cpp:512:5
+    #17 0x55555606fd90 in LLVMFuzzerTestOneInput /src/assimp/fuzz/assimp_fuzzer.cc:53:34
+    #18 0x555555fd2320 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #19 0x555555fbd595 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #20 0x555555fc302f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #21 0x555555fee2d2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #22 0x7ffff7c3a082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 5792732f783158c66fb4f3756458ca24e46e827d)
+    #23 0x555555fb577d in _start (/out/assimp_fuzzer+0xa6177d)
+
+DEDUP_TOKEN: __sanitizer_print_stack_trace--fuzzer::PrintStackTrace()--fuzzer::Fuzzer::AlarmCallback()
+SUMMARY: libFuzzer: timeout

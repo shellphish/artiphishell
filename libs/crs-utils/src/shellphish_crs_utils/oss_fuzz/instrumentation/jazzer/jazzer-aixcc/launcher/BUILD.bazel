@@ -1,0 +1,101 @@
+load("@apple_support//rules:universal_binary.bzl", "universal_binary")
+
+cc_library(
+    name = "jazzer_main",
+    srcs = ["jazzer_main.cpp"],
+    deps = [
+        ":jvm_tooling_lib",
+        "@abseil-cpp//absl/strings",
+    ] + select({
+        "@platforms//os:android": [],
+        "//conditions:default": ["@rules_jni//jni:libjvm"],
+    }),
+)
+
+cc_library(
+    name = "jvm_tooling_lib",
+    srcs = ["jvm_tooling.cpp"],
+    hdrs = ["jvm_tooling.h"],
+    data = [
+        "//src/main/java/com/code_intelligence/jazzer:jazzer_standalone_deploy.jar",
+    ],
+    linkopts = select({
+        "@platforms//os:android": ["-ldl"],
+        "//conditions:default": [],
+    }),
+    deps = [
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/strings:str_format",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@rules_jni//jni",
+    ],
+)
+
+cc_binary(
+    name = "jazzer_single_arch",
+    linkstatic = True,
+    tags = ["manual"],
+    visibility = ["//launcher/android:__pkg__"],
+    deps = [":jazzer_main"],
+)
+
+# On macOS, builds a binary that supports both x86_64 and arm64.
+# On all other platforms, it just symlinks the input binary.
+universal_binary(
+    name = "jazzer",
+    binary = ":jazzer_single_arch",
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "jvm_tooling_test",
+    size = "small",
+    srcs = ["jvm_tooling_test.cpp"],
+    data = [
+        "//launcher/testdata:fuzz_target_mocks_deploy.jar",
+    ],
+    env = {
+        "JAVA_OPTS": "-Djazzer.hooks=false",
+    },
+    includes = ["."],
+    deps = [
+        ":jvm_tooling_lib",
+        ":test_main",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "fuzzed_data_provider_test",
+    size = "medium",
+    srcs = ["fuzzed_data_provider_test.cpp"],
+    copts = select({
+        "@platforms//os:windows": ["/std:c++17"],
+        "//conditions:default": ["-std=c++17"],
+    }),
+    data = [
+        "//launcher/testdata:fuzz_target_mocks_deploy.jar",
+    ],
+    env = {
+        "JAVA_OPTS": "-Djazzer.hooks=false",
+    },
+    includes = ["."],
+    deps = [
+        ":jvm_tooling_lib",
+        ":test_main",
+        "//src/main/native/com/code_intelligence/jazzer/driver:fuzzed_data_provider",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "test_main",
+    srcs = ["test_main.cpp"],
+    linkstatic = True,
+    deps = [
+        "@googletest//:gtest",
+        "@rules_jni//jni:libjvm",
+    ],
+)

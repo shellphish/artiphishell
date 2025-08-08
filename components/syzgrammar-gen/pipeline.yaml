@@ -1,0 +1,89 @@
+repo_classes:
+  ######################## INPUTS ########################
+  linux_targets_with_sources: FilesystemRepository
+  linux_harness_infos: MetadataRepository
+  target_metadatas: MetadataRepository
+
+  ######################## OUTPUTS ########################
+  syzlang_grammar: BlobRepository
+  syscall_filter: BlobRepository
+
+tasks:
+  syz_grammar_generate:
+    annotations:
+      maturity: inProgress
+      authors:
+        - zolutal
+    require_success: true
+    job_quota:
+      cpu: "4"
+      mem: "4G"
+    links:
+      harness_info:
+        repo: linux_harness_infos
+        kind: InputMetadata
+      harness_info_id:
+        repo: linux_harness_infos
+        kind: InputId
+
+      target_with_sources:
+        repo: linux_targets_with_sources
+        kind: InputFilepath
+        key: harness_info.project_id
+      target_metadata:
+        repo: target_metadatas
+        kind: InputMetadata
+        key: harness_info.project_id
+
+      syzlang_grammar:
+        repo: syzlang_grammar
+        kind: OutputFilepath
+
+      syscall_filter:
+        repo: syscall_filter
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-syzgrammar-gen
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          PROJECT_ID={{ harness_info.project_id | shquote }}
+          TARGET_SRC_DIR={{ target_with_sources | shquote }}
+          CP_HARNESS_ID={{ harness_info.cp_harness_id | shquote }}
+
+          KERNEL_RELPATH={{ target_metadata.shellphish.known_sources.linux_kernel[0].relative_path | shquote }}
+          HARNESS_SOURCE=$(yq ".harnesses.${CP_HARNESS_ID}.source" "${TARGET_SRC_DIR}/project.yaml" | tr -d '"')
+
+          syzgrammar-gen /shellphish/libs/syzlangrs/syzkaller/ \
+                         "${TARGET_SRC_DIR}/${HARNESS_SOURCE}" \
+                         /shellphish/joern/joern-cli/joern \
+                         ./harness.sys.txt \
+                         ./syscall_filter || true
+
+          # Check if generating the grammar failed
+          # checking here in case it gets killed by the budget limit or for some
+          # unexpected reason or something
+          if [ ! -f ./harness.sys.txt ]; then
+            echo "Grammar generation failed, using fallback grammar"
+            echo "syz_harness(blob buffer[in], blob_size len[blob])" > ./harness.sys.txt
+            cp ./harness.sys.txt {{ syzlang_grammar | shquote }}
+          else
+            echo "Grammar generation succeeded"
+            cp ./harness.sys.txt {{ syzlang_grammar | shquote }}
+          fi
+
+          if [ ! -f ./syscall_filter ]; then
+            echo "Syscall Filter creation failed!"
+            echo "[]" > ./syscall_filter
+            cp ./syscall_filter {{ syscall_filter | shquote }}
+          else
+            echo "Syscall filter creation succeeded"
+            cp ./syscall_filter {{ syscall_filter | shquote }}
+          fi
+

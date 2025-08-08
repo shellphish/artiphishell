@@ -1,0 +1,526 @@
+repo_classes:
+  ##################### INPUTS #####################
+  project_harness_infos: MetadataRepository
+  project_harness_only_metadatas: MetadataRepository
+  project_metadatas: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  coverage_build_artifacts: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks: MetadataRepository
+  crs_tasks_full: MetadataRepository
+  crs_tasks_delta: MetadataRepository
+  commit_functions_indices: BlobRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+  sarif_reports: BlobRepository
+  sarif_metadatas: {cls: MetadataRepository, required: false}
+  target_split_metadatas: MetadataRepository
+
+  fuzzers_started: BlobRepository
+  
+  losan_dedup_pov_report_representative_crashing_inputs: BlobRepository
+  losan_dedup_pov_report_representative_metadatas: MetadataRepository
+  losan_dedup_pov_report_representative_full_reports: BlobRepository
+  jazzer_build_shellphish_dir: "FilesystemRepository"
+
+  ##################### INTERMEDIATES #####################
+  event_logs: { "cls": "MetadataRepository", "required": false }
+  explorer_event_logs: { "cls": "MetadataRepository", "required": false }
+
+tasks:
+  grammar_guy_fuzz:
+    priority: 100
+    max_spawn_jobs: 4
+    cache_dir: /pdt-per-node-cache
+    job_quota:
+      cpu: 500m
+      mem: 1Gi
+    resource_limits:
+      cpu: 1
+      mem: 3Gi
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    require_success: true
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      project_harness_metadata:
+        repo: project_harness_only_metadatas
+        kind: InputMetadata
+      project_harness_metadata_fp:
+        repo: project_harness_only_metadatas
+        kind: InputFilepath
+      project_harness_metadata_id:
+        repo: project_harness_only_metadatas
+        kind: InputId
+
+      # Wait until the fuzzers are ready before we schedule this task
+      #fuzzers_started:
+      #  repo: fuzzers_started
+      #  kind: InputId
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: project_harness_metadata.project_id
+      target_split_metadata_path:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+        template_cache_key: "coverage_build_artifacts-{{ project_harness_metadata.project_id }}"
+        use_cache_symlink: true
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+        template_cache_key: "full_functions_indices-{{ project_harness_metadata.project_id }}"
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+        template_cache_key: "full_functions_jsons_dirs-{{ project_harness_metadata.project_id }}"
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      project_id:
+        repo: full_functions_jsons_dirs
+        kind: InputId
+        key: project_harness_metadata.project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_metadata.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: project_harness_metadata.project_id
+
+      events_dir:
+        repo: event_logs
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-grammar-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          
+          export PROJECT_ID={{project_harness_metadata.project_id | shquote}}
+          export PROJECT_HARNESS_METADATA_ID={{project_harness_metadata_id | shquote}}
+          export PROJECT_HARNESS_METADATA_FILE={{project_harness_metadata_fp | shquote}}
+          export PROJECT_METADATA_FILE={{project_metadata_path | shquote}}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+          export TARGET_SPLIT_METADATA={{target_split_metadata_path | shquote}}
+          export FUNCTIONS_FULL_INDEX_PATH={{ functions_index | shquote }}
+          export FUNCTIONS_FULL_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export EVENTS_DIR={{events_dir | shquote}}
+          
+          /shellphish/grammar_guy/run-gg.sh
+
+  grammar_agent_explore:
+    priority: 100
+    cache_dir: /pdt-per-node-cache
+    replicable: true
+    starting_replicas: 1
+    replicas_per_minute: 1
+    max_replicas: 4
+    max_concurrent_jobs: 40
+    max_spawn_jobs: 4
+    priority_addend: '{{ target_split_metadata.num_harness_infos }}'
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    require_success: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    job_quota:
+      cpu: 500m
+      mem: 1Gi
+    resource_limits:
+      cpu: 1
+      mem: 4Gi
+
+    links:
+      project_harness_metadata:
+        repo: project_harness_only_metadatas
+        kind: InputMetadata
+      project_harness_metadata_fp:
+        repo: project_harness_only_metadatas
+        kind: InputFilepath
+      project_harness_metadata_id:
+        repo: project_harness_only_metadatas
+        kind: InputId
+
+      # Wait until the fuzzers are ready before we schedule this task
+      #fuzzers_started:
+      #  repo: fuzzers_started
+      #  kind: InputId
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: project_harness_metadata.project_id
+      target_split_metadata_path:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: project_harness_metadata.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_metadata.project_id
+
+      crs_task:
+        repo: crs_tasks_full
+        kind: InputMetadata
+        key: project_harness_metadata.project_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+        template_cache_key: "coverage_build_artifacts-{{ project_harness_metadata.project_id }}"
+        use_cache_symlink: true
+      functions_index:
+        repo: full_functions_indices
+        kind: InputId
+        key: project_harness_metadata.project_id
+
+      events_dir:
+        repo: explorer_event_logs
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-grammar-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{project_harness_metadata.project_id | shquote}}
+          export PROJECT_HARNESS_METADATA_ID={{project_harness_metadata_id | shquote}}
+          export PROJECT_HARNESS_METADATA_FILE={{project_harness_metadata_fp | shquote}}
+          export TARGET_SPLIT_METADATA={{target_split_metadata_path | shquote}}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+          export PROJECT_METADATA_FILE={{project_metadata_path | shquote}}
+          export EVENTS_DIR={{events_dir | shquote}}
+          
+          /shellphish/grammar_guy/run-gg-targeted-explorer-agent.sh
+          
+  grammar_agent_explore_delta:
+    priority: 100
+    #cache_dir: /shared/pdt-per-node-cache
+    replicable: true
+    starting_replicas: 1
+    replicas_per_minute: 1
+    # TODO(FINALDEPLOY): Update this
+    max_replicas: 4
+    max_concurrent_jobs: 40
+    max_spawn_jobs: 4
+    priority_addend: '{{ target_split_metadata.num_harness_infos }}'
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    require_success: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    job_quota:
+      cpu: 500m
+      mem: 1Gi
+    resource_limits:
+      cpu: 1
+      mem: 4Gi
+
+    links:
+      project_harness_metadata:
+        repo: project_harness_only_metadatas
+        kind: InputMetadata
+      project_harness_metadata_fp:
+        repo: project_harness_only_metadatas
+        kind: InputFilepath
+      project_harness_metadata_id:
+        repo: project_harness_only_metadatas
+        kind: InputId
+
+      # Wait until the fuzzers are ready before we schedule this task
+      #fuzzers_started:
+      #  repo: fuzzers_started
+      #  kind: InputId
+
+      commit_functions_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+      
+      commit_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: project_harness_metadata.project_id
+      target_split_metadata_path:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: project_harness_metadata.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: project_harness_metadata.project_id
+
+      crs_task:
+        repo: crs_tasks_delta
+        kind: InputMetadata
+        key: project_harness_metadata.project_id
+
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: project_harness_metadata.project_id
+        template_cache_key: "coverage_build_artifacts-{{ project_harness_metadata.project_id }}"
+        use_cache_symlink: true
+      functions_index:
+        repo: full_functions_indices
+        kind: InputId
+        key: project_harness_metadata.project_id
+
+      events_dir:
+        repo: explorer_event_logs
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-grammar-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{project_harness_metadata.project_id | shquote}}
+          export PROJECT_HARNESS_METADATA_ID={{project_harness_metadata_id | shquote}}
+          export PROJECT_HARNESS_METADATA_FILE={{project_harness_metadata_fp | shquote}}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+          export PROJECT_METADATA_FILE={{project_metadata_path | shquote}}
+          export TARGET_SPLIT_METADATA={{target_split_metadata_path | shquote}}
+          export EVENTS_DIR={{events_dir | shquote}}
+
+          export DELTA_MODE=1
+          export COMMIT_FUNCTIONS_INDEX={{ commit_functions_index | shquote }}
+          export COMMIT_FUNCTIONS_JSONS_DIR={{ commit_functions_jsons_dir | shquote }}
+
+          /shellphish/grammar_guy/run-gg-targeted-explorer-agent.sh
+
+  grammar_agent_reproduce_losan_dedup_pov:
+    priority: 100
+    cache_dir: /pdt-per-node-cache
+    job_quota:
+      cpu: 2
+      mem: 1Gi
+    resource_limits:
+      cpu: 2
+      mem: 4Gi
+
+    max_concurrent_jobs: 10
+    max_spawn_jobs: 4
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching in this pools quota
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    links:
+      losan_dedup_pov_report_representative_crashing_input_metadata_id:
+        repo: losan_dedup_pov_report_representative_metadatas
+        kind: InputId
+      losan_dedup_pov_report_representative_crashing_input_metadata:
+        repo: losan_dedup_pov_report_representative_metadatas
+        kind: InputMetadata
+      losan_dedup_pov_report_representative_crashing_input_metadata_fp:
+        repo: losan_dedup_pov_report_representative_full_reports
+        kind: InputFilepath
+
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+        key: losan_dedup_pov_report_representative_crashing_input_metadata.harness_info_id
+      harness_info_fp:
+        repo: project_harness_infos
+        kind: InputFilepath
+        key: losan_dedup_pov_report_representative_crashing_input_metadata.harness_info_id
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+        key: losan_dedup_pov_report_representative_crashing_input_metadata.harness_info_id
+
+      project_id:
+        repo: full_functions_jsons_dirs
+        kind: InputId
+        key: harness_info.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: harness_info.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: harness_info.project_id
+
+      coverage_build_artifact:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: harness_info.project_id
+        template_cache_key: "coverage_build_artifacts-{{ harness_info.project_id }}"
+        use_cache_symlink: true
+
+      losan_build_artifact_path:
+        repo: jazzer_build_shellphish_dir
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "jazzer_build_shellphish-{{ harness_info.build_configuration_id }}"
+        use_cache_symlink: true
+
+      events_dir:
+        repo: explorer_event_logs
+        kind: StreamingOutputFilepath
+
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-grammar-guy
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export LOSAN_DEDUP_POV_REPORT_REPRESENTATIVE_CRASHING_INPUT_ID={{losan_dedup_pov_report_representative_crashing_input_metadata_id}}
+          export LOSAN_DEDUP_POV_REPORT_REPRESENTATIVE_CRASHING_INPUT_METADATA_FILE={{losan_dedup_pov_report_representative_crashing_input_metadata_fp | shquote}}
+
+          export HARNESS_INFO_ID={{losan_dedup_pov_report_representative_crashing_input_metadata.harness_info_id}}
+          export HARNESS_INFO_FILE={{harness_info_fp | shquote}}
+          export PROJECT_ID={{harness_info.project_id}}
+          export BUILD_CONFIGURATION_ID={{harness_info.build_configuration_id}}
+          export COVERAGE_BUILD_ARTIFACT={{ coverage_build_artifact | shquote }}
+          export LOSAN_BUILD_ARTIFACT_PATH={{ losan_build_artifact_path | shquote }}
+          export PROJECT_NAME={{harness_info.project_name | shquote}}
+          export CP_HARNESS_NAME={{harness_info.cp_harness_name | shquote}}
+
+          export FUZZER_SYNC_DIR="/shared/fuzzer_sync/${PROJECT_NAME}-${CP_HARNESS_NAME}-${HARNESS_INFO_ID}/"
+
+          /shellphish/grammar_guy/run-gg-targeted-reproducer-agent.sh

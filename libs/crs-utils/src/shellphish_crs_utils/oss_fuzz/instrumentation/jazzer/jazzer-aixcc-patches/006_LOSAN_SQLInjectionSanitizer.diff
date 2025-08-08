@@ -1,0 +1,73 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+index 5cf355d9..ee8e0239 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+@@ -45,6 +45,7 @@ java_library(
+     deps = [
+         "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+         "@maven//:com_github_jsqlparser_jsqlparser",
++        "shell_utils_lib",
+     ],
+ )
+ 
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/SqlInjection.java b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/SqlInjection.java
+index 5d9e2c78..878e9c27 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/SqlInjection.java
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/SqlInjection.java
+@@ -30,6 +30,12 @@ import java.util.stream.Stream;
+ import net.sf.jsqlparser.JSQLParserException;
+ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+ 
++// LOSAN imports
++import java.util.List;
++import java.nio.charset.StandardCharsets;
++import com.code_intelligence.jazzer.sanitizers.ShellUtils;
++import com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical;
++
+ /**
+  * Detects SQL injections.
+  *
+@@ -58,7 +64,7 @@ public class SqlInjection {
+   // Characters that should be escaped in user input.
+   // See https://dev.mysql.com/doc/refman/8.0/en/string-literals.html
+   private static final String CHARACTERS_TO_ESCAPE = "'\"\b\n\r\t\\%_";
+-
++  private static String LoSan = System.getenv("SHELL_SAN");
+   private static final Set<String> SQL_SYNTAX_ERROR_EXCEPTIONS =
+       unmodifiableSet(
+           Stream.of(
+@@ -103,6 +109,9 @@ public class SqlInjection {
+ 
+     if (arguments.length > 0 && arguments[0] instanceof String) {
+       String query = (String) arguments[0];
++      if (LoSan != null) {
++        losan_check(query);
++      }
+       hasValidSqlQuery = isValidSql(query);
+       Jazzer.guideTowardsContainment(query, CHARACTERS_TO_ESCAPE, hookId);
+     }
+@@ -136,4 +145,24 @@ public class SqlInjection {
+       return true;
+     }
+   }
++  // LOSAN functions come here
++  private static boolean containsUnprintableOrUtf8(String input) {
++    byte[] byteArray = input.getBytes(StandardCharsets.UTF_8);
++    for (byte b : byteArray) {
++        int c = b & 0xFF; // Convert signed byte to unsigned
++        if (c > 126) { // Lets do (0-126) for this one
++            return true;
++        }
++    }
++    return false;
++  }
++
++  private static void losan_check(String query){
++    if (containsUnprintableOrUtf8(query)){
++      List<Integer> found_bytes = ShellUtils.byteArrayToIntList(query.getBytes());
++      List<Integer> expected_bytes = ShellUtils.byteArrayToIntList(CHARACTERS_TO_ESCAPE.getBytes());
++      String error_msg = String.format("SHELLPHISH_FOUND_LOSAN: %s and SHELLPHISH_EXPECTED_LOSAN: %s\n",ShellUtils.reprString(found_bytes),ShellUtils.reprString(expected_bytes));
++      Jazzer.reportFindingFromHook(new FuzzerSecurityIssueCritical("[LOSAN] : SQL Injection" + error_msg));
++    }
++  }
+ }

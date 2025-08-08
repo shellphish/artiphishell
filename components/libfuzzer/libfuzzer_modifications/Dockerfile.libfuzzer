@@ -1,0 +1,7 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE}
+ARG ISOLATED=
+RUN test -z "${ISOLATED}" || echo "deb [trusted=yes arch=amd64] http://apt-mirror-$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\./-/g'):$(grep DISTRIB_RELEASE= /etc/lsb-release | cut -d= -f2 | sed 's/\.//g') $(grep DISTRIB_CODENAME /etc/lsb-release | cut -d= -f2) main universe" > /etc/apt/sources.list
+RUN apt-get update && apt-get install -y clang
+RUN mkdir -p /shellphish/libfuzzer
+COPY shellphish_libfuzzer_*.sh /shellphish/libfuzzer/

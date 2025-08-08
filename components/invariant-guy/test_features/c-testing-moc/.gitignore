@@ -1,0 +1,6 @@
+targets-semis-aixcc-sc-mock-cp/
+pipeline.lock
+*.tar.gz
+pd.logs
+
+!backup/**

@@ -1,0 +1,4 @@
+GET / HTTP/1.1
+Host: localhost
+Range: bytes=-r, 0-614
+

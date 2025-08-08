@@ -1,0 +1,44 @@
+diff --git a/instrumentation/afl-llvm-dict2file.so.cc b/instrumentation/afl-llvm-dict2file.so.cc
+index 6559bc84..f4b38f29 100644
+--- a/instrumentation/afl-llvm-dict2file.so.cc
++++ b/instrumentation/afl-llvm-dict2file.so.cc
+@@ -381,7 +381,8 @@ bool AFLdict2filePass::runOnModule(Module &M) {
+                !FuncName.compare("xmlStrEqual") ||
+                !FuncName.compare("g_strcmp0") ||
+                !FuncName.compare("curl_strequal") ||
+-               !FuncName.compare("strcsequal"));
++               !FuncName.compare("strcsequal")) ||
++               !FuncName.compare("ngx_dns_strcmp");
+           isMemcmp &=
+               (!FuncName.compare("memcmp") || !FuncName.compare("bcmp") ||
+                !FuncName.compare("CRYPTO_memcmp") ||
+@@ -390,7 +391,8 @@ bool AFLdict2filePass::runOnModule(Module &M) {
+                !FuncName.compare("memcmpct"));
+           isStrncmp &= (!FuncName.compare("strncmp") ||
+                         !FuncName.compare("xmlStrncmp") ||
+-                        !FuncName.compare("curl_strnequal"));
++                        !FuncName.compare("curl_strnequal")) ||
++                        !FuncName.compare("ngx_filename_cmp");
+           isStrcasecmp &= (!FuncName.compare("strcasecmp") ||
+                            !FuncName.compare("stricmp") ||
+                            !FuncName.compare("ap_cstr_casecmp") ||
+@@ -400,7 +402,8 @@ bool AFLdict2filePass::runOnModule(Module &M) {
+                            !FuncName.compare("g_ascii_strcasecmp") ||
+                            !FuncName.compare("Curl_strcasecompare") ||
+                            !FuncName.compare("Curl_safe_strcasecompare") ||
+-                           !FuncName.compare("cmsstrcasecmp"));
++                           !FuncName.compare("cmsstrcasecmp")) ||
++                           !FuncName.compare("ngx_strcasecmp");
+           isStrncasecmp &= (!FuncName.compare("strncasecmp") ||
+                             !FuncName.compare("strnicmp") ||
+                             !FuncName.compare("ap_cstr_casecmpn") ||
+@@ -408,7 +411,8 @@ bool AFLdict2filePass::runOnModule(Module &M) {
+                             !FuncName.compare("xmlStrncasecmp") ||
+                             !FuncName.compare("g_ascii_strncasecmp") ||
+                             !FuncName.compare("Curl_strncasecompare") ||
+-                            !FuncName.compare("g_strncasecmp"));
++                            !FuncName.compare("g_strncasecmp")) ||
++                            !FuncName.compare("ngx_strncasecmp");
+           isStrstr &= (!FuncName.compare("strstr") ||
+                        !FuncName.compare("g_strstr_len") ||
+                        !FuncName.compare("ap_strcasestr") ||

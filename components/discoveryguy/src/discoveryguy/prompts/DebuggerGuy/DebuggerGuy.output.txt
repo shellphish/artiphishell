@@ -1,0 +1,16 @@
+After completing the analysis, you MUST output a report in the specified format.
+
+```
+<report>
+  <summary>
+    ...
+  </summary>
+</report>
+```
+
+<!-- Guidelines for output generation: -->
+1. For <summary>, replace the "..." with a summary of your investigation.
+2. The summary MUST contains clear guidelines on how to modify the Python script to integrate the feedback.
+
+<!-- Example: -->
+<PLACEHOLDER_FOR_EXAMPLE_REPORTS_BY_LANGUAGE>

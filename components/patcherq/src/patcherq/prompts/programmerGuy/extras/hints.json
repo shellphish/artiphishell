@@ -1,0 +1,6 @@
+{
+  "c": {},
+  "java": {
+    "Remote Code Execution": "If the vulnerable code is CLEARLY a backdoor, then just remove it\n. Otherwise, try to find a way to preserve the functionality of the code while mitigating obvious malicious payload.\n For instance, you can restrict the input to particular types or values!"
+  }
+}

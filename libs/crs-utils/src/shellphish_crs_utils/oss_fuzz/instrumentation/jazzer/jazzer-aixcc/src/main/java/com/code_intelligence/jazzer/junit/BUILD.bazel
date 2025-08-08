@@ -1,0 +1,176 @@
+load("@rules_jni//jni:defs.bzl", "java_jni_library")
+
+java_library(
+    name = "junit",
+    visibility = ["//deploy:__pkg__"],
+    runtime_deps = [
+        ":fuzz_test",
+    ],
+)
+
+java_library(
+    name = "agent_configurator",
+    srcs = [
+        "AgentConfigurator.java",
+    ],
+    deps = [
+        ":utils",
+        "//deploy:jazzer",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+)
+
+java_library(
+    name = "fuzz_test",
+    srcs = [
+        "AgentConfiguringArgumentsProvider.java",
+        "DictionaryEntries.java",
+        "DictionaryEntriesList.java",
+        "DictionaryFile.java",
+        "DictionaryFiles.java",
+        "FuzzTest.java",
+        "FuzzTestExtensions.java",
+        "FuzzerDictionary.java",
+        "FuzzingArgumentsProvider.java",
+        "SeedArgumentsProvider.java",
+        "SpringFuzzTestHelper.java",
+    ],
+    visibility = [
+        "//examples/junit/src/test/java/com/example:__pkg__",
+        "//selffuzz/src/test/java/com/code_intelligence/selffuzz:__subpackages__",
+        "//src/test/java/com/code_intelligence/jazzer/junit:__pkg__",
+    ],
+    exports = [
+        ":lifecycle",
+    ],
+    runtime_deps = [
+        # The JUnit launcher that is part of the Jazzer driver needs this on the classpath
+        # to run an @FuzzTest with JUnit. This will also result in a transitive dependency
+        # in the generated pom file.
+        "@maven//:org_junit_platform_junit_platform_launcher",
+    ],
+    deps = [
+        ":fuzz_test_configuration_error",
+        ":fuzz_test_executor",
+        ":lifecycle",
+        ":seed_serializer",
+        ":utils",
+        "//deploy:jazzer",
+        "@maven//:jakarta_servlet_jakarta_servlet_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_params",
+        "@maven//:org_junit_platform_junit_platform_commons",
+        "@maven//:org_springframework_spring_test",
+        "@maven//:org_springframework_spring_web",
+        "@maven//:org_springframework_spring_webmvc",
+    ],
+)
+
+java_library(
+    name = "fuzz_test_configuration_error",
+    srcs = ["FuzzTestConfigurationError.java"],
+    visibility = [
+        "//src/main/java/com/code_intelligence/jazzer/driver/junit:__pkg__",
+        "//src/test/java/com/code_intelligence/jazzer/junit:__pkg__",
+    ],
+)
+
+java_library(
+    name = "common_exceptions",
+    srcs = [
+        "ExitCodeException.java",
+        "FuzzTestFindingException.java",
+    ],
+    visibility = [
+        "//src/main/java/com/code_intelligence/jazzer/driver/junit:__pkg__",
+        "//src/test/java/com/code_intelligence/jazzer/junit:__pkg__",
+    ],
+)
+
+java_jni_library(
+    name = "fuzz_test_executor",
+    srcs = [
+        "ApiStats.java",
+        "ApiStatsHolder.java",
+        "ApiStatsInterval.java",
+        "ApiStatsNoop.java",
+        "FuzzTestExecutor.java",
+        "SpringFuzzTestHelper.java",
+    ],
+    native_libs = [
+        "//src/main/native/com/code_intelligence/jazzer/driver:jazzer_driver",
+    ],
+    visibility = ["//src/test/java/com/code_intelligence/jazzer/junit:__pkg__"],
+    deps = [
+        ":agent_configurator",
+        ":fuzz_test_configuration_error",
+        ":junit_lifecycle_methods_invoker",
+        ":lifecycle",
+        ":seed_serializer",
+        ":utils",
+        "//deploy:jazzer",
+        "//deploy:jazzer-api",
+        "@maven//:jakarta_servlet_jakarta_servlet_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_params",
+        "@maven//:org_junit_platform_junit_platform_commons",
+        "@maven//:org_springframework_spring_test",
+        "@maven//:org_springframework_spring_web",
+        "@maven//:org_springframework_spring_webmvc",
+    ],
+)
+
+java_library(
+    name = "junit_internals_compile_only",
+    neverlink = True,
+    # Do not add a dependency on junit-jupiter-engine to the POM file. The user
+    # has to add and control this dependency themselves if they want to use
+    # JUnit 5. Even if we added it, Maven resolution mechanics mean that we do
+    # not control the version anyway.
+    # https://github.com/junit-team/junit5/discussions/3441#discussioncomment-6884855
+    tags = ["maven:compile-only"],
+    exports = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+    ],
+)
+
+java_library(
+    name = "junit_lifecycle_methods_invoker",
+    srcs = ["JUnitLifecycleMethodsInvoker.java"],
+    deps = [
+        ":junit_internals_compile_only",
+        ":lifecycle",
+        # Unsafe provider is included in bootstrap jar and not available during compilation.
+        "//src/main/java/com/code_intelligence/jazzer/utils:unsafe_provider",
+        "//deploy:jazzer",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+)
+
+java_library(
+    name = "lifecycle",
+    srcs = ["Lifecycle.java"],
+)
+
+java_library(
+    name = "seed_serializer",
+    srcs = ["SeedSerializer.java"],
+    deps = [
+        ":fuzz_test_configuration_error",
+        "//deploy:jazzer",
+        "//deploy:jazzer-api",
+    ],
+)
+
+java_library(
+    name = "utils",
+    srcs = ["Utils.java"],
+    visibility = ["//src/test/java/com/code_intelligence/jazzer/junit:__pkg__"],
+    deps = [
+        "//deploy:jazzer",
+        # Unsafe provider is included in bootstrap jar and not available during compilation.
+        "//src/main/java/com/code_intelligence/jazzer/utils:unsafe_provider",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_params",
+    ],
+)

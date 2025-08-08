@@ -1,0 +1,62 @@
+######################################################################
+# Helper Functions
+######################################################################
+
+def artiphishell_base64_encode(data: bytes) -> bytes:
+    import base64
+    return base64.b64encode(data)
+
+######################################################################
+# Grammar Rules
+######################################################################
+
+ctx.rule('START', b'{HEADER}{CP_SECTION}{ACCESS_THIS_SUPER}{INTERFACES_SECTION}{FIELDS_SECTION}{METHODS_SECTION}{CLASS_ATTR_SECTION}')
+ctx.literal('MAGIC', b'\xca\xfe\xba\xbe')
+ctx.rule('HEADER', b'{MAGIC}{MINOR_VERSION}{MAJOR_VERSION}')
+ctx.literal('MINOR_VERSION', b'\x00\x00')
+ctx.bytes('MINOR_VERSION', 2)
+ctx.literal('MAJOR_VERSION', b'\x00-')
+ctx.bytes('MAJOR_VERSION', 2)
+ctx.rule('CP_SECTION', b'{CP_COUNT}{CP_ENTRY_LIST}')
+ctx.literal('CP_COUNT', b'\x00\x01')
+ctx.bytes('CP_COUNT', 2)
+ctx.literal('CP_ENTRY_LIST', b'')
+ctx.rule('CP_ENTRY_LIST', b'{CP_ENTRY}{CP_ENTRY_LIST}')
+ctx.bytes('CP_ENTRY', 3)
+ctx.rule('ACCESS_THIS_SUPER', b'{ACCESS_FLAGS}{THIS_CLASS}{SUPER_CLASS}')
+ctx.bytes('ACCESS_FLAGS', 2)
+ctx.bytes('THIS_CLASS', 2)
+ctx.bytes('SUPER_CLASS', 2)
+ctx.rule('INTERFACES_SECTION', b'{INTERFACE_COUNT}{INTERFACE_LIST}')
+ctx.literal('INTERFACE_COUNT', b'\x00\x00')
+ctx.bytes('INTERFACE_COUNT', 2)
+ctx.literal('INTERFACE_LIST', b'')
+ctx.rule('INTERFACE_LIST', b'{INTERFACE}{INTERFACE_LIST}')
+ctx.bytes('INTERFACE', 2)
+ctx.rule('FIELDS_SECTION', b'{FIELD_COUNT}{FIELD_LIST}')
+ctx.literal('FIELD_COUNT', b'\x00\x00')
+ctx.bytes('FIELD_COUNT', 2)
+ctx.literal('FIELD_LIST', b'')
+ctx.rule('FIELD_LIST', b'{FIELD_ENTRY}{FIELD_LIST}')
+ctx.rule('FIELD_ENTRY', b'{ACCESS_FLAGS}{NAME_INDEX}{DESC_INDEX}{FIELD_ATTR_COUNT}{FIELD_ATTR_LIST}')
+ctx.bytes('NAME_INDEX', 2)
+ctx.bytes('DESC_INDEX', 2)
+ctx.literal('FIELD_ATTR_COUNT', b'\x00\x00')
+ctx.literal('FIELD_ATTR_LIST', b'')
+ctx.rule('METHODS_SECTION', b'{METHOD_COUNT}{METHOD_LIST}')
+ctx.literal('METHOD_COUNT', b'\x00\x00')
+ctx.bytes('METHOD_COUNT', 2)
+ctx.literal('METHOD_LIST', b'')
+ctx.rule('METHOD_LIST', b'{METHOD_ENTRY}{METHOD_LIST}')
+ctx.rule('METHOD_ENTRY', b'{ACCESS_FLAGS}{NAME_INDEX}{DESC_INDEX}{METHOD_ATTR_COUNT}{METHOD_ATTR_LIST}')
+ctx.literal('METHOD_ATTR_COUNT', b'\x00\x00')
+ctx.literal('METHOD_ATTR_LIST', b'')
+ctx.rule('CLASS_ATTR_SECTION', b'{CLASS_ATTR_COUNT}{CLASS_ATTR_LIST}')
+ctx.literal('CLASS_ATTR_COUNT', b'\x00\x00')
+ctx.bytes('CLASS_ATTR_COUNT', 2)
+ctx.literal('CLASS_ATTR_LIST', b'')
+ctx.rule('CLASS_ATTR_LIST', b'{ATTRIBUTE}{CLASS_ATTR_LIST}')
+ctx.rule('ATTRIBUTE', b'{ATTRIBUTE_NAME_INDEX}{ATTRIBUTE_LENGTH}{ATTRIBUTE_INFO}')
+ctx.bytes('ATTRIBUTE_NAME_INDEX', 2)
+ctx.bytes('ATTRIBUTE_LENGTH', 4)
+ctx.bytes('ATTRIBUTE_INFO', 4)

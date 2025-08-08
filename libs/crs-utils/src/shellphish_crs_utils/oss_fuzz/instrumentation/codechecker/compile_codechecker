@@ -1,0 +1,12 @@
+#!/bin/bash -eu
+
+set -euo pipefail
+
+export CC=${CC:-clang}
+export CXX=${CXX:-clang++}
+
+$CC $CFLAGS -c -o $SRC/shellphish/generic_harness.o $SRC/shellphish/generic_harness.c
+ar rcs $SRC/shellphish/libgeneric_harness.a $SRC/shellphish/generic_harness.o
+cp $SRC/shellphish/libgeneric_harness.a $LIB_FUZZING_ENGINE
+
+echo " done."

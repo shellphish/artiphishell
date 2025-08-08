@@ -1,0 +1,9 @@
+patchery.egg-info/
+__pycache__/
+tests/aicc_testing
+tests/tmp
+tests/generic_tests/targets
+build/lib/patchery
+.env*
+tests/tmp/*
+tests/tmp/**

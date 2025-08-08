@@ -1,0 +1,38 @@
+focus_repo_path: "/src/nginx/"
+language: c
+sanitizer: address
+exit_code: 1
+expected_organizer_significance: 211 # RecognizedSanitizerCrash
+expected_organizer_crash_description: "LibFuzzer Sanitizer crash"
+expected_parser: 'asan'
+expected_summary: 'SUMMARY: AddressSanitizer: heap-buffer-overflow /src/harnesses/bld/src/http/modules/ngx_http_userid_filter_module.c:446:13 in ngx_http_userid_set_uid'
+expected_sanitizer: AddressSanitizer
+expected_crash_type: 'heap-buffer-overflow'
+expected_stack_trace_file_names:
+  main:
+    - source: asan_interceptors_memintrinsics.cpp
+    - source: ngx_http_userid_filter_module.c
+    - source: ngx_http_userid_filter_module.c
+    - source: ngx_http_headers_filter_module.c
+    - source: ngx_http_special_response.c
+    - source: ngx_http_special_response.c
+    - source: ngx_http_request.c
+    - source: ngx_http_core_module.c
+    - source: ngx_http_core_module.c
+    - source: ngx_http_core_module.c
+    - source: ngx_http_request.c
+    - source: ngx_http_request.c
+    - source: ngx_event_posted.c
+    - source: pov_harness.cc
+    - source: FuzzerLoop.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerMain.cpp
+    - binary: libc.so.6
+    - binary: pov_harness
+  buffer-previously-freed:
+    - source: asan_malloc_linux.cpp
+    - binary: libcrypto.so.1.1
+  allocate:
+    - source: asan_malloc_linux.cpp
+    - binary: libcrypto.so.1.1

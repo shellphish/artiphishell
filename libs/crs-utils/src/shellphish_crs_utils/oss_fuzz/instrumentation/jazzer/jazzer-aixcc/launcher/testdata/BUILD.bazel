@@ -1,0 +1,6 @@
+java_binary(
+    name = "fuzz_target_mocks",
+    srcs = glob(["test/*.java"]),
+    create_executable = False,
+    visibility = ["//visibility:public"],
+)

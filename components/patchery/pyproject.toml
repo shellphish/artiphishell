@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "patchery"
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+]
+license = {text = "BSD 2 Clause"}
+description = "The successor to PatcherX: PatcherY"
+urls = {Homepage = "https://github.com/shellphish-support-syndicate/artiphishell"}
+requires-python = ">= 3.10"
+dependencies = [
+    "tqdm",
+    "pyyaml",
+    "gitpython",
+    "tree-sitter==0.21.3",
+    "tree-sitter-languages",
+    "PyYAML",
+    "unidiff",
+    "jinja2",
+    'py-tlsh',
+    'openai',
+    'requests',
+    'unidiff',
+    'numpy',
+    'litellm==1.63.14'
+]
+dynamic = ["version"]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "ipdb",
+    "pytest-asyncio",
+    "pydantic",
+]
+aixcc = [
+    "shellphish_crs_utils"
+]
+
+[project.scripts]
+patchery = "patchery.__main__:main"
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages]
+find = {namespaces = false}
+
+[tool.setuptools.dynamic]
+version = {attr = "patchery.__version__"}

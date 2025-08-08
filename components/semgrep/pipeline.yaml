@@ -1,0 +1,208 @@
+repo_classes:
+  # input repos
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  project_metadatas: MetadataRepository
+
+  # new repo for delta mode
+  delta_mode_tasks: MetadataRepository
+  crs_tasks_base_sources: FilesystemRepository
+
+  # output repos
+  semgrep_analysis_raw_findings: BlobRepository
+  semgrep_analysis_report: BlobRepository
+
+  # new base output repos for delta mode
+  semgrep_analysis_raw_findings_base: BlobRepository
+  semgrep_analysis_report_base: BlobRepository
+
+
+tasks:
+  semgrep_analysis:
+    priority: 10
+    job_quota:
+      cpu: 1
+      mem: "1Gi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      project_analysis_source:
+        repo: project_analysis_sources
+        kind: InputFilepath
+
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      full_functions_jsons_dirs:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+
+      semgrep_analysis_raw_findings:
+        repo: semgrep_analysis_raw_findings
+        kind: OutputFilepath
+
+      semgrep_analysis_report:
+        repo: semgrep_analysis_report
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-semgrep
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          # Create empty reports at the beginning
+          cat > {{ semgrep_analysis_raw_findings | shquote }} << EOF
+          {
+            "repo_path": "{{ project_analysis_source }}",
+            "total_findings": 0,
+            "findings_by_severity": {},
+            "findings_by_rule": {},
+            "findings": []
+          }
+          EOF
+
+          echo '{}' > {{ semgrep_analysis_report | shquote }}
+
+          # Trap for exit and return 0
+          trap 'exit 0' EXIT
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export TARGET_LANG={{project_metadata.language | shquote }}
+          if [ "$TARGET_LANG" = "jvm" ]; then
+            TARGET_LANG="java"
+          elif [ "$TARGET_LANG" = "c++" ] || [ "$TARGET_LANG" = "c" ]; then
+            TARGET_LANG="c"
+          fi
+
+          python3 /semgrep.py \
+            --repo_path {{ project_analysis_source }} \
+            --rules_dir "/shellphish_semgrep_rules/$TARGET_LANG" \
+            --raw_findings_file_path {{ semgrep_analysis_raw_findings }} \
+            --vulnerable_functions_file_path {{ semgrep_analysis_report }} \
+            --full_functions_indices {{ full_functions_indices }} \
+            --functions_json_dir {{ full_functions_jsons_dirs }} \
+            --cp-name {{crs_task.project_name | shquote }} \
+            --project-id {{project_id | shquote }}
+
+  semgrep_analysis_base:
+    priority: 10
+    job_quota:
+      cpu: 1
+      mem: "1Gi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      # This ensures it only runs in delta mode
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputFilepath
+
+      # Base source (available in delta mode)
+      project_base_source:
+        repo: crs_tasks_base_sources
+        kind: InputFilepath
+
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      full_functions_jsons_dirs:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+
+      # Base outputs
+      semgrep_analysis_raw_findings_base:
+        repo: semgrep_analysis_raw_findings_base
+        kind: OutputFilepath
+
+      semgrep_analysis_report_base:
+        repo: semgrep_analysis_report_base
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-semgrep
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          # Create empty base reports at the beginning
+          cat > {{ semgrep_analysis_raw_findings_base | shquote }} << EOF
+          {
+            "repo_path": "{{ project_base_source }}",
+            "total_findings": 0,
+            "findings_by_severity": {},
+            "findings_by_rule": {},
+            "findings": []
+          }
+          EOF
+
+          echo '{}' > {{ semgrep_analysis_report_base | shquote }}
+
+          # Trap for exit and return 0
+          trap 'exit 0' EXIT
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          echo "Running Semgrep analysis in DELTA mode for {{ project_metadata.language }} project: {{ crs_task.project_name | shquote }}"
+
+          export TARGET_LANG={{project_metadata.language | shquote }}
+          if [ "$TARGET_LANG" = "jvm" ]; then
+            TARGET_LANG="java"
+          elif [ "$TARGET_LANG" = "c++" ] || [ "$TARGET_LANG" = "c" ]; then
+            TARGET_LANG="c"
+          fi
+
+          echo "Processing base source..."
+          python3 /semgrep.py \
+            --repo_path {{ project_base_source }} \
+            --rules_dir "/shellphish_semgrep_rules/$TARGET_LANG" \
+            --raw_findings_file_path {{ semgrep_analysis_raw_findings_base }} \
+            --vulnerable_functions_file_path {{ semgrep_analysis_report_base }} \
+            --full_functions_indices {{ full_functions_indices }} \
+            --functions_json_dir {{ full_functions_jsons_dirs }} \
+            --cp-name {{crs_task.project_name | shquote }} \
+            --project-id {{ (project_id ~ "-base") | shquote }}

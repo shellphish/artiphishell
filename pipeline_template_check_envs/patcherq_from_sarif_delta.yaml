@@ -1,0 +1,34 @@
+crs_task_meta: &crs_task
+  concurrent_target_num: 4
+  type: 'full'
+  project_name: 'nginx'
+delta_mode_task: *crs_task
+sarif_meta:
+  pdt_task_id: '1234'
+  pdt_sarif_id: '5678'
+
+patch_request_metadata:
+  request_type: 'refine'
+  poi_report_id: 'asdf'
+  patch_id: '10'
+  patcher_name: 'patcherq'
+  bucked_id: 'bucket'
+
+codeql_db_ready: {}
+
+project_metadata:
+  shellphish:
+    project_name: 'nginx'
+
+poi_report_meta:
+  cp_harness_name: pov_harness
+  crash_report_id: '12345'
+  project_id: '6666'
+  project_name: 'nginx'
+  consistent_sanitizers:
+    - 'address'
+    - 'memory'
+
+out_patch:
+  cokeyed_dirs:
+    meta: 'asdf'

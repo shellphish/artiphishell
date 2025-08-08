@@ -1,0 +1,17 @@
+{{- if .Values.tailscaleservice.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: tailscale-{{ include "api.fullname" . }}
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.tailscaleservice.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "api.selectorLabels" . | nindent 4 }}
+{{- end }}

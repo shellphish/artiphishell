@@ -1,0 +1,14 @@
+INFO: Instrumented org.quartz.impl.JobDetailImpl (took 10 ms, size +10%)
+Failed to add job TestJob to the database. Error: No suitable driver found for jdbc:h2:mem:quartz_jobs;DB_CLOSE_DELAY=-1
+== Java Exception: java.lang.NoClassDefFoundError: jakarta/xml/bind/DatatypeConverter
+        at org.quartz.xml.XMLSchedulingDataProcessor.process(XMLSchedulingDataProcessor.java:695)
+        at org.quartz.xml.XMLSchedulingDataProcessor.processStreamAndScheduleJobs(XMLSchedulingDataProcessor.java:490)
+        at XMLSchedulingDataProcessorFuzzer.fuzzerTestOneInput(XMLSchedulingDataProcessorFuzzer.java:45)
+Caused by: java.lang.ClassNotFoundException: jakarta.xml.bind.DatatypeConverter
+        at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:582)
+        at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:178)
+        at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:521)
+        ... 3 more
+== libFuzzer crashing input ==
+DEDUP_TOKEN: 88bd413b1f2a9d3a
+Failed to add job TestJob to the database. Error: No suitable driver found for jdbc:h2:mem:quartz_jobs;DB_CLOSE_DELAY=-1reproducer_path='.'; Java reproducer written to ./Crash_f0549b57504c3d8778ff94e6c0103a1bc73e486b.java

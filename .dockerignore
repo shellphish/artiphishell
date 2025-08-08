@@ -1,0 +1,22 @@
+# This file controls what files under $CRS/libs will be excluded from the base image for all CRS images
+
+# This is useful for when:
+# - The library changes often, breaking the build
+# - The library is very large
+# - The library is used by very few components
+
+# Once you add it here you need to modify the Dockerfile of dependent components to copy from the libs layer.
+# See https://github.com/shellphish-support-syndicate/artiphishell/wiki/X.-Important-notes-for-component-authors#adding-libs-from-crslibs-without-rebuilding-base
+
+libs/testguy/
+libs/debug-lib/
+libs/kumu-shi/
+libs/crs-api/
+libs/clusterfuzz/
+libs/organizers/dedup/exhibition2/clusterfuzz/
+libs/organizers/dedup/exhibition2/venv/
+artiphishell-ossfuzz-targets/
+artiphishell-ossfuzz-meta/
+
+__pycache__
+*.egg-info

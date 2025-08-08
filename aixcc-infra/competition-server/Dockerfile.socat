@@ -1,0 +1,7 @@
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y socat docker.io curl
+
+COPY socat.sh /socat.sh
+
+ENTRYPOINT ["/socat.sh"]

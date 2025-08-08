@@ -1,0 +1,6 @@
+import java
+from MethodCall call, Method func
+where
+  call.getMethod().hasName("{{ function_name }}") and
+  call.getEnclosingCallable() = func
+select call, func, call.getLocation(), "Call to {{ function_name }} found in method " + func.getName() + "."

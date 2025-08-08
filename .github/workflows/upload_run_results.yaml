@@ -1,0 +1,52 @@
+name: Upload Run Results
+
+on:
+  # These should be triggered on periodic nightly runs via a dispatched workflow.
+
+  # Do trigger after the apt-cache is successful
+  #workflow_run:
+  #  workflows: [apt-cache-check]
+  #  types:
+  #    - completed
+      
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      url:
+        type: string
+        description: The URL of the run results to upload
+        default: ''
+      github-run-id:
+        type: string
+        description: The GitHub run ID
+        default: ''
+env:
+  # Setting an environment variable with the value of a configuration variable
+  AIXCC_LITELLM_HOSTNAME: "http://wiseau.seclab.cs.ucsb.edu:666"
+  #LITELLM_KEY: ${{ vars.LITELLM_KEY }}
+  RETRIEVAL_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:48751"
+  EMBEDDING_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:49152"
+  OPENAI_API_KEY: "${{ secrets.OPENAI_KEY }}"
+  LITELLM_KEY: sk-artiphishell
+  USE_LLM_API: "1"
+  API_COMPONENTS_USE_DUMMY_DATA: "1"
+
+jobs:
+  upload-results:
+    runs-on: ["self-hosted"]
+    steps:
+      - name: get_results
+        shell: bash
+        run: |
+          wget -O /tmp/results.json ${{ inputs.url }}
+
+      - name: Save results for CI UI
+        uses: shellphish-support-syndicate/ci-crs-actions@v2.0.0
+        continue-on-error: true
+        if: ${{ always() }}
+        with:
+          github-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          action: 'save-pipeline-results'
+          results_path: /tmp/results.json
+          cache: '/tmp/cache'
+          github-run-id: ${{ inputs.github-run-id }}

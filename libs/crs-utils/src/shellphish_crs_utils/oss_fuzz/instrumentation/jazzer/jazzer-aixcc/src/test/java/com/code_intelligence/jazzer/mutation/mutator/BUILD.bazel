@@ -1,0 +1,38 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_junit5_test")
+
+TEST_PARALLELISM = 4
+
+java_junit5_test(
+    name = "StressTest",
+    size = "large",
+    srcs = ["StressTest.java"],
+    env = {"JAZZER_MOCK_LIBFUZZER_MUTATOR": "true"},
+    javacopts = [
+        "--release",
+        "17",
+    ],
+    jvm_flags = [
+        "-Djunit.jupiter.execution.parallel.enabled=true",
+        "-Djunit.jupiter.execution.parallel.mode.default=concurrent",
+        "-Djunit.jupiter.execution.parallel.config.strategy=fixed",
+        "-Djunit.jupiter.execution.parallel.config.fixed.parallelism=" + str(TEST_PARALLELISM),
+    ],
+    tags = [
+        "cpu:" + str(TEST_PARALLELISM),
+        "no-jdk8",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api",
+        "//src/main/java/com/code_intelligence/jazzer/driver:fuzzed_data_provider_impl",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/annotation",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/annotation/proto",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/api",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/mutator",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/support",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/utils",
+        "//src/test/java/com/code_intelligence/jazzer/mutation/mutator/proto:proto2_java_proto",
+        "//src/test/java/com/code_intelligence/jazzer/mutation/mutator/proto:proto3_java_proto",
+        "//src/test/java/com/code_intelligence/jazzer/mutation/support:test_support",
+        "@protobuf//java/core",
+    ],
+)

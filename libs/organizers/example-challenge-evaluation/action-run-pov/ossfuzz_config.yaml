@@ -1,0 +1,261 @@
+# Significance Values from crash interpreter:
+#
+# - 0 => No significant crash recognized
+# - 211 => Recognized sanitizer crash
+# - 212 => Recognized non-sanitizer but notable crash
+# - 213 => Recognized sanitizer signature despite return_code=0 (error)
+# - 214 => Recognized error in reproducing
+
+engines:
+  - name: libfuzzer
+    codes:
+      # libfuzzer 0: Intended Case:
+      #   1. This case is hit when no crash occurs
+      # Conflicting Cases:
+      #   1. Any case that prematurely returns 0 would be considered
+      #      a non-proper crash, so there are no conflicting cases
+      #      that we care to worry about
+
+      0:
+        msg: "No Crash (LibFuzzer)"
+        significance: 0
+
+      # libfuzzer 1: Intended Case:
+      #   1. This case is hit if a sanitizer causes the crash
+      # Conflicting Cases:
+      #   1. This case is hit if the binary data blob cannot be found
+      #      when using helper.py reproduce
+      #      - Conflict is resolved by requiring a sanitizer in the logs
+
+      1:
+        msg: "LibFuzzer Sanitizer crash"
+        require_sanitizer: true
+        significance: 211
+
+      # libfuzzer 70: Intended Case:
+      #   1. This case is hit if libfuzzer detects a timeout
+      #      IF timeouts are disabled for the challenges, otherwise
+      #      libfuzzer is configured to exit 0.
+      # Conflicting Cases:
+      #   1. --
+
+      70:
+        msg: "LibFuzzer Timeout"
+        significance: 212
+
+      # libfuzzer 71: Intended Case:
+      #   1. This case is hit if libfuzzer detects an OOM.
+      # Conflicting Cases:
+      #   1. --
+
+      71:
+        msg: "LibFuzzer OOM"
+        significance: 212
+
+      # libfuzzer 77: Intended Case:
+      #   1. This case is hit if libfuzzer detects an OOM, leak, etc.
+      #   2. This case is hit on signals caught by libFuzzer, not sanitizers.
+      #   3. This case is hit when Jazzer crashes via sanitizer trigger.
+      # Conflicting Cases:
+      #   1. --
+      # Known Issues:
+      #   - Jazzer triggers this case, but we call it a non-sanitizer crash,
+      #     this is ok, just not totally clear.
+
+      77:
+        msg: "LibFuzzer Generic crash and/or Jazzer Sanitizer Crash"
+        significance: 212
+
+      # timeout 124: Intended Case:
+      #   1. This case is hit if reproduce never resolves in our required
+      #      timeout window; this is likely caused by a hand, and we will
+      #      check for sanitizers and return accordingly.
+      # Conflicting Cases:
+      #   1. --
+
+      124:
+        msg: "Reproduce subprocess hung, but we found a sanitizer."
+        require_sanitizer: true
+        significance: 211
+
+sanitizers:
+  address:
+    patterns:
+      - crash_type: "unspecified catch-all jazzer"
+        regex: "Java Exception: com.code_intelligence.jazzer"
+      - crash_type: "unspecified catch-all asan"
+        regex: "AddressSanitizer:"
+      - crash_type: "unspecified catch-all memorysan"
+        regex: "WARNING: MemorySanitizer:"
+      - crash_type: "unspecified catch-all ubsan"
+        regex: "runtime error:"
+      - crash_type: "alternate catch-all ubsan"
+        regex: "UndefinedBehaviorSanitizer:"
+      - crash_type: "unspecified catch-all threadsan"
+        regex: "WARNING: ThreadSanitizer:"
+      - crash_type: "unspecified catch-all hwasan"
+        regex: "ERROR: HWAddressSanitizer:"
+
+  none:
+    patterns:
+      - crash_type: "unspecified catch-all jazzer"
+        regex: "Java Exception: com.code_intelligence.jazzer"
+      - crash_type: "unspecified catch-all asan"
+        regex: "AddressSanitizer:"
+      - crash_type: "unspecified catch-all memorysan"
+        regex: "WARNING: MemorySanitizer:"
+      - crash_type: "unspecified catch-all ubsan"
+        regex: "runtime error:"
+      - crash_type: "alternate catch-all ubsan"
+        regex: "UndefinedBehaviorSanitizer:"
+      - crash_type: "unspecified catch-all threadsan"
+        regex: "WARNING: ThreadSanitizer:"
+      - crash_type: "unspecified catch-all hwasan"
+        regex: "ERROR: HWAddressSanitizer:"
+
+  memory:
+    patterns:
+      - crash_type: "unspecified catch-all jazzer"
+        regex: "Java Exception: com.code_intelligence.jazzer"
+      - crash_type: "unspecified catch-all asan"
+        regex: "AddressSanitizer:"
+      - crash_type: "unspecified catch-all memorysan"
+        regex: "WARNING: MemorySanitizer:"
+      - crash_type: "unspecified catch-all ubsan"
+        regex: "runtime error:"
+      - crash_type: "alternate catch-all ubsan"
+        regex: "UndefinedBehaviorSanitizer:"
+      - crash_type: "unspecified catch-all threadsan"
+        regex: "WARNING: ThreadSanitizer:"
+      - crash_type: "unspecified catch-all hwasan"
+        regex: "ERROR: HWAddressSanitizer:"
+
+  undefined:
+    patterns:
+      - crash_type: "unspecified catch-all jazzer"
+        regex: "Java Exception: com.code_intelligence.jazzer"
+      - crash_type: "unspecified catch-all asan"
+        regex: "AddressSanitizer:"
+      - crash_type: "unspecified catch-all memorysan"
+        regex: "WARNING: MemorySanitizer:"
+      - crash_type: "unspecified catch-all ubsan"
+        regex: "runtime error:"
+      - crash_type: "alternate catch-all ubsan"
+        regex: "UndefinedBehaviorSanitizer:"
+      - crash_type: "unspecified catch-all threadsan"
+        regex: "WARNING: ThreadSanitizer:"
+      - crash_type: "unspecified catch-all hwasan"
+        regex: "ERROR: HWAddressSanitizer:"
+
+  thread:
+    patterns:
+      - crash_type: "unspecified catch-all jazzer"
+        regex: "Java Exception: com.code_intelligence.jazzer"
+      - crash_type: "unspecified catch-all asan"
+        regex: "AddressSanitizer:"
+      - crash_type: "unspecified catch-all memorysan"
+        regex: "WARNING: MemorySanitizer:"
+      - crash_type: "unspecified catch-all ubsan"
+        regex: "runtime error:"
+      - crash_type: "alternate catch-all ubsan"
+        regex: "UndefinedBehaviorSanitizer:"
+      - crash_type: "unspecified catch-all threadsan"
+        regex: "WARNING: ThreadSanitizer:"
+      - crash_type: "unspecified catch-all hwasan"
+        regex: "ERROR: HWAddressSanitizer:"
+
+  coverage:
+    patterns: []
+
+  introspector:
+    patterns: []
+
+  hwaddress:
+    patterns:
+      - crash_type: "unspecified catch-all jazzer"
+        regex: "Java Exception: com.code_intelligence.jazzer"
+      - crash_type: "unspecified catch-all asan"
+        regex: "AddressSanitizer:"
+      - crash_type: "unspecified catch-all memorysan"
+        regex: "WARNING: MemorySanitizer:"
+      - crash_type: "unspecified catch-all ubsan"
+        regex: "runtime error:"
+      - crash_type: "alternate catch-all ubsan"
+        regex: "UndefinedBehaviorSanitizer:"
+      - crash_type: "unspecified catch-all threadsan"
+        regex: "WARNING: ThreadSanitizer:"
+      - crash_type: "unspecified catch-all hwasan"
+        regex: "ERROR: HWAddressSanitizer:"
+
+misc_errors:
+  codes:
+    0:
+      msg: "Command executed successfully"
+      significance: 0
+    1:
+      msg: "Generic Docker build or container error"
+      significance: 214
+    125:
+      msg: "Docker CLI error (e.g. daemon unreachable, image not found, etc.)"
+      significance: 214
+    126:
+      msg: "Command is found but not executable (permission denied)"
+      significance: 214
+    127:
+      msg: "Command not found"
+      significance: 214
+    128:
+      msg: "Invalid exit signal."
+      significance: 214
+    130:
+      msg: "SIGINT - interrupt program."
+      significance: 212
+    131:
+      msg: "SIGQUIT - quit program."
+      significance: 212
+    132:
+      msg: "SIGILL - illegal instruction."
+      significance: 212
+    133:
+      msg: "SIGTRAP - trace trap."
+      significance: 212
+    134:
+      msg: "SIGABRT - abort probram."
+      significance: 212
+    135:
+      msg: "SIGEMT - emulate instruction executed."
+      significance: 212
+    136:
+      msg: "SIGFPE - floating-point exception."
+      significance: 212
+    137:
+      msg: "SIGKILL - kill program."
+      significance: 212
+    138:
+      msg: "SIGBUS - bus error."
+      significance: 212
+    139:
+      msg: "SIGSEGV - segmentation violation."
+      significance: 212
+    140:
+      msg: "SIGSYS - non-existent system call invoked."
+      significance: 212
+    141:
+      msg: "SIGPIPE - write on a pipe with no reader."
+      significance: 212
+    142:
+      msg: "SIGALRM - real-time timer expired."
+      significance: 214
+    143:
+      msg: "SIGTERM - software termination signal."
+      significance: 212
+    201:
+      msg: "Analysis tooling error"
+      significance: 214
+
+  patterns:
+    - error_type: "Docker Error"
+      regex: "Cannot connect to the Docker daemon"
+      significance: 214
+
+fallback_error_regex: "ERROR:.*"

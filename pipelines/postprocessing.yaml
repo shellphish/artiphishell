@@ -1,0 +1,356 @@
+repo_classes:
+  crs_tasks:                          MetadataRepository
+  crs_tasks_cancelled:                MetadataRepository
+  project_metadatas:                  MetadataRepository
+  project_harness_infos:              MetadataRepository
+  target_split_metadatas:             MetadataRepository
+  crs_tasks_oss_fuzz_repos:           FilesystemRepository
+  project_build_configurations:       MetadataRepository
+  crs_tasks_analysis_sources:         FilesystemRepository
+  crs_tasks_base_sources:             FilesystemRepository
+  debug_build_artifacts:              FilesystemRepository
+  dyva_build_artifacts:               FilesystemRepository
+
+  jazzer_build_artifacts:             FilesystemRepository
+  jazzer_build_shellphish_dir:        FilesystemRepository
+  coverage_build_artifacts:           FilesystemRepository
+  aflpp_build_artifacts:              FilesystemRepository
+  sarif_reports:                      BlobRepository
+  patcher_generated_sarif_metadatas:  MetadataRepository
+  patcher_generated_sarif_reports:    BlobRepository
+  sarif_metadatas:                    MetadataRepository
+  sarif_retry_metadatas:              MetadataRepository
+  delta_mode_tasks:                   MetadataRepository
+  full_mode_tasks:                    MetadataRepository
+  c_crs_tasks:                     MetadataRepository
+  java_crs_tasks:                    MetadataRepository
+
+  commit_functions_jsons_dirs:        FilesystemRepository
+  full_functions_jsons_dirs:          FilesystemRepository
+  commit_functions_indices:           BlobRepository
+  full_functions_indices:             BlobRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  benign_harness_inputs:              BlobRepository
+  benign_harness_inputs_metadatas:    MetadataRepository
+  crashing_harness_inputs:            BlobRepository
+  crashing_harness_inputs_metadatas:  MetadataRepository
+  crs_tasks_diffs:                    BlobRepository
+  losan_crashing_harness_inputs:            BlobRepository
+  losan_crashing_harness_inputs_metadatas:  MetadataRepository
+
+  patch_bypass_requests: MetadataRepository
+
+  points_of_interest:                                       {cls: BlobRepository, required: false}
+  dedup_pov_reports:                                        BlobRepository
+  dedup_pov_report_representative_crashing_inputs:          BlobRepository
+  dedup_pov_report_representative_metadatas:                MetadataRepository
+  dedup_pov_report_representative_full_reports:             BlobRepository
+  per_crash_full_pov_reports:                               {cls: BlobRepository, required: false}
+  losan_dedup_pov_report_representative_crashing_inputs:          BlobRepository
+  losan_dedup_pov_report_representative_metadatas:                MetadataRepository
+  losan_dedup_pov_report_representative_full_reports:             BlobRepository
+
+  emperors_crash_submission_edicts:                        { cls: BlobRepository, required: false }
+  emperors_patch_submission_edicts:                        { cls: BlobRepository, required: false }
+
+  patch_diffs:                { cls: BlobRepository, required: false }
+  patch_metadatas:            { cls: MetadataRepository, required: false }
+  vulnerability_submissions:  { cls: MetadataRepository, required: false }
+  patch_submissions:          { cls: MetadataRepository, required: false }
+  sarif_submissions:          { cls: MetadataRepository, required: false }
+  dyva_reports:               { cls: MetadataRepository, required: false }
+  kumushi_output: { cls: MetadataRepository, required: false }
+  debug_build_base_artifacts: {cls: FilesystemRepository, required: false}
+  patch_requests_meta: { cls: MetadataRepository, required: false }
+  patched_artifacts_dirs: FilesystemRepository
+
+  diffguy_reports: FilesystemRepository
+
+  crashing_harness_inputs_exploration: {cls: FilesystemRepository, required: false}
+  codeql_db_ready: MetadataRepository
+  saved_logs: {cls: BlobRepository, required: false}
+
+  base_run_success: { cls: MetadataRepository, required: false }
+  build_check_success: { cls: MetadataRepository, required: false }
+
+
+
+  # targets_built_with_coverage: FilesystemRepository
+
+  # target_metadatas: MetadataRepository
+  # target_harness_infos: MetadataRepository
+  # target_start_times: MetadataRepository
+
+  # points_of_interest: MetadataRepository
+
+  # commit_functions_indices: BlobRepository
+  # full_functions_indices: BlobRepository
+  # full_functions_jsons_dirs: FilesystemRepository
+  # full_functions_by_file_index_jsons: BlobRepository
+  # functions_by_commit_jsons_dirs: FilesystemRepository
+  # benign_harness_inputs_coverages: BlobRepository
+  # crashing_reports: BlobRepository
+  # crashing_harness_inputs_coverages: BlobRepository
+
+
+  # dyva_reports:
+  #   cls: MetadataRepository
+  #   required: false
+
+  # invariant_reports:
+  #   cls: MetadataRepository
+  #   required: false
+
+  # similar_harness_inputs_dirs:
+  #   cls: FilesystemRepository
+  #   required: false
+
+  # patch_rankings:
+  #   cls: MetadataRepository
+  #   required: false
+
+  # patch_validation_testing_results:
+  #   cls: MetadataRepository
+  #   required: false
+
+  # benign_coverages_full_report: BlobRepository # streaming
+
+imports:
+  povguy:
+    path: ../components/povguy/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      debug_build_artifacts: debug_build_artifacts
+      delta_mode_tasks: delta_mode_tasks
+      full_mode_tasks: full_mode_tasks
+      full_functions_indices: full_functions_indices
+      project_harness_infos: project_harness_infos
+      crs_tasks_base_sources: crs_tasks_base_sources
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      losan_crashing_harness_inputs: losan_crashing_harness_inputs
+      losan_crashing_harness_inputs_metadatas: losan_crashing_harness_inputs_metadatas
+      per_crash_full_pov_reports: per_crash_full_pov_reports
+      dedup_pov_reports: dedup_pov_reports
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      losan_dedup_pov_report_representative_crashing_inputs: losan_dedup_pov_report_representative_crashing_inputs
+      losan_dedup_pov_report_representative_metadatas: losan_dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_full_reports: losan_dedup_pov_report_representative_full_reports
+      debug_build_base_artifacts: debug_build_base_artifacts
+      base_run_success: base_run_success
+      project_build_configurations: project_build_configurations
+      build_check_success: build_check_success
+
+  crash_exploration:
+    path: ../components/crash_exploration/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_harness_infos: project_harness_infos
+      aflpp_build_artifacts: aflpp_build_artifacts
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      crashing_harness_inputs_exploration: crashing_harness_inputs_exploration
+
+  poiguy:
+    path: ../components/poiguy/pipeline_poiguy.yaml
+    repos:
+      crs_tasks: crs_tasks
+      project_metadatas: project_metadatas
+      crs_tasks_cancelled: crs_tasks_cancelled
+      dedup_pov_reports: dedup_pov_reports
+      dedup_pov_reports_representative_metadatas: dedup_pov_report_representative_metadatas
+      full_functions_indices: full_functions_indices
+      points_of_interest: points_of_interest
+
+  coverage_trace:
+    path: ../components/coverage-guy/pipeline_trace.yaml
+    repos:
+      crs_tasks: crs_tasks
+      project_metadatas: project_metadatas
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_harness_infos: project_harness_infos
+      target_split_metadatas: target_split_metadatas
+      full_functions_indices: full_functions_indices
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      coverage_build_artifacts: coverage_build_artifacts
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+
+  PatcherY:
+    path: ../components/patchery/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      full_mode_tasks: full_mode_tasks
+      delta_mode_tasks: delta_mode_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      project_metadatas: project_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      commit_functions_indices: commit_functions_indices
+      full_functions_indices: full_functions_indices
+      points_of_interest: points_of_interest
+      patch_diffs: patch_diffs
+      patch_metadatas: patch_metadatas
+      patch_submissions: patch_submissions
+      kumushi_output: kumushi_output
+      patch_requests_meta: patch_requests_meta
+
+
+  PatcherQ:
+    path: ../components/patcherq/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      project_metadatas: project_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      full_functions_indices: full_functions_indices
+      points_of_interest: points_of_interest
+      patch_diffs: patch_diffs
+      crs_tasks_diffs: crs_tasks_diffs
+      patch_metadatas: patch_metadatas
+      sarif_reports: sarif_reports
+      sarif_metadatas: sarif_metadatas
+      patcher_generated_sarif_reports: patcher_generated_sarif_reports
+      patcher_generated_sarif_metadatas: patcher_generated_sarif_metadatas
+      patch_submissions: patch_submissions
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+      dyva_reports: dyva_reports
+      codeql_db_ready: codeql_db_ready
+      patch_requests_meta: patch_requests_meta
+      commit_functions_indices: commit_functions_indices
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      full_mode_tasks: full_mode_tasks
+      delta_mode_tasks: delta_mode_tasks
+      patch_bypass_requests: patch_bypass_requests
+      patched_artifacts_dirs: patched_artifacts_dirs
+
+  PatcherG:
+    path: ../components/patcherg/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      project_metadatas: project_metadatas
+      patch_requests_meta: patch_requests_meta
+      patch_bypass_requests: patch_bypass_requests
+      emperors_crash_submission_edicts: emperors_crash_submission_edicts
+      emperors_patch_submission_edicts: emperors_patch_submission_edicts
+      saved_logs: saved_logs
+
+  PoVPatrol:
+    path: ../components/pov-patrol/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      project_metadatas: project_metadatas
+      patch_metadatas: patch_metadatas
+      dedup_pov_reports: dedup_pov_reports
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+
+  Kumushi:
+    path: ../components/kumu-shi-runner/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      full_mode_tasks: full_mode_tasks
+      delta_mode_tasks: delta_mode_tasks
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      coverage_build_artifacts: coverage_build_artifacts
+      debug_build_artifacts: debug_build_artifacts
+      project_metadatas: project_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      crashing_harness_inputs_exploration: crashing_harness_inputs_exploration
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      commit_functions_indices: commit_functions_indices
+      full_functions_indices: full_functions_indices
+      points_of_interest: points_of_interest
+      diffguy_reports: diffguy_reports
+      kumushi_output: kumushi_output
+      c_crs_tasks: c_crs_tasks
+      patch_requests_meta: patch_requests_meta
+      dyva_reports: dyva_reports
+
+  Kumushi_Java:
+    path: ../components/kumu-shi-runner/pipeline-java.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      full_mode_tasks: full_mode_tasks
+      delta_mode_tasks: delta_mode_tasks
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      coverage_build_artifacts: coverage_build_artifacts
+      debug_build_artifacts: debug_build_artifacts
+      project_metadatas: project_metadatas
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_full_reports: dedup_pov_report_representative_full_reports
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      commit_functions_indices: commit_functions_indices
+      full_functions_indices: full_functions_indices
+      points_of_interest: points_of_interest
+      diffguy_reports: diffguy_reports
+      kumushi_output: kumushi_output
+      java_crs_tasks: java_crs_tasks
+      patch_requests_meta: patch_requests_meta
+      dyva_reports: dyva_reports
+
+  submitter:
+    path: ../components/submitter/pipeline.yaml
+    repos:
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks: crs_tasks
+      crashing_inputs: crashing_harness_inputs
+      crashing_inputs_metadata: crashing_harness_inputs_metadatas
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      patch_diffs: patch_diffs
+      patch_metadatas: patch_metadatas
+      sarif_metadatas: sarif_metadatas
+      sarif_retry_metadatas: sarif_retry_metadatas
+      vulnerability_submissions: vulnerability_submissions
+      patch_submissions: patch_submissions
+      sarif_submissions: sarif_submissions
+      emperors_crash_submission_edicts: emperors_crash_submission_edicts
+      emperors_patch_submission_edicts: emperors_patch_submission_edicts
+
+  dyva:
+    path: ../components/dyva/pipeline.yaml
+    repos:
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_metadatas: project_metadatas
+      points_of_interest: points_of_interest
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      dedup_pov_report_representative_crashing_inputs: dedup_pov_report_representative_crashing_inputs
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      dyva_build_artifacts: dyva_build_artifacts
+      crs_tasks: crs_tasks
+      project_build_configurations: project_build_configurations
+      patch_requests_meta: patch_requests_meta
+
+      dyva_reports: dyva_reports

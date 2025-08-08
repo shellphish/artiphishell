@@ -1,0 +1,41 @@
+focus_repo_path: "/src/sqlite3/"
+language: c
+sanitizer: memory
+exit_code: 1
+expected_organizer_significance: 211 # RecognizedSanitizerCrash
+expected_organizer_crash_description: "LibFuzzer Sanitizer crash"
+expected_parser: 'asan'
+expected_summary: 'SUMMARY: MemorySanitizer: use-of-uninitialized-value /src/sqlite3/test/shell.c:29066:7 in do_meta_command'
+expected_sanitizer: MemorySanitizer
+expected_crash_type: 'use-of-uninitialized-value'
+expected_stack_trace_file_names:
+  main:
+    - source: shell.c
+    - source: shell.c
+    - source: customfuzz3.c
+    - source: FuzzerLoop.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerMain.cpp
+    - binary: libc.so.6
+    - binary: customfuzz3
+  uninitialized-value-stored:
+    - source: shell.c
+    - source: shell.c
+    - source: customfuzz3.c
+    - source: FuzzerLoop.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerMain.cpp
+    - binary: libc.so.6
+  uninitialized-value-stored--1:
+    - source: shell.c
+    - source: shell.c
+    - source: customfuzz3.c
+    - source: FuzzerLoop.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerDriver.cpp
+    - source: FuzzerMain.cpp
+    - binary: libc.so.6
+  uninitialized-value-creation:
+    - source: shell.c

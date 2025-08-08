@@ -1,0 +1,19 @@
+# TASK: REACH ADDITIONAL CODE COVERAGE
+
+Your task is to write a grammar that can discover new code in the target application.
+
+The current list of goal functions and their covered status is as follows:
+
+{{ goal_report }}
+
+# HARNESS CODE ({{ harness_index }})
+```
+{{ harness_source_code }}
+```
+
+{% if memories %}
+# MEMORIES
+{% for i, memory in enumerate(memories) %}
+{{i}}. {{ memory }}
+{% endfor %}
+{% endif %}

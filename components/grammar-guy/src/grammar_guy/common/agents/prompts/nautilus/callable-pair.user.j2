@@ -1,0 +1,48 @@
+# User's Questions
+
+To adjust the grammars, you are provided with:
+
+- The *STARTING GRAMMAR* that is used to achieve the current coverage.
+- The *HIT FUNCTION* that calls the *TARGET FUNCTION* and has already been hit.
+- The source code of the *TARGET FUNCTION* annotated with coverage information.
+- A report from a highly trustworthy testing specialist that includes details on how to achieve coverage on the *TARGET FUNCTION*.
+
+Analyze the source code including the coverage annotations. Consider the report from the test engineer and improve the grammar to implement the details of the report.
+
+## The *STARTING GRAMMAR* used to achieve the current coverage
+```
+{{ prev_grammar }}
+```
+
+## The report from the testing specialist
+
+```
+{{ report }}
+```
+
+## The name of the *HIT FUNCTION*
+
+```
+{{ fun_name }}
+```
+
+## The source code of the already *HIT FUNCTION* annotated with coverage information.
+
+```
+{{ fun_coverage }}
+```
+
+## The name of the *GOAL FUNCTION*
+```
+{{ function_to_hit }}
+
+```
+
+## One sample harness input (in python notation) that the grammar generated
+
+```
+{{ input_example }}
+```
+
+# Output format
+{{ output_format }}

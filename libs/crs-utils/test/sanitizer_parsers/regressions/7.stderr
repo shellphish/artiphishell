@@ -1,0 +1,29 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3577871637
+INFO: Loaded 1 modules   (235610 inline 8-bit counters): 235610 [0x555556fa54b8, 0x555556fded12), 
+INFO: Loaded 1 PC tables (235610 PCs): 235610 [0x555556fded18,0x5555573772b8), 
+/out/assimp_fuzzer: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+Info,  T0: Load $$$___magic___$$$.
+UndefinedBehaviorSanitizer:DEADLYSIGNAL
+==16==ERROR: UndefinedBehaviorSanitizer: stack-overflow on address 0x7ffffffff000 (pc 0x7ffff7da1963 bp 0x7fffffffd950 sp 0x7fffffffd788 T16)
+    #0 0x7ffff7da1963  (/lib/x86_64-linux-gnu/libc.so.6+0x18b963) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+    #1 0x555556a1ce8d in std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>::__init(char const*, unsigned long) (/out/assimp_fuzzer+0x14c8e8d)
+    #2 0x555556941244 in basic_string /usr/local/bin/../include/c++/v1/string:971:5
+    #3 0x555556941244 in Assimp::ZipArchiveIOSystem::Implement::MapArchive() /src/assimp/code/Common/ZipArchiveIOSystem.cpp:377:29
+    #4 0x555556941912 in Assimp::ZipArchiveIOSystem::Implement::getFileList(std::__1::vector<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, std::__1::allocator<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>&) /src/assimp/code/Common/ZipArchiveIOSystem.cpp:390:5
+    #5 0x5555568c02a2 in Assimp::D3MF::D3MFOpcPackage::D3MFOpcPackage(Assimp::IOSystem*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&) /src/assimp/code/AssetLib/3MF/D3MFOpcPackage.cpp:129:18
+    #6 0x5555568b606e in Assimp::D3MFImporter::CanRead(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, Assimp::IOSystem*, bool) const /src/assimp/code/AssetLib/3MF/D3MFImporter.cpp:600:30
+    #7 0x55555609d7e2 in Assimp::Importer::ReadFile(char const*, unsigned int) /src/assimp/code/Common/Importer.cpp:625:38
+    #8 0x55555609ceb8 in Assimp::Importer::ReadFileFromMemory(void const*, unsigned long, unsigned int, char const*) /src/assimp/code/Common/Importer.cpp:512:5
+    #9 0x55555606fd90 in LLVMFuzzerTestOneInput /src/assimp/fuzz/assimp_fuzzer.cc:53:34
+    #10 0x555555fd2320 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #11 0x555555fbd595 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #12 0x555555fc302f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #13 0x555555fee2d2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #14 0x7ffff7c3a082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+    #15 0x555555fb577d in _start (/out/assimp_fuzzer+0xa6177d)
+
+DEDUP_TOKEN: std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>::__init(char const*, unsigned long)--basic_string
+SUMMARY: UndefinedBehaviorSanitizer: stack-overflow (/lib/x86_64-linux-gnu/libc.so.6+0x18b963) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58) 
+==16==ABORTING

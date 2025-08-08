@@ -1,0 +1,111 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE}
+
+RUN apt-get install -y jq rsync
+
+COPY yq /usr/local/bin/
+COPY yq /usr/bin/
+
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ENV BENZENE_HOME "/benzene"
+ENV PIN_ROOT "/benzene/pin-3.21"
+ENV DR_BUILD "/benzene/dr-build"
+ENV ASAN_OPTIONS="detect_leaks=0"
+
+RUN apt-get update && apt-get install git  ccache cmake make g++-multilib gdb \
+  pkg-config coreutils python3-pexpect manpages-dev git \
+  ninja-build capnproto libcapnp-dev zlib1g-dev libgmp-dev linux-tools-common linux-tools-generic linux-cloud-tools-generic wget autoconf automake libtool curl make g++ unzip pip python-setuptools libpng-dev libxml2-dev libzstd-dev libcapnp-dev gcc-multilib g++-multilib lldb -y
+# apt install linux-tools-`uname -r` might not work, install perf using linux-cloud-tools and linux-tools and then create a symlink
+
+# RUN mkdir benzene
+# WORKDIR /benzene
+RUN git clone https://github.com/ubersandro/BENZENE /benzene
+# COPY benzene /benzene/benzene
+# COPY src src
+# COPY libdft64 libdft64
+# COPY setup.sh setup.sh
+# RUN apt-get update
+
+RUN pip install setuptools pandas scikit-learn protobuf capstone
+
+
+# RUN /benzene/setup.sh
+ENV BENZENE_HOME=/benzene
+
+# install Mozilla's RR debugger
+WORKDIR $BENZENE_HOME
+RUN git clone https://github.com/rr-debugger/rr
+WORKDIR $BENZENE_HOME/rr 
+RUN git checkout 5.8.0 # pinpointing this version works, after commit https://github.com/rr-debugger/rr/commit/db5faf831c9f73c99acfccef2bc950c66b2e44b0 broke rr on older kernels
+WORKDIR $BENZENE_HOME
+RUN mkdir rr-build 
+WORKDIR $BENZENE_HOME/rr-build
+RUN python3 -m pip install pexpect
+RUN cmake -DCMAKE_CXX_FLAGS="-Wno-error" -DCMAKE_C_FLAGS="-Wno-error" ../rr && make -j$(nproc)
+# sudo make install
+
+# install dynamorio
+WORKDIR $BENZENE_HOME
+RUN git clone --recursive https://github.com/DynamoRIO/dynamorio dynamorio
+WORKDIR ${BENZENE_HOME}/dynamorio
+RUN git reset --hard bb2ff609c65cf2cf541be331d7cd29da086d3cac # before droption change
+WORKDIR $BENZENE_HOME
+RUN mkdir -p dr-build
+WORKDIR ${BENZENE_HOME}/dr-build 
+RUN CC=gcc CCC=c++ CXX=c++ CFLAGS="" CXXFLAGS="" CXXFLAGS_EXTRA="" cmake ../dynamorio && make -j$(nproc)
+
+# install Intel PIN
+WORKDIR $BENZENE_HOME
+RUN wget -q https://software.intel.com/sites/landingpage/pintool/downloads/pin-3.21-98484-ge7cd811fd-gcc-linux.tar.gz
+RUN tar -xf pin-3.21-98484-ge7cd811fd-gcc-linux.tar.gz && mv pin-3.21-98484-ge7cd811fd-gcc-linux pin-3.21
+ENV PIN_ROOT=$BENZENE_HOME/pin-3.21
+
+# build libdft64
+WORKDIR $BENZENE_HOME/libdft64/src 
+RUN make -j$(nproc) CC=/usr/bin/gcc CXX=/usr/bin/g++
+
+# Build a Pin-related tool
+WORKDIR $BENZENE_HOME/src/dynvfg
+RUN make vfg -j$(nproc) CC=/usr/bin/gcc CXX=/usr/bin/g++
+
+# Build a DynamoRIO-related tool
+RUN mkdir $BENZENE_HOME/src/fuzz/build
+WORKDIR $BENZENE_HOME/src/fuzz/build
+# cmake .. -DDynamoRIO_DIR=$BENZENE_HOME/dr-build/cmake
+RUN CC=gcc CCC=c++ CXX=c++ CFLAGS="" CXXFLAGS="" CXXFLAGS_EXTRA="" cmake .. -DDynamoRIO_DIR=$BENZENE_HOME/dr-build/cmake -D CMAKE_C_COMPILER=gcc -D CMAKE_CXX_COMPILER=c++
+RUN make -j$(nproc)
+
+# install gdb 11.2
+WORKDIR $BENZENE_HOME
+RUN wget -q https://ftp.gnu.org/gnu/gdb/gdb-11.2.tar.gz
+RUN tar -xf gdb-11.2.tar.gz
+WORKDIR $BENZENE_HOME/gdb-11.2
+# export PATH=$PATH:$(pwd)
+RUN ln -s /usr/bin/python3 python # make our gdb use python3, not python2
+RUN CC=gcc CCC=c++ CXX=c++ CFLAGS="" CXXFLAGS="" CXXFLAGS_EXTRA="" ./configure --with-python=$BENZENE_HOME/gdb-11.2 --with-separate-debug-dir=/usr/lib/debug && make -j$(nproc)
+RUN make -j$(nproc)
+RUN ln -s $BENZENE_HOME/gdb-11.2/gdb/gdb $BENZENE_HOME/tools/gdb
+
+
+# build testcase CVE-2013-7226
+# WORKDIR $BENZENE_HOME/example/cve-2013-7226
+# RUN apt-get install libpng-dev libxml2-dev -y
+# RUN wget http://museum.php.net/php5/php-5.5.0.tar.gz && tar xvfz php-5.5.0.tar.gz
+# WORKDIR  $BENZENE_HOME/example/cve-2013-7226/php-5.5.0
+# RUN ./configure --with-gd && make -j$(nproc)
+
+# the following seems needed to account for some path problems
+RUN alias gdb=/benzene/gdb-11.2/gdb/gdb 
+RUN echo "alias gdb=/benzene/gdb-11.2/gdb/gdb"> /root/.bashrc
+RUN if [ ! -d /usr/local/share/gdb/ ]; then  mkdir -p /usr/local/share/gdb; fi
+RUN ln -s /usr/share/gdb/python /usr/local/share/gdb/python
+
+# fix the perf mess 
+RUN [ ! -f /usr/bin/perf ] || rm /usr/bin/perf
+RUN ln -s /usr/lib/linux-tools-5.4.0-204/perf /usr/bin/perf
+
+RUN pip3 install setuptools pandas scikit-learn protobuf capstone
+
+WORKDIR /benzene

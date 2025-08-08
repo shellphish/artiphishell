@@ -1,0 +1,26 @@
+{{- range $i := until (.Values.global.num_concurrent_tasks.value | int) }}
+{{- $taskid := add $i 1 }}
+{{- with $ }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "analysisgraph.fullname" . }}-{{ $taskid }}
+  labels:
+    {{- include "analysisgraph.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "analysisgraph.name" . }}-{{ $taskid }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      protocol: TCP
+      name: neo4j
+    {{- with .Values.service.additionalPorts }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  selector:
+    {{- include "analysisgraph.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "analysisgraph.name" . }}-{{ $taskid }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,63 @@
++ FUZZER=customfuzz3
++ shift
++ '[' '!' -v TESTCASE ']'
++ '[' '!' -f /work/pov_input ']'
++ export RUN_FUZZER_MODE=interactive
++ RUN_FUZZER_MODE=interactive
++ export FUZZING_ENGINE=libfuzzer
++ FUZZING_ENGINE=libfuzzer
++ export SKIP_SEED_CORPUS=1
++ SKIP_SEED_CORPUS=1
++ run_fuzzer customfuzz3 /work/pov_input
+vm.mmap_rnd_bits = 28
+/out/customfuzz3 -rss_limit_mb=2560 -timeout=25 /work/pov_input -timeout_exitcode=0 < /dev/null
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3280175317
+INFO: Loaded 1 modules   (65595 inline 8-bit counters): 65595 [0x555555fad7a0, 0x555555fbd7db), 
+INFO: Loaded 1 PC tables (65595 PCs): 65595 [0x555555fbd7e0,0x5555560bdb90), 
+/out/customfuzz3: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+==20==WARNING: MemorySanitizer: use-of-uninitialized-value
+    #0 0x555555e432d2 in do_meta_command /src/sqlite3/test/shell.c:29066:7
+    #1 0x555555e197fb in shell_main /src/sqlite3/test/shell.c:33195:14
+    #2 0x55555584d41c in LLVMFuzzerTestOneInput /src/sqlite3/test/customfuzz3.c:27:3
+    #3 0x555555743300 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #4 0x55555572e575 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #5 0x55555573400f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #6 0x55555575f2b2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #7 0x7ffff7c1e082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+    #8 0x55555572675d in _start (/out/customfuzz3+0x1d275d)
+
+DEDUP_TOKEN: do_meta_command--shell_main--LLVMFuzzerTestOneInput
+  Uninitialized value was stored to memory at
+    #0 0x555555e432cb in do_meta_command /src/sqlite3/test/shell.c:29066:52
+    #1 0x555555e197fb in shell_main /src/sqlite3/test/shell.c:33195:14
+    #2 0x55555584d41c in LLVMFuzzerTestOneInput /src/sqlite3/test/customfuzz3.c:27:3
+    #3 0x555555743300 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #4 0x55555572e575 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #5 0x55555573400f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #6 0x55555575f2b2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #7 0x7ffff7c1e082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+
+DEDUP_TOKEN: do_meta_command--shell_main--LLVMFuzzerTestOneInput
+  Uninitialized value was stored to memory at
+    #0 0x555555e3da4c in do_meta_command /src/sqlite3/test/shell.c
+    #1 0x555555e197fb in shell_main /src/sqlite3/test/shell.c:33195:14
+    #2 0x55555584d41c in LLVMFuzzerTestOneInput /src/sqlite3/test/customfuzz3.c:27:3
+    #3 0x555555743300 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #4 0x55555572e575 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #5 0x55555573400f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+    #6 0x55555575f2b2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #7 0x7ffff7c1e082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 0323ab4806bee6f846d9ad4bccfc29afdca49a58)
+
+DEDUP_TOKEN: do_meta_command--shell_main--LLVMFuzzerTestOneInput
+  Uninitialized value was created by an allocation of 'x1343' in the stack frame
+    #0 0x555555e29fa1 in do_meta_command /src/sqlite3/test/shell.c:29028:11
+
+DEDUP_TOKEN: do_meta_command
+SUMMARY: MemorySanitizer: use-of-uninitialized-value /src/sqlite3/test/shell.c:29066:7 in do_meta_command
+Unique heap origins: 120
+Stack depot allocated bytes: 9764880
+Unique origin histories: 5
+History depot allocated bytes: 196608
+Exiting

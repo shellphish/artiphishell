@@ -1,0 +1,27 @@
+{
+    "name": "Debug Lib Container",
+    "build": {
+      "dockerfile": "../../Dockerfile.component-base",
+      "context": "../../"
+    },
+    "workspaceMount": "source=${localWorkspaceFolder}/,target=/shellphish/debug_kib,type=bind,consistency=cached",
+    "workspaceFolder": "/shellphish/coveragelib",
+    "mounts": [
+      "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+      "source=/shared/,target=/shared,type=bind,consistency=cached",
+      "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    ],
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "github.copilot", 
+          "ms-azuretools.vscode-docker",
+          "ms-vscode.vscode-remote-extensionpack",
+          "ms-python.python"
+        ],
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash"
+        }
+      }
+    }
+  }

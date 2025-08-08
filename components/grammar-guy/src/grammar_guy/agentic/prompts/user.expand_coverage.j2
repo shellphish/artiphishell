@@ -1,0 +1,45 @@
+# TASK: MAXIMIZE COVERAGE IN THE TARGET FUNCTION {{ target_name }}
+
+You MUST first explore the code from the target fucntion until you are ready to commit to a set of goal lines to cover in the target function.
+Based on your investigation, you must then set yourself goals for which lines of code in the target function you believe are reachable by modifying the grammar.
+NOTE: YOU ONLY HAVE ONE CHANCE AT THIS. Therefore you should set ALL function lines as a goal that you believe are at all reachable. Failure to include 
+any reachable lines will cause them to be dropped and a penalty.
+Once you have committed to and registered a set of goal lines, propose modified grammars based on the initial grammar that maximize coverage in the function.
+Use the coverage tooling to analyze your progress, both on the target function as well as functions involved in the computation of values guarding uncovered lines.
+If any target function lines are not reached, reinvestigate the coverage of any involved functions to discover where the grammar is stuck.
+
+# HARNESS CODE ( {{ harness_index }} )
+```
+{{ harness_coverage_report }}
+```
+
+# TARGET FUNCTION STARTING COVERAGE ({{ target_name }})
+```
+{{ target_coverage_report }}
+```
+
+
+
+{% if example_grammars %}
+# EXAMPLE GRAMMARS ILLUSTRATING THE GRAMMAR FORMAT
+{% for example_grammar in example_grammars %}
+```python
+{{ example_grammar }}
+```
+{% endfor %}
+{% endif %}
+
+
+{% if goal_report %}
+# GOAL LINES
+The current list of goal functions and their covered status is as follows:
+
+{{ goal_report }}
+{% endif %}
+
+{% if memories %}
+# MEMORIES
+{% for i, memory in enumerate(memories) %}
+{{i}}. {{ memory }}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,20 @@
+import java
+
+string targetPattern() {
+  // Generic partial match using template parameter
+  result = "{{variable_name}}"
+}
+
+from
+  Method f,
+  VarAccess access
+where
+  access.getEnclosingCallable() = f and
+  (
+    access.(FieldAccess).getField().getName().matches(targetPattern()) or
+    access.getVariable().getName().matches(targetPattern())
+  )
+select
+  f,
+  access.getLocation().getStartLine().toString() as line,
+  access.getType() as accessType

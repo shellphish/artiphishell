@@ -1,0 +1,43 @@
+{{- if .Values.ciingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "api.fullname" . }}-ci
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+  {{- with .Values.ciingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ciingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ciingress.tls }}
+  tls:
+    {{- range .Values.ciingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ciingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- with .pathType }}
+            pathType: {{ . }}
+            {{- end }}
+            backend:
+              service:
+                name: {{ include "api.fullname" $ }}-ci
+                port:
+                  number: {{ $.Values.ciservice.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}

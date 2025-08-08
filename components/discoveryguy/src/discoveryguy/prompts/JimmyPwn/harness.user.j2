@@ -1,0 +1,23 @@
+<project_name>{{PROJECT_NAME}}</project_name>
+<language_expertise>{{LANGUAGE_EXPERTISE}}</language_expertise>
+
+<sink_index>{{FUNCTION_INDEX}}</sink_index>
+<sink_file_name>{{FILE_NAME}}</sink_file_name>
+<sink_function_name>{{FUNCTION_NAME}}</sink_function_name>
+<sink_function_code>
+{{CODE}}
+</sink_function_code>
+
+<harnesses>
+{% for item in HARNESSES %}
+<harness>
+<harness_name>{{item.bin_name}}</harness_name>
+<harness_index>{{item.func_key}}</harness_index>
+<harness_code>
+{{item.code}}
+</harness_code>
+</harness>
+{% endfor %}
+</harnesses>
+
+Now select the top 5 harnesses that are most likely to trigger a crash in the sink function!

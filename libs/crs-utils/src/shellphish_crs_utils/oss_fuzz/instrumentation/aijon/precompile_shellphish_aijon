@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "Compiling AFLplusplus"
+(
+    pushd $SRC/shellphish/aflplusplus > /dev/null
+    unset CFLAGS CXXFLAGS
+
+    export CC=clang CXX=clang++
+    export REAL_CC=gcc REAL_CXX=g++
+    # export AFL_NO_X86=1 NO_NYX=1
+    sed -i 's/-Wno-deprecated-copy-with-dtor//g' ./GNUmakefile.llvm && \
+    LLVM_CONFIG=$(which llvm-config) make source-only
+
+    make -C utils/aflpp_driver
+    # cp utils/aflpp_driver/libAFLDriver.a ./
+    # pwd; ls -al; ls -al utils/aflpp_driver; exit 1
+    popd > /dev/null
+)
+echo "Done."

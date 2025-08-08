@@ -1,0 +1,81 @@
+diff --git a/src/main/native/com/code_intelligence/jazzer/driver/fuzz_target_runner.cpp b/src/main/native/com/code_intelligence/jazzer/driver/fuzz_target_runner.cpp
+index cdcfc30..933df75 100644
+--- a/src/main/native/com/code_intelligence/jazzer/driver/fuzz_target_runner.cpp
++++ b/src/main/native/com/code_intelligence/jazzer/driver/fuzz_target_runner.cpp
+@@ -46,15 +46,30 @@ JavaVM *gJavaVm;
+ JNIEnv *gEnv;
+ jboolean gUseMutatorFramework;
+ 
++size_t (*testOneInputHook)(const uint8_t *, const std::size_t, uint8_t **) = nullptr;
++size_t (*customMutatorHook)(uint8_t *, size_t, size_t, unsigned int) = nullptr;
++size_t (*crossOverHook)(const uint8_t *, size_t, const uint8_t *, size_t, const uint8_t *, size_t, unsigned int) = nullptr;
++
+ // A libFuzzer-registered callback that outputs the crashing input, but does
+ // not include a stack trace.
+ void (*gLibfuzzerPrintCrashingInput)() = nullptr;
+ 
+ int testOneInput(const uint8_t *data, const std::size_t size) {
+   JNIEnv &env = *gEnv;
++  const uint8_t *chosen_data = data;
++  size_t chosen_size = size;
++  if (testOneInputHook != nullptr && size > 0) {
++    // allow mutator to allocate it's own out buf since serialized data may be larger than original input
++    uint8_t *out_buffer = NULL;
++    size_t out_size = testOneInputHook(data, size, &out_buffer);
++    if (out_buffer != NULL && chosen_size > 0) {
++      chosen_data = out_buffer;
++      chosen_size = out_size;
++    }
++  }
+   jint jsize =
+-      std::min(size, static_cast<size_t>(std::numeric_limits<jint>::max()));
+-  int res = env.CallStaticIntMethod(gRunner, gRunOneId, data, jsize);
++      std::min(chosen_size, static_cast<size_t>(std::numeric_limits<jint>::max()));
++  int res = env.CallStaticIntMethod(gRunner, gRunOneId, chosen_data, jsize);
+   if (env.ExceptionCheck()) {
+     env.ExceptionDescribe();
+     _Exit(1);
+@@ -65,7 +80,9 @@ int testOneInput(const uint8_t *data, const std::size_t size) {
+ 
+ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
+                                           size_t MaxSize, unsigned int Seed) {
+-  if (gUseMutatorFramework) {
++  if (customMutatorHook != nullptr) {
++    return customMutatorHook(Data, Size, MaxSize, Seed);
++  } else if (gUseMutatorFramework) {
+     JNIEnv &env = *gEnv;
+     jint jsize =
+         std::min(Size, static_cast<size_t>(std::numeric_limits<jint>::max()));
+@@ -88,7 +105,9 @@ extern "C" size_t LLVMFuzzerCustomCrossOver(const uint8_t *Data1, size_t Size1,
+                                             const uint8_t *Data2, size_t Size2,
+                                             uint8_t *Out, size_t MaxOutSize,
+                                             unsigned int Seed) {
+-  if (gUseMutatorFramework) {
++  if (customMutatorHook != nullptr) {
++    return crossOverHook(Data1, Size1, Data2, Size2, Out, MaxOutSize, Seed);
++  } else if (gUseMutatorFramework) {
+     JNIEnv &env = *gEnv;
+     jint jsize1 =
+         std::min(Size1, static_cast<size_t>(std::numeric_limits<jint>::max()));
+@@ -150,6 +169,21 @@ Java_com_code_1intelligence_jazzer_runtime_FuzzTargetRunnerNatives_startLibFuzze
+     _Exit(1);
+   }
+ 
++  std::cout << "RUNNING PATCHED JAZZER YAYYY!!" << std::endl;
++
++  if (getenv("JAZZER_NAUTILUS_HOOKS")) {
++    char *lib_path = getenv("JAZZER_NAUTILUS_HOOKS_PATH");
++    if (!lib_path) {
++      std::cout << "The JAZZER_NAUTILUS_HOOKS_PATH variable was unset!!" << std::endl;
++    } else {
++      std::cout << "The JAZZER_NAUTILUS_HOOKS_PATH variable was set to " << lib_path << "!!" << std::endl;
++      void *handle = dlopen(lib_path, RTLD_NOW);
++      testOneInputHook = (size_t (*)(const uint8_t *, const std::size_t, uint8_t **))dlsym(handle, "testOneInputHook");
++      customMutatorHook = (size_t (*)(uint8_t *, size_t, size_t, unsigned int))dlsym(handle, "customMutatorHook");
++      crossOverHook = (size_t (*)(const uint8_t *, size_t, const uint8_t *, size_t, const uint8_t *, size_t, unsigned int))dlsym(handle, "crossOverHook");
++    }
++  }
++
+   int argc = env->GetArrayLength(args);
+   if (env->ExceptionCheck()) {
+     env->ExceptionDescribe();

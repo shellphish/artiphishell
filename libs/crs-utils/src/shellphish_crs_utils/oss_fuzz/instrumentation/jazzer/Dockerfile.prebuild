@@ -1,0 +1,80 @@
+ARG OSS_FUZZ_BASE_BUILDER_IMAGE=
+
+FROM ${OSS_FUZZ_BASE_BUILDER_IMAGE} as base
+
+
+#RUN apt -y update
+RUN apt-get update && apt-get install -y software-properties-common
+RUN apt-get update && apt-get install -y curl build-essential python3-dev pigz
+
+#COPY libfuzzer-jazzer $SRC/shellphish/libfuzzer-jazzer
+#COPY libfuzzer-jazzer-patches $SRC/shellphish/libfuzzer-jazzer/libfuzzer-jazzer-patches
+
+#WORKDIR $SRC/shellphish/libfuzzer-jazzer/
+#RUN git apply ./libfuzzer-jazzer-patches/libfuzzer.patch
+
+####### Jazzer #######
+ENV BAZELISK_VERSION 1.9.0
+RUN curl -L https://github.com/bazelbuild/bazelisk/releases/download/v$BAZELISK_VERSION/bazelisk-linux-amd64 -o /usr/local/bin/bazel && \
+    chmod +x /usr/local/bin/bazel
+
+RUN useradd bazel && mkdir /home/bazel && chown bazel:bazel /home/bazel
+USER bazel
+
+COPY --chown=bazel:bazel jazzer-aixcc $SRC/shellphish/jazzer-aixcc
+COPY jazzer-aixcc-patches $SRC/shellphish/jazzer-aixcc/jazzer-aixcc-patches
+
+COPY --chown=bazel:bazel libfuzzer-jazzer $SRC/shellphish/libfuzzer-jazzer
+COPY libfuzzer-jazzer-patches $SRC/shellphish/libfuzzer-jazzer/libfuzzer-jazzer-patches
+
+WORKDIR $SRC/shellphish/jazzer-aixcc
+RUN for patch in jazzer-aixcc-patches/*.diff; do git apply "$patch"; done
+#RUN git apply ./jazzer-aixcc-patches/
+#RUN git apply ./jazzer-aixcc-patches/002_XPathInjection_NamingContextLookup.patch
+#RUN git apply ./jazzer-aixcc-patches/002_losan_patch_2.patch
+#RUN git apply ./jazzer-aixcc-patches/003_jazzer_hooks.patch
+
+WORKDIR $SRC/shellphish/libfuzzer-jazzer/
+RUN git apply ./libfuzzer-jazzer-patches/libfuzzer.patch
+RUN git apply ./libfuzzer-jazzer-patches/reload-additional-corpus.patch
+
+# libfuzzer patch for logs
+COPY build_libfuzzer.sh $SRC/shellphish/build_libfuzzer.sh
+WORKDIR $SRC/shellphish/
+
+##### Libfuzzer and Jazzer #####
+RUN ./build_libfuzzer.sh
+
+# NOTE: we build jazzer with libfuzzer patch for logging in build_libfuzzer.sh. enable below lines when we don't need libfuzzer patch
+
+# RUN mkdir ./jazzer-build
+# RUN bazel build //src/main/java/com/code_intelligence/jazzer:jazzer_standalone_deploy.jar //deploy:jazzer-api //deploy:jazzer-junit //launcher:jazzer
+# RUN cp $(bazel cquery --output=files //src/main/java/com/code_intelligence/jazzer:jazzer_standalone_deploy.jar) $SRC/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar
+# RUN cp $(bazel cquery --output=files //launcher:jazzer) $SRC/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver
+
+USER root
+
+####### Rust #######
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > /tmp/rustup.sh
+RUN bash /tmp/rustup.sh -y
+RUN rm -f /tmp/rustup.sh
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+
+####### Nautilus #######
+COPY nautilus $SRC/shellphish/nautilus
+RUN rustup default nightly
+RUN cd $SRC/shellphish/nautilus && cargo clean && PYO3_PYTHON=python3.8 ./build.sh
+
+
+FROM ${OSS_FUZZ_BASE_BUILDER_IMAGE}
+
+RUN mkdir -p $SRC/shellphish/jazzer-aixcc/jazzer-build/
+# Copy jazzer from base
+COPY --from=base $SRC/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver $SRC/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver
+COPY --from=base $SRC/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar $SRC/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar
+
+# Copy nautilus from base
+RUN mkdir -p $SRC/shellphish/nautilus
+COPY --from=base $SRC/shellphish/nautilus/target/release/librevolver_mutator.so $SRC/shellphish/nautilus
+COPY --from=base $SRC/shellphish/nautilus/target/release/watchtower $SRC/shellphish/nautilus

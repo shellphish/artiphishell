@@ -1,0 +1,12 @@
+
+Your final report looks like this:
+
+```
+<report>
+  <verdict>TP</verdict>
+  <summary>
+  This vulnerability occurs in the file rabbit/walker.java at line 294. 
+  It involves an unsanitized SQL strings that is processed by an unsafe user object at line 100. 
+  </summary>
+</report>
+```

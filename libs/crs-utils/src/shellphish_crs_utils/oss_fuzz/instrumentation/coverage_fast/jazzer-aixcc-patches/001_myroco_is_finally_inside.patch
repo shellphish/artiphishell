@@ -1,0 +1,417 @@
+diff --git a/src/main/java/com/code_intelligence/jazzer/agent/Agent.kt b/src/main/java/com/code_intelligence/jazzer/agent/Agent.kt
+index 2463ff1d..9bb44268 100644
+--- a/src/main/java/com/code_intelligence/jazzer/agent/Agent.kt
++++ b/src/main/java/com/code_intelligence/jazzer/agent/Agent.kt
+@@ -50,6 +50,7 @@ fun installInternal(
+     dumpClassesDir: String = Opt.dumpClassesDir.get(),
+     additionalClassesExcludes: List<String> = Opt.additionalClassesExcludes.get(),
+ ) {
++    println("[Myroco] Syncing with file $idSyncFile")
+     val allCustomHookNames = (Constants.SANITIZER_HOOK_NAMES + userHookNames).toSet()
+     check(allCustomHookNames.isNotEmpty()) { "No hooks registered; expected at least the built-in hooks" }
+     val customHookNames = allCustomHookNames - disabledHookNames.toSet()
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/Driver.java b/src/main/java/com/code_intelligence/jazzer/driver/Driver.java
+index 8d50b1a6..6902efdc 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/Driver.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/Driver.java
+@@ -25,14 +25,81 @@ import com.code_intelligence.jazzer.driver.junit.JUnitRunner;
+ import com.code_intelligence.jazzer.utils.Log;
+ import java.io.File;
+ import java.io.IOException;
+-import java.nio.file.Files;
+-import java.nio.file.Path;
+-import java.nio.file.Paths;
++import java.nio.file.*;
++import static java.nio.file.StandardWatchEventKinds.*;
++import static java.nio.file.LinkOption.*;
++import java.nio.file.attribute.*;
++import java.io.*;
++import java.util.*;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
+ import java.security.SecureRandom;
+-import java.util.List;
+-import java.util.Optional;
+ 
+ public class Driver {
++  // This method registers the watchdog to watch the given directory
++  public static void register_run(Path dir,String targetClassName,String exec_dir) throws IOException{
++    WatchService watcher = FileSystems.getDefault().newWatchService();
++    WatchKey key = dir.register(watcher, ENTRY_MODIFY);
++    processEvents(watcher,targetClassName,dir,exec_dir);
++  }
++
++  public static void processEvents(WatchService watcher,String targetClassName,Path dir,String exec_dir){
++    System.out.println("Waiting for seeds to be traced ...");
++    byte[] data = null;
++    // Lets first list the directory and trace all the seeds
++    File[] files = new File(dir.toString()).listFiles();
++    for (File file : files){
++      if (file.isFile()){
++        //byte[] data = new byte[1024];
++        String filename = file.getAbsolutePath();
++        System.out.printf("Tracing seed - %s\n", filename);
++        String inp_name = Paths.get(exec_dir, "seed.exec").toString();
++        try{
++          data = Files.readAllBytes(Paths.get(filename));
++        } catch (IOException e){
++          e.printStackTrace();
++          exit(1);
++        }
++        FuzzTargetRunner.runOneDir(data,inp_name);
++      }
++    }
++    // Create the lock file at /shellphish/myroco/.myroco.lock
++    try{
++      File lock_file = new File("/shellphish/myroco/.myroco.lock");
++      if (!lock_file.exists()){
++        lock_file.createNewFile();
++      }
++    } catch (IOException e){
++      e.printStackTrace();
++    }
++    for (;;){
++      WatchKey key;
++      try{
++        key = watcher.take();
++      } catch (InterruptedException x){
++        return;
++      }
++      for (WatchEvent<?> event : key.pollEvents()){
++        WatchEvent.Kind<?> kind = event.kind();
++
++        if (kind == ENTRY_MODIFY){
++         //byte[] data = new byte[1024];
++         String filename = dir.resolve(event.context().toString()).toString();
++         System.out.printf("Tracing seed - %s\n", filename);
++         String inp_name = Paths.get(exec_dir, "seed.exec").toString();
++         try{
++          data = Files.readAllBytes(Paths.get(filename));
++         } catch (IOException e){
++           e.printStackTrace();
++           exit(1);
++         }
++         FuzzTargetRunner.runOneDir(data,inp_name);
++        }
++      }
++      key.reset();
++    }
++  }
++
+   public static int start(List<String> args, boolean spawnsSubprocesses) throws IOException {
+     Log.debug("User: " + System.getProperty("user.name"));
+     Log.debug("OS: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
+@@ -93,7 +160,7 @@ public class Driver {
+       // This wouldn't run in case we exit the process with _Exit, but the parent process of a -fork
+       // run is expected to exit with a regular exit(0), which does cause JVM shutdown hooks to run:
+       // https://github.com/llvm/llvm-project/blob/940e178c0018b32af2f1478d331fc41a92a7dac7/compiler-rt/lib/fuzzer/FuzzerFork.cpp#L491
+-      idSyncFile.toFile().deleteOnExit();
++      //idSyncFile.toFile().deleteOnExit();
+     }
+ 
+     if (args.stream().anyMatch("-merge_inner=1"::equals)) {
+@@ -123,17 +190,109 @@ public class Driver {
+     if (args.stream().noneMatch(arg -> arg.startsWith("-rss_limit_mb="))) {
+       args.add(getDefaultRssLimitMbArg());
+     }
+-
++    // Check if a file exists at path /shellphish/myroco/config
++    if (Files.exists(Paths.get("/shellphish/myroco/config"))){
++      System.out.println("[Myroco] Booting config file");
++      String cp = Opt.cp.get().toString();
++      String content = "";
++      try{
++        content = new String(Files.readAllBytes(Paths.get("/shellphish/myroco/config")));
++      } catch (IOException e){
++        e.printStackTrace();
++      }
++      // Split the contents by new line
++      String[] lines = content.split("\n");
++      if(lines.length != 5){
++        System.out.println("[Myroco] Config file is not valid");
++        exit(0);
++      }
++      // First line of config is instrument_only
++      List <String> instrumentOnly =  new ArrayList<>(Opt.cp.get());
++      // remove all entries from instrumentOnly that do not end with .jar
++      instrumentOnly.removeIf(s -> !s.endsWith(".jar"));
++      System.out.println("[Myroco] Instrumenting jars : " + instrumentOnly);
++      Opt.instrumentOnly.setIfDefault(instrumentOnly);
++      // Second line of config is insclasspattern
++      Pattern pattern = Pattern.compile(":\\s*\"([^\"]*)\"");
++      Matcher matcher = pattern.matcher(lines[1]);
++      if (matcher.find()){
++        String[] insclasspattern = matcher.group(1).split(",");
++        List<String> insclasspatternList = Arrays.asList(insclasspattern);
++        Opt.insclasspattern.setIfDefault(insclasspatternList);
++      }
++      else{
++        System.out.println("[Myroco] insclasspattern not found in config");
++        exit(0);
++      }
++      //// Third line of config is input_watchdir
++      matcher = pattern.matcher(lines[2]);
++      if (matcher.find()){
++        String input_watchdir = matcher.group(1);
++        // check if the dir exists if not create it 
++        if (!Files.exists(Paths.get(input_watchdir))){
++          try{
++            Files.createDirectories(Paths.get(input_watchdir));
++          } catch (IOException e){
++            e.printStackTrace();
++          }
++        }
++        Opt.input_watchdir.setIfDefault(input_watchdir);
++      }
++      else{
++        System.out.println("[Myroco] input_watchdir not found in config");
++        exit(0);
++      }
++      //// Fourth line of config is input_watchdir
++      matcher = pattern.matcher(lines[3]);
++      if (matcher.find()){
++        String exec_folder = matcher.group(1);
++        // check if the dir exists if not create it
++        if (!Files.exists(Paths.get(exec_folder))){
++          try{
++            Files.createDirectories(Paths.get(exec_folder));
++          } catch (IOException e){
++            e.printStackTrace();
++          }
++        }
++        Opt.exec_folder.setIfDefault(exec_folder);
++      }
++      else{
++        System.out.println("[Myroco] exec_folder not found in config");
++        exit(0);
++      }
++      // The last line is dump_dir
++      matcher = pattern.matcher(lines[4]);
++      if (matcher.find()){
++        String dump_dir = matcher.group(1);
++        // check if the dir exists if not create it
++        if (!Files.exists(Paths.get(dump_dir))){
++          try{
++            Files.createDirectories(Paths.get(dump_dir));
++          } catch (IOException e){
++            e.printStackTrace();
++          }
++        }
++        Opt.dumpClassesDir.setIfDefault(dump_dir);
++      }
++      else{
++        System.out.println("[Myroco] dump_dir not found in config");
++        exit(0);
++      }
++      System.out.println("[Myroco] The value of dumpClassesDir is : " + Opt.dumpClassesDir.get());
++      //Opt.dumpClassesDir.get()
++    }
+     if (!Opt.instrumentOnly.get().isEmpty()) {
+       if (Opt.dumpClassesDir.get().isEmpty()) {
+         Log.error("--dump_classes_dir must be set with --instrument_only");
+         exit(1);
+       }
++      System.out.println("[Myroco] Performing offline instrumentation");
++      long startTime = System.nanoTime();
+       boolean instrumentationSuccess = OfflineInstrumentor.instrumentJars(Opt.instrumentOnly.get());
+-      if (!instrumentationSuccess) {
+-        exit(1);
+-      }
+-      exit(0);
++      long endTime = System.nanoTime();
++      System.out.println("Instrumentation took : " + ((endTime - startTime) / 1000000));
++      System.out.println("[Myroco] Finished instrumentation");
++      //exit(0);
+     }
+ 
+     Driver.class.getClassLoader().setDefaultAssertionStatus(true);
+@@ -158,7 +317,19 @@ public class Driver {
+         return runner.get().run();
+       }
+     }
+-
++    if (!Opt.input_watchdir.get().isEmpty()){
++      FuzzTargetHolder.fuzzTarget = FuzzTargetFinder.findFuzzTarget(targetClassName);
++      if(Opt.exec_folder.get().isEmpty()){
++        Log.error("Missing argument --exec_folder=<exec_folder>");
++        exit(1);
++      }
++      File exec_folder = new File(Opt.exec_folder.get());
++      if (!exec_folder.exists()){
++        exec_folder.mkdir();
++      }
++      register_run(Paths.get(Opt.input_watchdir.get()),targetClassName,Opt.exec_folder.get());
++      exit(0);
++    }
+     // Installing the agent after the following "findFuzzTarget" leads to an asan error
+     // in it on "Class.forName(targetClassName)", but only during native fuzzing.
+     AgentInstaller.install(Opt.hooks.get());
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+index 112c4a2d..5a9ab81c 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+@@ -40,6 +40,8 @@ import java.lang.invoke.MethodHandle;
+ import java.lang.invoke.MethodHandles;
+ import java.math.BigInteger;
+ import java.nio.charset.StandardCharsets;
++import java.nio.file.Files;
++import java.nio.file.Paths;
+ import java.security.MessageDigest;
+ import java.security.NoSuchAlgorithmException;
+ import java.util.ArrayList;
+@@ -184,6 +186,18 @@ public final class FuzzTargetRunner {
+       UNSAFE.freeMemory(dataPtr);
+     }
+   }
++  static int runOneDir(byte[] data,String inpname) {
++    System.out.println("[PRE-RUN] Initial coverage array lenght : " + CoverageRecorder.getWholeCoverage().length);
++    long startTime = System.nanoTime();
++    runOne(data);
++    System.out.println("[POST-RUN] Coverage array length : " + CoverageRecorder.getWholeCoverage().length);
++    CoverageRecorder.dumpJacocoCoverage(inpname);
++    long endTime = System.nanoTime();
++    long timeElapsed = endTime - startTime;
++    System.out.println("[POST-RUN] Time taken to run the fuzz target : " + timeElapsed/1000000000 + " seconds");
++    CoverageRecorder.resetCoverage();
++    return 0;
++  }
+ 
+   /**
+    * Executes the user-provided fuzz target once.
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/OfflineInstrumentor.java b/src/main/java/com/code_intelligence/jazzer/driver/OfflineInstrumentor.java
+index 18e21c5d..720de5bd 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/OfflineInstrumentor.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/OfflineInstrumentor.java
+@@ -68,7 +68,7 @@ public class OfflineInstrumentor {
+       Log.info("Instrumenting jar file: " + jarPath);
+ 
+       try {
+-        errorMessages = createInstrumentedClasses(jarPath);
++        errorMessages = createInstrumentedClasses(jarPath, Opt.insclasspattern.get());
+       } catch (IOException e) {
+         errorMessages.add(
+             "Failed to instrument jar: "
+@@ -103,7 +103,7 @@ public class OfflineInstrumentor {
+    * @param jarPath a path to a jar file to instrument.
+    * @return a list of errors that were hit when trying to instrument all classes in jar
+    */
+-  private static List<String> createInstrumentedClasses(String jarPath) throws IOException {
++  private static List<String> createInstrumentedClasses(String jarPath, List <String> instclassnames) throws IOException {
+     List<String> errorMessages = new ArrayList<>();
+     List<String> allClasses = new ArrayList<>();
+ 
+@@ -124,6 +124,11 @@ public class OfflineInstrumentor {
+ 
+         String className = name.substring(0, name.lastIndexOf(".class"));
+         className = className.replace('/', '.');
++        final String tmp_className = className;
++        boolean found = instclassnames.stream().anyMatch(s -> tmp_className.contains(s));
++        if(!found){
++          continue;
++        }
+         allClasses.add(className);
+         Log.info("Found class: " + className);
+       }
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/Opt.java b/src/main/java/com/code_intelligence/jazzer/driver/Opt.java
+index 5840a7c1..52d59b8b 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/Opt.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/Opt.java
+@@ -165,7 +165,7 @@ public final class Opt {
+   public static final OptItem<String> idSyncFile =
+       stringSetting(
+           "id_sync_file",
+-          "",
++          "/tmp/Jazzer_ID_SYNC",
+           "A file used by Jazzer subprocesses to coordinate coverage instrumented. If not set, "
+               + "Jazzer will create a temporary file and pass it to subprocesses.");
+   public static final OptItem<List<String>> ignore =
+@@ -225,7 +225,21 @@ public final class Opt {
+           "Prints all fuzz test names in the given classes. If no classes are provided, all"
+               + " directories (but not JAR files) on the classpath are scanned for tests. If this"
+               + " parameter is given, all others are ignored. Only used for JUnit fuzz tests.");
+-
++  public static final OptItem<List<String>> insclasspattern =
++    stringListSetting(
++          "insclasspattern",
++          ',',
++          "A regular expression pattern that matches classes to instrument.");
++  public static final OptItem<String> input_watchdir = 
++    stringSetting(
++        "input_watchdir",
++        "",
++        "The directory to watch for new inputs to trace.");
++  public static final OptItem<String> exec_folder = 
++    stringSetting(
++        "exec_folder",
++        "",
++        "The directory to store the execution traces.");
+   // Internal options:
+ 
+   // Whether Jazzer is running a JUnit fuzz test from the command line.
+@@ -243,7 +257,7 @@ public final class Opt {
+   public static final OptItem<List<String>> instrumentOnly =
+       stringListSetting(
+           "instrument_only",
+-          ',',
++          ':',
+           "Comma separated list of jar files to instrument. No fuzzing is performed.");
+ 
+   // Special driver options:
+diff --git a/src/main/java/com/code_intelligence/jazzer/instrumentor/CoverageRecorder.kt b/src/main/java/com/code_intelligence/jazzer/instrumentor/CoverageRecorder.kt
+index 0aab6ca8..e4ba0a30 100644
+--- a/src/main/java/com/code_intelligence/jazzer/instrumentor/CoverageRecorder.kt
++++ b/src/main/java/com/code_intelligence/jazzer/instrumentor/CoverageRecorder.kt
+@@ -68,7 +68,11 @@ object CoverageRecorder {
+      */
+     @JvmStatic
+     fun updateCoveredIdsWithCoverageMap() {
+-        additionalCoverage.addAll(CoverageMap.getCoveredIds())
++        val ids = CoverageMap.getCoveredIds()
++        println(
++            "[updateCoveredIdsWithCoverageMap] Seed Execution produced: ${ids.size}"
++        )
++        additionalCoverage.addAll(ids)
+     }
+ 
+     /**
+@@ -84,6 +88,17 @@ object CoverageRecorder {
+             writer.write(computeFileCoverage(coveredIds))
+         }
+     }
++    // getwholecoverage
++    @JvmStatic
++    fun getWholeCoverage(): IntArray {
++        return CoverageMap.getCoveredIds().toIntArray();
++    }
++
++    @JvmStatic
++    fun resetCoverage() {
++        CoverageMap.resetCoverage();
++        additionalCoverage.clear();
++    }
+ 
+     private fun computeFileCoverage(coveredIds: IntArray): String {
+         fun Double.format(digits: Int) = "%.${digits}f".format(this)
+@@ -175,6 +190,7 @@ object CoverageRecorder {
+     private fun analyzeJacocoCoverage(coveredIds: Set<Int>): ExecutionDataStore {
+         val executionDataStore = ExecutionDataStore()
+         val sortedCoveredIds = (additionalCoverage + coveredIds).sorted().toIntArray()
++        println("[analyzeJacocoCoverage] We have unique coveredids: ${sortedCoveredIds.size}")
+         for ((internalClassName, info) in instrumentedClassInfo) {
+             // Determine the subarray of coverage IDs in sortedCoveredIds that contains the IDs generated while
+             // instrumenting the current class. Since the ID array is sorted, use binary search.
+diff --git a/src/main/java/com/code_intelligence/jazzer/runtime/CoverageMap.java b/src/main/java/com/code_intelligence/jazzer/runtime/CoverageMap.java
+index c4442b40..e718feab 100644
+--- a/src/main/java/com/code_intelligence/jazzer/runtime/CoverageMap.java
++++ b/src/main/java/com/code_intelligence/jazzer/runtime/CoverageMap.java
+@@ -144,7 +144,9 @@ public final class CoverageMap {
+       UNSAFE.putByte(countersAddress + id, (byte) 1);
+     }
+   }
+-
++  public static void resetCoverage() {
++    UNSAFE.setMemory(countersAddress, currentNumCounters, (byte) 0);
++  }
+   private static void logInfo(String message) {
+     try {
+       LOG_INFO.invokeExact(message);

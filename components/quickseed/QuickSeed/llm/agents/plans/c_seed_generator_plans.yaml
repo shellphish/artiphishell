@@ -1,0 +1,55 @@
+1:
+  name: "summarize_harness_code"
+  description: "Read harness_code and think step by step to summarize what the function LLVMFuzzerTestOneInput does. 
+    Give a detailed breakdown of the input structure that LLVMFuzzerTestOneInput expects."
+
+2:
+  name: "summarize_source_code"
+  description: "Read the source codes of the functions from the call graph that starts with harness.
+    You will be provided multiple functions in the order of triggering.
+    And we will provide the exact statement that this function uses to call the next function.
+    And summarize each function we give you.
+    "
+
+
+3:
+  name: "call_chain"
+  description: "Based on the summarization of the harness and the source codes, 
+    please provide the call chain that will trigger the last function from the harness.
+    For example, if function 1 is foo, and function 2 is bar, and function 3 is baz, please provide the call chain as foo -> bar -> baz.
+    And also please tell me what kind of input can trigger the last function based on the call chain you provided"
+
+4:
+  name: "read_commit_change"
+  description:
+    "The last function you are given is introduced in a commit. 
+    To help you generate the triggering input, we will provide you the source code of the functions that are also changed in this commit besides the functions I already provided.
+    Please read the source code of the functions that are changed in this commit and extract the information that will help you generate the triggering input.
+    "
+
+5:
+  name: "generate_seed"
+  description:
+    "Based on the summarization of the source codes, and the path you proposed,
+      please generate an input seed that will trigger the sink (the last function you are given)."
+
+
+6:
+  name: "generate_script"
+  description:
+    "Based on the summarization of the harness and the detailed breakdown of the input format. 
+    please write a python script that will convert the input seed to bytes. 
+    it has to match the size in the seed_structure and save it in a binary file called output.bin. 
+    For example a 2 bytes integer 13 is 000d in big endian. 
+    PLEASE USE Python and output the script in the following format.
+    ```python
+      {script}
+    ```"
+7:
+  name: "review_script"
+  description:
+    "Review the script you generated in the last step. Make sure the script is correct and will generate the correct input seed. 
+    If you find any issues, please fix them and generate the script again. PLEASE USE Python and output the script in the following format.
+    ```python
+      {script}
+    ```"

@@ -1,0 +1,20 @@
+You will be given a log of completed tasks. All these tasks were working to a goal. You must take all the collected information and create a single response to the goal
+
+# Previous Task Results
+{% if past_steps and past_steps|length > 0 %}
+{% for s in past_steps %}
+## Task {{ loop.index + 1 }}
+{{ s.description }}
+{{ s.final_context }}
+{% endfor %}
+{% else %}
+No tasks have been completed yet....
+{% endif %}
+
+# User Goal / Question:
+```
+{{ goal }}
+```
+
+# Output Format
+{{ format_instructions }}

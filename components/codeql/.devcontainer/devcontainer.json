@@ -1,0 +1,45 @@
+{
+    "name": "CodeQL Dev Container",
+    "build": {
+      "dockerfile": "../Dockerfile",
+      "context": "../",
+      "args": {
+        "IMAGE_PREFIX": "ghcr.io/shellphish-support-syndicate/",
+        "SOURCE_REPO": "https://github.com/shellphish-support-syndicate/artiphishell"
+      }
+    },
+    "workspaceMount": "source=${localWorkspaceFolder}/,target=/shellphish/codeql,type=bind,consistency=cached",
+    "workspaceFolder": "/shellphish/codeql",
+    "runArgs": [
+      "--add-host=localhost:host-gateway",
+      "--privileged"
+      // This makes localhost point to the host machine
+    ],
+    "mounts": [
+      "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+      "source=/shared/,target=/shared,type=bind,consistency=cached",
+      "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
+    "customizations": {
+      "env": {
+        "AIXCC_LITELLM_HOSTNAME": "'http://wiseau.seclab.cs.ucsb.edu:666'",
+        "LITELLM_KEY": "sk-artiphishell"
+        // "USE_LLM_API": "false"
+      },
+      "vscode": {
+        "extensions": [
+          "github.copilot",
+          "ms-azuretools.vscode-docker",
+          "ms-vscode.vscode-remote-extensionpack",
+          "ms-python.python"
+        ],
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash"
+        }
+      }
+    },
+    "forwardPorts": [
+      8050,
+      8080
+    ]
+  }

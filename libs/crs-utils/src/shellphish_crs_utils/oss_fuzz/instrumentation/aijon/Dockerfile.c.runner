@@ -1,0 +1,9 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} AS aijon-afl-compile-base
+
+RUN apt-get update && apt-get install -y jq rsync
+
+ENV AFL_PATH=$OUT
+COPY yq /usr/local/bin/
+COPY yq /usr/bin/
+COPY run_fuzzer /usr/local/bin/

@@ -1,0 +1,46 @@
+# Other repositories
+ci_tests/*
+targets/clib/clib
+tools/grammarinator
+tools/nautilus
+tools/mozilla_avalanche
+tools/agentlib
+src/spearfuzz/volumes/
+bin/
+.antlr
+work/outputs/coverage/
+
+# Keep these files
+!.gitkeep
+work/inputs/
+work/outputgit
+.vscode/
+volumes/
+test.ipynb
+/deprecated/targets/targets-semis-templates/
+/backup/
+aixcc_crs/
+index/
+deprecated/targets/targets-semis-cjson
+deprecated/targets/targets-semis-clib
+deprecated/targets/targets-semis-jq
+Dockerfile-backup
+gg-mount/
+aixcc_targets/
+local_test/
+pipeline.lock
+src/work_local/
+selinux
+targets-semis-selinux*
+cov_checker*
+
+backups/
+tmp/
+
+src/www/events_dir
+.history/
+events/
+
+# Ignore all backup things
+*.tar.gz
+*backup-*/

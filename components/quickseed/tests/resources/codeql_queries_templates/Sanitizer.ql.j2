@@ -1,0 +1,77 @@
+
+/**
+ * @id java/CommandInjection
+ * @kind problem
+ * @name List all function calls in paths related to source and target functions
+ * @severity information
+ */
+
+import java
+import semmle.code.java.frameworks.javaee.ejb.EJBRestrictions
+
+// Base predicate for direct calls
+predicate edges(Callable pred, Callable succ) {
+  pred.polyCalls(succ) and
+  succ.getName() != ""
+}
+predicate is_target_function(Callable c) { 
+    {% for i, full_name in enumerate(sink_methods) %}
+     {% if i > 0 %}or {% endif %}c.getQualifiedName().matches("{{ full_name }}")
+    {% endfor %}
+    {% if sanitizer_name == "CommandInjection" or sanitizer_name == "All" %}
+    or c instanceof RuntimeExecMethod
+    {% endif %}
+  //c.getQualifiedName().matches("java.lang.ProcessBuilder.start") or 
+  //c instanceof RuntimeExecMethod // "java.lang.Runtime.exec
+  //instanceof CommandInjectionSink
+}
+
+predicate is_harness_function(Callable c) { 
+  c.getQualifiedName().matches("%.fuzzerTestOneInput") or 
+    exists (Annotation a |
+    c.getADeclaredAnnotation() = a and
+    a.toString().matches("FuzzTest"))
+}
+
+// Helper predicates to cache common computations
+predicate source_reachable(Callable c) {
+  is_harness_function(c) or
+  exists(Callable prev | source_reachable(prev) and edges(prev, c))
+}
+
+predicate target_reachable(Callable c) {
+  is_target_function(c) or
+  exists(Callable next | target_reachable(next) and edges(c, next))
+}
+
+
+from Callable prevcall, Callable inbetween, Callable dest, Call tcall
+where
+  // Must have a valid call relationship
+  prevcall.polyCalls(inbetween) and
+  tcall = prevcall.getACallSite(inbetween) and
+  
+  // At least one of these must be true to be interesting
+  (
+    source_reachable(prevcall) or
+    target_reachable(inbetween) or
+    (source_reachable(prevcall) and target_reachable(inbetween))
+  )
+  and
+  is_target_function(dest)
+
+
+
+select
+  prevcall.getQualifiedName() as source_qualified_name,
+  inbetween.getQualifiedName() as target_qualified_name,
+  prevcall.getStringSignature() as source_signature,
+  inbetween.getStringSignature() as target_signature,
+  tcall.getLocation().getFile().getAbsolutePath() as call_filepath,
+  tcall.getLocation().getStartLine() as call_lineno,
+  prevcall.getLocation().getFile().getAbsolutePath() as source_filepath,
+  prevcall.getLocation().getStartLine() as source_lineno,
+  inbetween.getLocation().getFile().getAbsolutePath() as target_filepath,
+  inbetween.getLocation().getStartLine() as target_lineno,
+  "{{ sanitizer_name }}"
+  // dest.getQualifiedName()

@@ -1,0 +1,141 @@
+repo_classes:
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks: MetadataRepository
+  commit_functions_indices: BlobRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_by_file_index_jsons: BlobRepository
+
+  info_extraction_requests: MetadataRepository
+  
+tasks:
+  generate_full_function_index:
+    annotations:
+      authors:
+        - ammonia
+        - clasm
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the full function clang index or java index data for poiguy.
+    job_quota:
+      max: 0.45
+    links:
+      target_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: OutputFilepath
+      target_functions_index:
+        repo: full_functions_indices
+        kind: OutputFilepath
+      project_id:
+        repo: full_functions_jsons_dirs
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-function-index-generator'
+        host_mounts:
+          "/shared": "/shared"
+
+        template: |
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export TARGET_FUNCTIONS_JSONS_DIR={{ target_functions_jsons_dir | shquote}}
+          export FUNCTIONS_BY_FILE_INDEX_JSON={{ functions_by_file_index_json | shquote }}
+          export TARGET_FUNCTIONS_INDEX={{ target_functions_index | shquote }}
+
+          /function-index-generator/run-full-function-index.sh
+
+          # Initialize the RemoteFunctionResolver service
+          PYTHONUNBUFFERED=1 python3 functionresolver-server-init.py \
+            --cp_name {{crs_task.project_name | shquote}} \
+            --project_id {{ project_id | shquote }} \
+            --functions_index_path {{ target_functions_index }} \
+            --functions_jsons_path {{ target_functions_jsons_dir }}
+
+  generate_commit_function_index:
+    job_quota:
+      max: 0.45
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the clang index or java index data for poiguy.
+    links:
+      target_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      target_functions_index:
+        repo: commit_functions_indices
+        kind: OutputFilepath
+
+      project_id:
+        repo: commit_functions_jsons_dirs
+        kind: InputId
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-function-index-generator'
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ target_functions_jsons_dir | shquote}}
+          export TARGET_FUNCTIONS_INDEX={{ target_functions_index | shquote }}
+
+          /function-index-generator/run-commit-function-index.sh
+
+  # generate_function_reachability_request:
+  #   links:
+  #     project_id:
+  #       repo: commit_functions_indices
+  #       kind: InputId
+  #     project_cancel:
+  #       repo: crs_tasks_cancelled
+  #       kind: Cancel
+  #     commit_index:
+  #       repo: commit_functions_indices
+  #       kind: InputFilepath
+  #     commit_jsons_dir:
+  #       repo: commit_functions_jsons_dirs
+  #       kind: InputFilepath
+  #     reachability_request:
+  #       repo: info_extraction_requests
+  #       kind: OutputFilepath
+  #   annotations:
+  #     authors:
+  #       - clasm
+  #     maturity: fullyIntegrated
+  #     doc: |
+  #       This task takes the meta_index_csv_path and generates reachability requests for the functions.
+  #   executable:
+  #     cls: Container
+  #     args:
+  #       image: 'aixcc-function-index-generator'
+  #       template: |
+  #         python3 /function-index-generator/generate_reachability_request.py \
+  #           --project-id {{project_id}} \
+  #           --name "test" \
+  #           {{commit_index|shquote}} {{commit_jsons_dir|shquote}} {{reachability_request|shquote}}
+

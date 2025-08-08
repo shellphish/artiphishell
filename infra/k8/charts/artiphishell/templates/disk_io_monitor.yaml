@@ -1,0 +1,274 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: disk-monitor
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-taint-manager
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: disk-monitor-binding
+subjects:
+- kind: ServiceAccount
+  name: disk-monitor
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: node-taint-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: disk-monitor-script
+data:
+  monitor.py: |
+    #!/usr/bin/env python3
+    import time, datetime, subprocess, pathlib, os, sys, json, shutil
+
+    LOG_DIR = "/var/log/disk-monitor"
+    pathlib.Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
+
+    # Disk usage thresholds
+    SOFT_THRESHOLD = 85  # Start tainting at 85% usage
+    WARNING_THRESHOLD = 75  # Log warnings
+    CRITICAL_THRESHOLD = 88  # Approaching AKS eviction threshold
+
+    def get_node_name():
+        """Get the current node name from environment or downward API"""
+        node_name = os.environ.get('KUBE_NODE_NAME')
+        if not node_name:
+            try:
+                with open('/etc/hostname', 'r') as f:
+                    node_name = f.read().strip()
+            except:
+                node_name = 'unknown'
+        return node_name
+
+    def should_monitor_node(node_name):
+        """Check if this node should be monitored based on node name"""
+        if not node_name:
+            return False
+        node_name_lower = node_name.lower()
+        return 'usr' in node_name_lower or 'cov' in node_name_lower
+
+    def get_shared_disk_usage():
+        """Get disk usage percentage for /shared"""
+        try:
+            result = subprocess.run(['df', '/shared'], 
+                                  capture_output=True, text=True, check=True)
+            lines = result.stdout.strip().split('\n')
+            if len(lines) >= 2:
+                # Parse df output: Filesystem 1K-blocks Used Available Use% Mounted
+                parts = lines[1].split()
+                if len(parts) >= 5:
+                    use_percent = parts[4].rstrip('%')
+                    return int(use_percent)
+        except Exception as e:
+            print(f"ERROR getting disk usage: {e}")
+        return 0
+
+    def add_node_taint(node_name, taint_key, taint_value, effect):
+        """Add taint to node"""
+        try:
+            taint = f"{taint_key}={taint_value}:{effect}"
+            result = subprocess.run([
+                'kubectl', 'taint', 'node', node_name, taint
+            ], capture_output=True, text=True, check=True)
+            print(f"SUCCESS: Added taint {taint} to node {node_name}")
+            return True
+        except Exception as e:
+            print(f"ERROR adding taint to node {node_name}: {e}")
+            return False
+
+    def remove_node_taint(node_name, taint_key):
+        """Remove taint from node"""
+        try:
+            result = subprocess.run([
+                'kubectl', 'taint', 'node', node_name, f"{taint_key}-"
+            ], capture_output=True, text=True, check=True)
+            print(f"SUCCESS: Removed taint {taint_key} from node {node_name}")
+            return True
+        except Exception as e:
+            print(f"ERROR removing taint from node {node_name}: {e}")
+            return False
+
+    def bytes_written():
+        """Get total bytes written from /proc/diskstats for I/O monitoring"""
+        total = 0
+        try:
+            with open("/proc/diskstats") as f:
+                for line in f:
+                    parts = line.split()
+                    # field 9 = sectors written; *512 = bytes
+                    try:
+                        total += int(parts[9]) * 512
+                    except (IndexError, ValueError):
+                        pass
+        except Exception as e:
+            print(f"ERROR reading diskstats: {e}")
+        return total
+
+    # Initialize
+    node_name = get_node_name()
+    
+    print(f"Starting disk monitor on node: {node_name}")
+    
+    if not should_monitor_node(node_name):
+        # Still do I/O monitoring but no tainting
+        monitor_tainting = False
+    else:
+        print(f"Node {node_name} will be monitored for disk pressure tainting")
+        monitor_tainting = True
+
+    # Track taint state in variable instead of API calls
+    taint_applied = False
+    prev_bytes = bytes_written()
+    
+    while True:
+        time.sleep(30)
+        now = datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z"
+        
+        # I/O monitoring (existing functionality)
+        curr_bytes = bytes_written()
+        delta_mb = (curr_bytes - prev_bytes) / (1024 * 1024)
+        prev_bytes = curr_bytes
+
+        # Disk usage monitoring (new functionality)
+        disk_usage_percent = get_shared_disk_usage()
+        
+        # Log current status
+        status_msg = f"{now} NODE={node_name} DISK_USAGE={disk_usage_percent}% IO_DELTA_MB={delta_mb:.2f} TAINT_APPLIED={taint_applied}"
+        print(status_msg)
+        
+        # Handle tainting logic
+        taint_key = "disk-pressure-custom"
+        taint_value = "true"
+        taint_effect = "NoSchedule"
+        
+        if monitor_tainting:
+            if disk_usage_percent >= SOFT_THRESHOLD:
+                if not taint_applied:
+                    print(f"ALERT: Disk usage {disk_usage_percent}% >= {SOFT_THRESHOLD}% threshold - adding taint")
+                    if add_node_taint(node_name, taint_key, taint_value, taint_effect):
+                        taint_applied = True
+                else:
+                    print(f"INFO: Disk usage {disk_usage_percent}% >= {SOFT_THRESHOLD}% threshold - taint already applied")
+            else:
+                if taint_applied:
+                    print(f"INFO: Disk usage {disk_usage_percent}% < {SOFT_THRESHOLD}% threshold - removing taint")
+                    if remove_node_taint(node_name, taint_key):
+                        taint_applied = False
+            
+            # Additional warning logs
+            if disk_usage_percent >= CRITICAL_THRESHOLD:
+                print(f"CRITICAL: Disk usage {disk_usage_percent}% approaching AKS eviction threshold!")
+            elif disk_usage_percent >= WARNING_THRESHOLD:
+                print(f"WARNING: Disk usage {disk_usage_percent}% above warning threshold")
+
+        # I/O top monitoring (existing functionality)
+        try:
+            top = subprocess.run(
+                ["iotop", "-b", "-n", "1"],
+                capture_output=True,
+                text=True,
+                check=False,
+            ).stdout.strip().split("\n")[:20]
+            top = '\n'.join(top)
+            sys.stdout.write(top + "\n\n\n")
+            sys.stdout.flush()
+        except Exception as e:
+            top = f"ERROR running iotop: {e}"
+
+        # Write to log file
+        with open(f"{LOG_DIR}/usage.log", "a") as lf:
+            lf.write(f"{status_msg}\n{top}\n\n\n--------------------------------\n\n\n")
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: disk-monitor
+spec:
+  selector:
+    matchLabels:
+      app: disk-monitor
+  template:
+    metadata:
+      labels:
+        app: disk-monitor
+    spec:
+      serviceAccountName: disk-monitor
+      hostPID: true                    # see real host processes
+      hostNetwork: true
+      tolerations:
+      - operator: Exists               # hit every tainted node too
+      nodeSelector:
+        kubernetes.azure.com/mode: user
+      imagePullSecrets:
+        - name: acr-docker-secret
+        - name: ci-acr-pull-secret
+      priorityClassName: system-node-critical
+      containers:
+      - name: monitor
+        image: {{ .Values.global.deployment_registry.value }}/python:3.12-slim
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y --no-install-recommends iotop procps curl >/dev/null
+            
+            # Install kubectl
+            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            chmod +x kubectl
+            mv kubectl /usr/local/bin/
+            
+            exec python /scripts/monitor.py
+        env:
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: script
+          mountPath: /scripts
+        - name: host-varlog
+          mountPath: /var/log/disk-monitor
+        - name: shared-dir
+          mountPath: /shared
+        securityContext:
+          privileged: true              # iotop needs CAP_SYS_ADMIN
+          capabilities:
+            add: ["SYS_ADMIN", "NET_ADMIN"]
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1000Mi
+          limits:
+            cpu: 1000m
+            memory: 1000Mi
+      volumes:
+      - name: script
+        configMap:
+          name: disk-monitor-script
+          defaultMode: 0755
+      - name: host-varlog
+        hostPath:
+          path: /var/log/disk-monitor
+          type: DirectoryOrCreate
+      - name: shared-dir
+        hostPath:
+          path: /shared
+          type: Directory
+      restartPolicy: Always

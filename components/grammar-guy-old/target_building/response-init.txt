@@ -1,0 +1,114 @@
+```antlr
+grammar spearfuzz;
+
+// Entry point for the grammar
+spearfuzz
+    : httpRequest
+    ;
+
+// Define an HTTP request structure
+httpRequest
+    : requestLine headers CRLF body?
+    ;
+
+// Request line typically includes method, URI, and HTTP version
+requestLine
+    : httpMethod SP requestUri SP httpVersion CRLF
+    ;
+
+// Supported HTTP methods
+httpMethod
+    : 'GET'
+    | 'POST'
+    | 'PUT'
+    | 'DELETE'
+    | 'PATCH'
+    | 'HEAD'
+    | 'OPTIONS'
+    ;
+
+// Request URI
+requestUri
+    : '/' // Simplified for the purpose of this grammar
+    | '/index.html'
+    | '/userid' // Targeting specific functionality
+    ;
+
+// HTTP version
+httpVersion
+    : 'HTTP/' DIGIT '.' DIGIT
+    ;
+
+// Headers including Host, User-Agent, and others
+headers
+    : header+
+    ;
+
+header
+    : 'Host:' SP host CRLF
+    | 'User-Agent:' SP userAgent CRLF
+    | 'Accept:' SP acceptTypes CRLF
+    | 'Cookie:' SP cookie CRLF
+    | 'Content-Length:' SP DIGIT+ CRLF
+    | 'Content-Type:' SP contentType CRLF
+    ;
+
+host
+    : 'localhost'
+    | 'example.com'
+    | '127.0.0.1'
+    ;
+
+userAgent
+    : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+    | 'curl/7.58.0'
+    ;
+
+acceptTypes
+    : '*/*'
+    | 'text/html'
+    | 'application/json'
+    ;
+
+cookie
+    : 'uid=0000000000000000;' // Specific cookie targeting the user ID functionality
+    ;
+
+contentType
+    : 'application/x-www-form-urlencoded'
+    | 'multipart/form-data'
+    | 'text/plain'
+    ;
+
+// Body of the HTTP request, if any
+body
+    : keyValue (AMP keyValue)*
+    ;
+
+keyValue
+    : key EQ value
+    ;
+
+key
+    : 'data'
+    | 'file'
+    | 'upload'
+    ;
+
+value
+    : 'test'
+    | '123'
+    | 'sample'
+    ;
+
+// Terminal symbols defined by regular expressions
+CRLF : '\r'? '\n' ;
+SP   : ' ' ;
+DIGIT : [0-9] ;
+AMP  : '&' ;
+EQ   : '=' ;
+
+WS  : [ \t]+ -> skip ; // Skip whitespace
+```
+
+This grammar is designed to generate HTTP requests that could potentially interact with the nginx configuration and the specific ngx_http_userid_set_uid function in the provided source code. The grammar includes various HTTP methods, headers, and a simplified body structure to allow for different types of requests. The cookie header is specifically crafted to target the user ID functionality, which is crucial for reaching the desired function in the nginx setup.

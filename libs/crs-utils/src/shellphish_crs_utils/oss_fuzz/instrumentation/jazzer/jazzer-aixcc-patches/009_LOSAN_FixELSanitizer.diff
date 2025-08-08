@@ -1,0 +1,92 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ExpressionLanguageInjection.kt b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ExpressionLanguageInjection.kt
+index 29f4c72a..0bac0c6d 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ExpressionLanguageInjection.kt
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ExpressionLanguageInjection.kt
+@@ -116,11 +116,81 @@ object ExpressionLanguageInjection {
+     fun losan_crash(
+         found_string: String
+     ){
+-        Jazzer.reportFindingFromHook(
+-            FuzzerSecurityIssueCritical(
+-                """[LOSAN] Expression Language Injection
+-                Passing data without sanitization to EL functions can lead to remote code execution. SHELLPHISH_FOUND_LOSAN: ${reprString(found_string.toByteArray().map { it.toInt() })} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(EXPRESSION_LANGUAGE_ATTACK.toByteArray().map { it.toInt() })}""",
+-            ),
+-        )
++        if(el_injection_check(found_string)){
++            Jazzer.reportFindingFromHook(
++                FuzzerSecurityIssueCritical(
++                    """[LOSAN] Expression Language Injection
++                    Passing data without sanitization to EL functions can lead to remote code execution. SHELLPHISH_FOUND_LOSAN: ${reprString(found_string.toByteArray().map { it.toInt() })} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(EXPRESSION_LANGUAGE_ATTACK.toByteArray().map { it.toInt() })}""",
++                ),
++            )
++        }
++    }
++
++    fun el_injection_check(input: String?): Boolean {
++        if (input == null || input.isEmpty()) {
++            return true
++        }
++        return hasNullBytes(input) ||
++               hasControlCharacters(input) ||
++               hasUnprintableCharacters(input)
++    }
++
++    private fun hasNullBytes(input: String): Boolean {
++        return input.contains('\u0000')
++    }
++
++    private fun hasControlCharacters(input: String): Boolean {
++        return input.any { char ->
++            when {
++                char.code < 32 && char !in setOf('\t', '\n', '\r') -> true
++                char.code == 127 -> true // DEL
++                char.isISOControl() && char !in setOf('\t', '\n', '\r') -> true
++                char.category == CharCategory.CONTROL -> true
++                else -> false
++            }
++        }
++    }
++
++    private fun hasUnprintableCharacters(input: String): Boolean {
++        return input.any { char ->
++            when {
++                // Allow basic printable ASCII (32-126)
++                char.code in 32..126 -> false
++                // Allow common whitespace characters that are valid in EL
++                char in setOf('\t', '\n', '\r', ' ') -> false
++                // Allow Unicode letters, digits, and marks (legitimate international content)
++                char.isLetter() || char.isDigit() -> false
++                // Allow common Unicode punctuation and symbols that might appear in legitimate strings
++                char.category in setOf(
++                    CharCategory.DECIMAL_DIGIT_NUMBER,
++                    CharCategory.LETTER_NUMBER,
++                    CharCategory.OTHER_NUMBER,
++                    CharCategory.CONNECTOR_PUNCTUATION,
++                    CharCategory.DASH_PUNCTUATION,
++                    CharCategory.START_PUNCTUATION,
++                    CharCategory.END_PUNCTUATION,
++                    CharCategory.INITIAL_QUOTE_PUNCTUATION,
++                    CharCategory.FINAL_QUOTE_PUNCTUATION,
++                    CharCategory.OTHER_PUNCTUATION,
++                    CharCategory.MATH_SYMBOL,
++                    CharCategory.CURRENCY_SYMBOL,
++                    CharCategory.MODIFIER_SYMBOL,
++                    CharCategory.OTHER_SYMBOL,
++                    CharCategory.SPACE_SEPARATOR
++                ) -> false
++                // Reject dangerous control characters and non-printable chars
++                // This catches fuzzer artifacts while allowing legitimate Unicode
++                char.isISOControl() -> true
++                char.category == CharCategory.CONTROL -> true
++                char.category in setOf(
++                    CharCategory.FORMAT,
++                    CharCategory.PRIVATE_USE,
++                    CharCategory.SURROGATE,
++                    CharCategory.UNASSIGNED
++                ) -> true
++                // Default: allow other valid Unicode characters
++                else -> false
++            }
++        }
+     }
+ }

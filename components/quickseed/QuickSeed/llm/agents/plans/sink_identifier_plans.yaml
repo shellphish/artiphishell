@@ -1,0 +1,10 @@
+1:
+  name: "identify_project"
+  description: "Read the list of list of names we provide, identify the project and summarize what this project does.
+    And think of what part of the project might be vulnerable to {{ sanitizer_name }}"
+
+2:
+  name: "identify_sink"
+  description: "Please provide the potential {{ sanitizer_name }} sinks. {{ additional_info }}
+    Please only select from the list we provided to you. Please provide at most 10 sinks. It is OK if you provide less than 10 sinks. 
+    Please output the sinks in the order of priority. And also please provide the reason why you think this function is a sink."

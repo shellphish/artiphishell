@@ -1,0 +1,21 @@
+
+You are given the following security warning:
+
+<--- SECURITY WARNING -->
+Run ID: {{RUN_ID}}
+Project name: {{PROJECT_NAME}}
+Potential Vulnerability: {{VULN_NAME}}
+Description: {{SARIF_GUY_SUMMARY}}
+
+Functions in Scope:
+{{LOCS_IN_SCOPE}}
+
+{% if HAS_DATA_FLOWS %}
+These are possible dataflows that can be used to trigger the vulnerability:
+{{DATA_FLOWS}}
+{% endif %}
+
+<--- SECURITY WARNING -->
+
+
+{{output_format}}

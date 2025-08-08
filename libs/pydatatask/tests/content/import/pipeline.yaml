@@ -1,0 +1,21 @@
+repo_classes:
+  repo_a: MetadataRepository
+  repo_b: MetadataRepository
+  repo_c: MetadataRepository
+  extra:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+imports:
+  one:
+    path: 1.yaml
+    repos:
+      input: repo_a
+      output: repo_b
+      extra: extra
+  two:
+    path: 2.yaml
+    repos:
+      input: repo_b
+      output: repo_c
+      extra: extra

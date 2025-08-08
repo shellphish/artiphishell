@@ -1,0 +1,18 @@
+After completing the analysis, you MUST output a report in the specified format.
+
+```
+<report>
+  <verdict>
+  </verdict>
+  <summary>
+    ...
+  </summary>
+</report>
+```
+
+<!-- Guidelines for output generation: -->
+1. For <summary>, replace the "..." with a summary of the warning you processed.
+2. For <verdict>, replace the "..." with TP (true positive) or FP (false positive) depending on if you think this is a true positive warning or a false positive one.
+
+<!-- Example: -->
+<PLACEHOLDER_FOR_EXAMPLE_REPORTS_BY_LANGUAGE>

@@ -1,0 +1,76 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/Deserialization.kt b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/Deserialization.kt
+index d864a164..8564d4a9 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/Deserialization.kt
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/Deserialization.kt
+@@ -28,6 +28,11 @@ import java.io.ObjectStreamConstants
+ import java.lang.invoke.MethodHandle
+ import java.util.WeakHashMap
+ 
++// LOSAN imports
++import com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical
++import java.lang.reflect.Method
++import com.code_intelligence.jazzer.api.Jazzer;
++
+ /**
+  * Detects unsafe deserialization that leads to attacker-controlled method calls, in particular to [Object.finalize].
+  */
+@@ -77,6 +82,7 @@ object Deserialization {
+         }
+     }
+ 
++    private val LoSan = System.getenv("SHELL_SAN");
+     /**
+      * Guides the fuzzer towards producing a valid header for an ObjectInputStream.
+      */
+@@ -157,6 +163,51 @@ object Deserialization {
+     ) {
+         val inputStream = inputStreamForObjectInputStream.get()[objectInputStream]
+         if (inputStream?.markSupported() != true) return
++        if(LoSan != null){
++            // Mark and read the data
++            inputStream.mark(Int.MAX_VALUE)
++            val preConsumedInput = OBJECT_INPUT_STREAM_HEADER + inputStream.readAllBytes()
++            inputStream.reset() // Reset back to the marked position
++            try {
++                val readObjectMethod: Method = ObjectInputStream::class.java.getDeclaredMethod(
++                    "readObject", Class::class.java
++                )
++                readObjectMethod.setAccessible(true)
++                // Just call readObject on the original objectInputStream - it should work now
++                readObjectMethod.invoke(objectInputStream, Object::class.java)
++            } catch (e: ClassNotFoundException) {
++                val errorMessage = e.message
++                val className = errorMessage?.substringAfter("class ").orEmpty()
++                println("[LOSAN] ClassNotFoundException occurred: $className")
++                Jazzer.reportFindingFromHook(
++                    FuzzerSecurityIssueCritical(
++                        """
++                        [LOSAN] Deserialization Sanitizer SHELLPHISH_FOUND_LOSAN: ${reprString(
++                            preConsumedInput.map { it.toInt() }
++                        )} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(
++                            SERIALIZED_JAZ_ZER_INSTANCE.map { it.toInt() }
++                        )}
++                        Unrestricted class/object creation based on externally controlled data may allow
++                        remote code execution depending on available classes on the classpath.
++                        """.trimIndent()
++                    )
++                )
++            } catch (e: Exception) {
++                Jazzer.reportFindingFromHook(
++                    FuzzerSecurityIssueCritical(
++                        """
++                        [LOSAN] Deserialization Sanitizer SHELLPHISH_FOUND_LOSAN: ${reprString(
++                            preConsumedInput.map { it.toInt() }
++                        )} and SHELLPHISH_EXPECTED_LOSAN: ${reprString(
++                            SERIALIZED_JAZ_ZER_INSTANCE.map { it.toInt() }
++                        )}
++                        Unrestricted class/object creation based on externally controlled data may allow
++                        remote code execution depending on available classes on the classpath.
++                        """.trimIndent()
++                    )
++                )
++            }
++        }
+         guideMarkableInputStreamTowardsEquality(inputStream, SERIALIZED_JAZ_ZER_INSTANCE, hookId)
+     }
+ }

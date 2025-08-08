@@ -1,0 +1,80 @@
+diff --git a/.gitignore b/.gitignore
+index e13ba77..f2d4e10 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -13,3 +13,5 @@ dist
+ *.interp
+ *.tokens
+ grammarinator/tool/g4/ANTLRv4*.py
++
++// ADDING LINE TO GITITNORE
+diff --git a/docs/make.bat b/docs/make.bat
+old mode 100644
+new mode 100755
+diff --git a/grammarinator/tool/processor.py b/grammarinator/tool/processor.py
+index 788e748..f553cb0 100644
+--- a/grammarinator/tool/processor.py
++++ b/grammarinator/tool/processor.py
+@@ -605,6 +605,8 @@ class ProcessorTool:
+             if offset + 2 > len(s):
+                 raise ValueError('Escape must have at least two characters')
+ 
++            # CHANGES Adjusted to Python's escape sequences
++            # print(f"ESCAPED VALUE IN {s}")
+             escaped = s[offset + 1]
+             offset += 2  # Move past backslash and escaped character
+ 
+@@ -621,6 +623,7 @@ class ProcessorTool:
+                     offset = hex_end_offset + 1  # Skip over last bracket
+                 else:
+                     # \uXXXX
++                    #import ipdb; ipdb.set_trace()
+                     hex_start_offset = offset
+                     hex_end_offset = hex_start_offset + 4
+                     if hex_end_offset > len(s):
+@@ -637,6 +640,26 @@ class ProcessorTool:
+                     raise ValueError(f'Invalid unicode codepoint ({s})')
+ 
+                 return codepoint, offset
++            
++            # CHANGES Adjusted to Python's escape sequences
++            if escaped in ('x', 'X'):
++                # \xXX
++                hex_start_offset = offset
++                hex_end_offset = hex_start_offset + 2
++                if hex_end_offset > len(s):
++                    raise ValueError(f'Non-bracketed hex escape must be of form \\xXX ({s})')
++
++                offset = hex_end_offset
++
++                try:
++                    codepoint = int(s[hex_start_offset:hex_end_offset], 16)
++                except ValueError as exc:
++                    raise ValueError(f'Invalid hex value ({s})') from exc
++
++                if codepoint < 0 or codepoint > maxunicode:
++                    raise ValueError(f'Invalid unicode codepoint ({s})')
++
++                return codepoint, offset
+ 
+             # \p{...}, \P{...}
+             if escaped in ('p', 'P'):
+@@ -725,14 +748,15 @@ class ProcessorTool:
+                 # Additional escape sequences defined by org.antlr.v4.misc.EscapeSequenceParsing.parseEscape
+                 '-': '-',
+                 ']': ']',
+-                '\'': '\''
++                '\'': '\'',
++                '0':'\0',
+             }
+ 
+             if escaped in escaped_values:
+                 return ord(escaped_values[escaped]), offset
+ 
+-            raise ValueError('Invalid escaped value')
+-
++            raise ValueError(f'Invalid escaped value {escaped}')
++            
+         def lexer_charset_interval(s):
+             # To be kept in sync with org.antlr.v4.automata.LexerATNFactory.getSetFromCharSetLiteral
+             assert len(s) > 0, 'Charset cannot be empty'

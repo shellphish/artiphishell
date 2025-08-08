@@ -1,0 +1,47 @@
+diff --git a/compiler-rt/lib/fuzzer/FuzzerInternal.h b/compiler-rt/lib/fuzzer/FuzzerInternal.h
+index 823b0085c..6d0c574e7 100644
+--- a/compiler-rt/lib/fuzzer/FuzzerInternal.h
++++ b/compiler-rt/lib/fuzzer/FuzzerInternal.h
+@@ -93,6 +93,7 @@ public:
+   static void MaybeExitGracefully();
+   static int InterruptExitCode();
+   std::string WriteToOutputCorpus(const Unit &U);
++  std::string NewWriteToOutputCorpus(const Unit &U, const std::string &old_hash);
+ 
+ private:
+   void AlarmCallback();
+diff --git a/compiler-rt/lib/fuzzer/FuzzerLoop.cpp b/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+index 0ac9a341b..dcc3bca7a 100644
+--- a/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
++++ b/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+@@ -639,6 +639,21 @@ std::string Fuzzer::WriteToOutputCorpus(const Unit &U) {
+   return Path;
+ }
+ 
++std::string Fuzzer::NewWriteToOutputCorpus(const Unit &U, const std::string &old_hash) {
++  if (Options.OnlyASCII)
++    assert(IsASCII(U));
++  if (Options.OutputCorpus.empty())
++    return "";
++  std::string new_filename = old_hash + "_" + Hash(U);
++  if (Options.Verbosity >= 2)
++    Printf("Using new_filename = %s\n", new_filename.c_str());
++  std::string Path = DirPlusFile(Options.OutputCorpus, new_filename);
++  WriteToFile(U, Path);
++  if (Options.Verbosity >= 2)
++    Printf("Written %zd bytes to %s\n", U.size(), Path.c_str());
++  return Path;
++}
++
+ void Fuzzer::WriteUnitToFileWithPrefix(const Unit &U, const char *Prefix) {
+   if (!Options.SaveArtifacts)
+     return;
+@@ -667,7 +682,7 @@ void Fuzzer::ReportNewCoverage(InputInfo *II, const Unit &U) {
+   II->NumSuccessfullMutations++;
+   MD.RecordSuccessfulMutationSequence();
+   PrintStatusForNewUnit(U, II->Reduced ? "REDUCE" : "NEW   ");
+-  WriteToOutputCorpus(U);
++  NewWriteToOutputCorpus(U, Sha1ToString(II->Sha1));
+   NumberOfNewUnitsAdded++;
+   CheckExitOnSrcPosOrItem(); // Check only after the unit is saved to corpus.
+   LastCorpusUpdateRun = TotalNumberOfRuns;

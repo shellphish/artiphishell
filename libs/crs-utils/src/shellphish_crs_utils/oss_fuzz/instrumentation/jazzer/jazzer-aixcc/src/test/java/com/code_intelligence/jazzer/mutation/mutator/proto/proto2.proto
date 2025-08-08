@@ -1,0 +1,163 @@
+//
+// Copyright 2024 Code Intelligence GmbH
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package com.code_intelligence.jazzer.protobuf;
+option java_package = "com.code_intelligence.jazzer.protobuf";
+
+message PrimitiveField2 {
+optional bool some_field = 1;
+}
+
+message RequiredPrimitiveField2 {
+required bool some_field = 1;
+}
+
+message RepeatedPrimitiveField2 {
+repeated bool some_field = 1;
+}
+
+message MessageField2 {
+optional RequiredPrimitiveField2 message_field = 1;
+}
+
+message RepeatedMessageField2 {
+repeated RequiredPrimitiveField2 message_field = 1;
+}
+
+message RepeatedOptionalMessageField2 {
+repeated PrimitiveField2 message_field = 1;
+}
+
+message RecursiveMessageField2 {
+required bool some_field = 1;
+optional RecursiveMessageField2 message_field = 2;
+}
+
+message RepeatedRecursiveMessageField2 {
+optional bool some_field = 1;
+repeated RepeatedRecursiveMessageField2 message_field = 2;
+}
+
+message OneOfField2 {
+required bool other_field = 4;
+oneof oneof_field {
+  bool bool_field = 7;
+  RequiredPrimitiveField2 message_field = 2;
+}
+optional bool yet_another_field = 1;
+}
+
+message IntegralField2 {
+optional uint32 some_field = 1;
+}
+
+message RepeatedIntegralField2 {
+repeated uint32 some_field = 1;
+}
+
+message BytesField2 {
+optional bytes some_field = 1;
+}
+
+message StringField2 {
+optional string some_field = 1;
+}
+
+message Parent {
+  optional Child child = 1;
+}
+
+message Child {
+  optional Parent parent = 1;
+}
+
+// Taken from
+// https://github.com/google/fuzztest/blob/c5fde4baee6134c84d4f2b618def9f60c7505151/fuzztest/internal/test_protobuf.proto#L24
+message TestSubProtobuf {
+  optional int32 subproto_i32 = 1;
+  repeated int32 subproto_rep_i32 = 2 [packed = true];
+  optional TestProtobuf parent = 3;
+}
+
+message TestProtobuf {
+  enum Enum {
+    Label1 = 0;
+    Label2 = 1;
+    Label3 = 2;
+    Label4 = 3;
+    Label5 = 4;
+  }
+
+  optional bool b = 1;
+  optional int32 i32 = 2;
+  optional uint32 u32 = 3;
+  optional int64 i64 = 4;
+  optional uint64 u64 = 5;
+  optional float f = 6;
+  optional double d = 7;
+  optional string str = 8;
+  optional Enum e = 9;
+  optional TestSubProtobuf subproto = 10;
+
+  repeated bool rep_b = 11;
+  repeated int32 rep_i32 = 12;
+  repeated uint32 rep_u32 = 13;
+  repeated int64 rep_i64 = 14;
+  repeated uint64 rep_u64 = 15;
+  repeated float rep_f = 16;
+  repeated double rep_d = 17;
+  repeated string rep_str = 18;
+  repeated Enum rep_e = 19;
+  repeated TestSubProtobuf rep_subproto = 20;
+
+  oneof oneof_field {
+    int32 oneof_i32 = 21;
+    int64 oneof_i64 = 22;
+    uint32 oneof_u32 = 24;
+  }
+
+  map<int32, int32> map_field = 25;
+
+  // Special cases
+  enum EnumOneLabel {
+    OnlyLabel = 17;
+  }
+  optional EnumOneLabel enum_one_label = 100;
+  message EmptyMessage {}
+  optional EmptyMessage empty_message = 101;
+}
+
+message OriginalSubmessage2 {
+  required int32 numeric_field = 1;
+}
+
+message OriginalMessage2 {
+  required OriginalSubmessage2 message_field = 1;
+  required bool bool_field = 2;
+}
+
+message ExtendedSubmessage2 {
+  required int32 numeric_field = 1;
+  required OriginalSubmessage2 message_field = 2;
+}
+
+message ExtendedMessage2 {
+  required ExtendedSubmessage2 message_field = 1;
+  required bool bool_field = 2;
+  required float float_field = 3;
+}

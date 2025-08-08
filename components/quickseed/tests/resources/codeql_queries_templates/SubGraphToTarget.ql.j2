@@ -1,0 +1,47 @@
+
+/**
+ * @id java/FindPath
+ * @kind problem
+ * @name List all function calls in paths related to source and target functions
+ * @severity information
+ */
+
+import java
+
+// Base predicate for direct calls
+predicate edges(Callable pred, Callable succ) {
+  pred.calls(succ) and
+  succ.getName() != ""
+}
+predicate is_target_function(Callable c) { 
+    {% for i, name in enumerate(methods) %}
+     {% if i > 0 %}or {% endif %}c.getQualifiedName().matches("{{ name }}") 
+    {% endfor %}
+}
+
+predicate target_reachable(Callable c) {
+  is_target_function(c) or
+  exists(Callable next | target_reachable(next) and edges(c, next))
+}
+
+
+from Callable prevcall, Callable inbetween, Call tcall
+where
+  // Must have a valid call relationship
+  prevcall.calls(inbetween) and
+  //tcall = prevcall.getACallSite(inbetween) and
+    target_reachable(inbetween)
+
+select
+  prevcall.getQualifiedName() as source_qualified_name,
+  inbetween.getQualifiedName() as target_qualified_name,
+  prevcall.getStringSignature() as source_signature,
+  inbetween.getStringSignature() as target_signature,
+  prevcall.getLocation() as source_location,
+  inbetween.getLocation() as target_location
+  //tcall.getLocation().getFile().getAbsolutePath() as call_filepath,
+  //tcall.getLocation().getStartLine() as call_lineno,
+  //prevcall.getLocation().getFile().getAbsolutePath() as source_filepath,
+  //prevcall.getLocation().getStartLine() as source_lineno,
+  //inbetween.getLocation().getFile().getAbsolutePath() as target_filepath,
+  //inbetween.getLocation().getStartLine() as target_lineno

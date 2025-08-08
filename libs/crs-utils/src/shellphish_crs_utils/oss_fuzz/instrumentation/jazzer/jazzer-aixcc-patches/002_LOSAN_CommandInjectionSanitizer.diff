@@ -1,0 +1,99 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+index 01fc1c37..8685bff3 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+@@ -18,7 +18,8 @@ java_library(
+ java_library(
+     name = "os_command_injection",
+     srcs = ["OsCommandInjection.java"],
+-    deps = ["//src/main/java/com/code_intelligence/jazzer/api:hooks"],
++    deps = ["//src/main/java/com/code_intelligence/jazzer/api:hooks",
++            "shell_utils_lib",],
+ )
+ 
+ java_library(
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/OsCommandInjection.java b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/OsCommandInjection.java
+index 4f061871..163988ad 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/OsCommandInjection.java
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/OsCommandInjection.java
+@@ -30,12 +30,23 @@ import java.util.List;
+ import java.util.Locale;
+ import java.util.Set;
+ 
++// LOSAN import 
++import com.code_intelligence.jazzer.sanitizers.ShellUtils;
++import java.util.List;
++import java.nio.charset.StandardCharsets;
++import java.nio.charset.CharsetDecoder;
++import java.nio.charset.CodingErrorAction;
++import java.nio.charset.CharacterCodingException;
++import java.nio.ByteBuffer;
++import java.nio.CharBuffer;
++
+ public class OsCommandInjection {
+     //Slightly safer command injection sanitizer that only allows 'java' to execute.
+     //If necessary, this can be modified to allow an include list of allowed commands
+     //as Jazzer does with ssrf, etc.
+     public static String SENTINEL = "jazze";
+     private static Set<String> ALLOWED_COMMANDS = Set.of("java");
++    public static String LoSan = System.getenv("SHELL_SAN");
+ 
+     @MethodHook(
+             type = HookType.BEFORE,
+@@ -67,6 +78,55 @@ public class OsCommandInjection {
+         if (ALLOWED_COMMANDS.contains(lcCmd)) {
+             return;
+         }
++        if(LoSan != null){
++            losan_check(cmd);
++        }
++ 
+         throw new IOException("sorry, I'm not allowed to launch: " + cmd);
+     }
++
++    private static boolean fuzzerArtifactCheck(String cmd){
++        CharsetDecoder dec = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
++        CharBuffer cb;
++        try {
++            cb = dec.decode(ByteBuffer.wrap(cmd.getBytes(StandardCharsets.UTF_8)));
++        } catch (CharacterCodingException e) {
++            return true;   // malformed UTF-8
++        }
++        // for (int i = 0; i < cb.length(); ) {
++        //     int cp = Character.codePointAt(cb, i);
++        //     if (cp < 0x20 || cp == 0x7F) return true;  
++        //     if (cp >= 0xFDD0 && cp <= 0xFDEF) return true; 
++        //     if ((cp & 0xFFFF) == 0xFFFE || (cp & 0xFFFF) == 0xFFFF) return true; // non-characters
++        //     if (cp >= 0xD800 && cp <= 0xDFFF) return true;
++        //     i += Character.charCount(cp);
++        // }
++        return false;
++    }
++
++    private static void losan_check(String cmd){
++        if(containsUnprintableOrUtf8(cmd)){
++            List<Integer> found_bytes = ShellUtils.byteArrayToIntList(cmd.getBytes());
++            List<Integer> expected_bytes = ShellUtils.byteArrayToIntList(SENTINEL.getBytes());
++            Jazzer.reportFindingFromHook(
++                new FuzzerSecurityIssueCritical(
++                    "[LOSAN] OS Command Injection\n"
++                    + "Executing OS commands with attacker-controlled data can lead to remote code execution. "
++                    + "SHELLPHISH_FOUND_LOSAN: "  + ShellUtils.reprString(found_bytes)
++                    + " and SHELLPHISH_EXPECTED_LOSAN: " + ShellUtils.reprString(expected_bytes)
++                )
++            );
++        }
++    }
++
++    private static boolean containsUnprintableOrUtf8(String input) {
++        byte[] byteArray = input.getBytes(StandardCharsets.UTF_8);
++        for (byte b : byteArray) {
++            int c = b & 0xFF; // Convert signed byte to unsigned
++            if (c < 32 || c > 126) { // Check if it's outside the printable ASCII range (32-126)
++                return true;
++            }
++        }
++        return false;
++    }
+ }
+\ No newline at end of file

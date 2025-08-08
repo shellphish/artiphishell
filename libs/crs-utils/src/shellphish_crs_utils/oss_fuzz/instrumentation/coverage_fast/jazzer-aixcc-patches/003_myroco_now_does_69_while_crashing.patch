@@ -1,0 +1,86 @@
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+index 09f13c13..32b8b6ee 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+@@ -42,6 +42,7 @@ import java.math.BigInteger;
+ import java.nio.charset.StandardCharsets;
+ import java.nio.file.Files;
+ import java.nio.file.Paths;
++import java.nio.file.StandardOpenOption;
+ import java.security.MessageDigest;
+ import java.security.NoSuchAlgorithmException;
+ import java.util.ArrayList;
+@@ -176,20 +177,27 @@ public final class FuzzTargetRunner {
+     Runtime.getRuntime().addShutdownHook(new Thread(FuzzTargetRunner::shutdown));
+   }
+ 
+-  /** A test-only convenience wrapper around {@link #runOne(long, int)}. */
+-  static int runOne(byte[] data,int myroco) {
++  /* This is copied over from one of the tests wherein the args are data, myroco mode and filename */
++  static int runOne(byte[] data,int myroco, String inpname) {
+     long dataPtr = UNSAFE.allocateMemory(data.length);
+     UNSAFE.copyMemory(data, BYTE_ARRAY_OFFSET, null, dataPtr, data.length);
+     try {
+-      return runOne(dataPtr, data.length, myroco);
++      return runOne(dataPtr, data.length, myroco, inpname);
+     } finally {
+       UNSAFE.freeMemory(dataPtr);
+     }
+   }
++  /**
++   * This function runs a single input and then dumps the coverage into the an exec file with the same
++   * name as the input. For example if input is seed-1 then it produces a seed-1.exec
++   * @param data
++   * @param inpname
++   * @return
++   */
+   static int runOneDir(byte[] data,String inpname) {
+     System.out.println("[PRE-RUN] Initial coverage array lenght : " + CoverageRecorder.getWholeCoverage().length);
+     long startTime = System.nanoTime();
+-    runOne(data,1);
++    runOne(data,1,inpname);
+     System.out.println("[POST-RUN] Coverage array length : " + CoverageRecorder.getWholeCoverage().length);
+     CoverageRecorder.dumpJacocoCoverage(inpname);
+     long endTime = System.nanoTime();
+@@ -200,7 +208,9 @@ public final class FuzzTargetRunner {
+   }
+ 
+   /**
+-   * Executes the user-provided fuzz target once.
++   * This is the copy of the runOne function overloaded to support myroco stuff
++   * Additions include a paramater called myroco that checks if the seed excecution
++   * was successful and then continues to run the next seed
+    *
+    * @param dataPtr a native pointer to beginning of the input provided by the fuzzer for this
+    *     execution
+@@ -208,7 +218,7 @@ public final class FuzzTargetRunner {
+    * @return the value that the native LLVMFuzzerTestOneInput function should return. The function
+    *     may exit the process instead of returning.
+    */
+-  private static int runOne(long dataPtr, int dataLength, int myroco) {
++  private static int runOne(long dataPtr, int dataLength, int myroco, String inpname) {
+     Throwable finding = null;
+     byte[] data;
+     Object argument;
+@@ -272,6 +282,21 @@ public final class FuzzTargetRunner {
+ 
+     // In myroco we don't care about crash logs or any info
+     if(myroco == 1){
++      String SEEDS_STATUS_LOGS = System.getenv("SEEDS_STATUS_LOGS");
++      if(SEEDS_STATUS_LOGS == null){
++        System.out.println("[MYROCO] The environment variable SEEDS_STATUS_LOGS is not set. Please set it to the path where you want to store the logs");
++        return LIBFUZZER_CONTINUE;
++      }
++      // Open the file and append a line to it
++      try {
++        Files.write(Paths.get(SEEDS_STATUS_LOGS), (inpname + " " + (finding == null ? "0" : "69") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
++      } catch (IOException e) {
++        System.out.println("[MYROCO] Failed to write to the file : " + SEEDS_STATUS_LOGS);
++        e.printStackTrace();
++      }
++      if (finding != null) {
++        System.out.printf("[MYROCO] Seed %s resulted in a crash\n", inpname);
++      }
+       return LIBFUZZER_CONTINUE;
+     }
+ 

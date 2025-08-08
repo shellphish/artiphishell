@@ -1,0 +1,60 @@
+load("@rules_jni//jni:defs.bzl", "cc_jni_library")
+
+package(default_testonly = True)
+
+cc_jni_library(
+    name = "native_asan",
+    srcs = [
+        "com_example_ExampleFuzzerWithNative.cpp",
+    ],
+    copts = [
+        "-fsanitize=fuzzer-no-link,address",
+        "-fno-sanitize-blacklist",
+    ],
+    defines = [
+        # Workaround for Windows build failures with VS 2022:
+        # "lld-link: error: /INFERASANLIBS is not allowed in .drectve"
+        # https://github.com/llvm/llvm-project/issues/56300#issuecomment-1214313292
+        "_DISABLE_STRING_ANNOTATION=1",
+        "_DISABLE_VECTOR_ANNOTATION=1",
+    ],
+    linkopts = select({
+        "@platforms//os:windows": [
+            # Windows requires all symbols that should be imported from the main
+            # executable to be defined by an import lib.
+            "/wholearchive:clang_rt.asan_dll_thunk-x86_64.lib",
+        ],
+        "//conditions:default": [
+            "-fsanitize=fuzzer-no-link,address",
+        ],
+    }),
+    visibility = ["//examples:__pkg__"],
+    deps = [
+        "//examples:example_fuzzer_with_native_lib.hdrs",
+    ],
+)
+
+cc_jni_library(
+    name = "native_ubsan",
+    srcs = [
+        "com_example_ExampleFuzzerWithNative.cpp",
+    ],
+    copts = [
+        "-fsanitize=fuzzer-no-link,undefined",
+        "-fno-sanitize-recover=all",
+    ],
+    linkopts = select({
+        "@platforms//os:windows": [
+            # Using the asan thunk is correct here as it contains symbols for
+            # UBSan and SanCov as well.
+            "/wholearchive:clang_rt.asan_dll_thunk-x86_64.lib",
+        ],
+        "//conditions:default": [
+            "-fsanitize=fuzzer-no-link,undefined",
+        ],
+    }),
+    visibility = ["//examples:__pkg__"],
+    deps = [
+        "//examples:example_fuzzer_with_native_lib.hdrs",
+    ],
+)

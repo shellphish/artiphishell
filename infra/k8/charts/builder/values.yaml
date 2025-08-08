@@ -1,0 +1,87 @@
+replicaCount: 1
+
+image:
+  repository: docker
+  tag: dind
+  pullPolicy: IfNotPresent
+
+nameOverride: "docker-builder"
+fullnameOverride: "docker-builder"
+
+# Whether to expose a cluster-wide docker instance
+clusterWideEnabled: true
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "docker-builder-sa"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+imagePullSecrets:
+  - name: acr-docker-secret
+  - name: ci-acr-pull-secret
+
+securityContext:
+  privileged: true
+
+service:
+  type: ClusterIP
+  port: 2375
+  targetPort: 2375
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+resources:
+  limits:
+    cpu: 4000m
+    memory: 16Gi
+  requests:
+    cpu: 1000m
+    memory: 8Gi
+
+# NOTE: You need to update these for any new node pools that need docker daemons
+nodeSelector:
+  kubernetes.io/mode: user
+
+tolerations:
+  - key: "support.shellphish.net/only-fuzzing"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+#tolerations:
+#- key: "kubernetes.io/role"
+#  operator: "Equal"
+#  value: "user-node"
+#  effect: "NoSchedule"
+#- key: "allowed-on-coverage"
+#  operator: "Equal"
+#  value: "true"
+#  effect: "NoSchedule"
+#- key: "allowed-on-fuzzing"
+#  operator: "Equal"
+#  value: "true"
+#  effect: "NoSchedule"
+
+affinity: {}
+
+persistence:
+  enabled: false
+  storageClass: "managed-csi"
+  size: 100Gi 
+
+env: {}

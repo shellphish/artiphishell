@@ -1,0 +1,129 @@
+# This workflow is designed to be run on a single sub-component of the monorepo
+
+name: "Test Changes to a Single Component"
+run-name: "${{ inputs.emoji }} [${{ inputs.component }}] ${{ inputs.run_message }} | @${{ inputs.push_author != '' && inputs.push_author || github.actor }}"
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: 'The component to test'
+        required: true
+        type: string
+      run_message:
+        description: 'The message related to the run'
+        required: false
+        default: 'Running Tests'
+        type: string
+
+      timeout_minutes:
+        description: 'The time to run the tests for'
+        required: false
+        default: 20
+        type: number
+
+      runner:
+        description: 'Whether to run on self-hosted runners'
+        required: false
+        default: 'self-hosted'
+        type: choice
+        options:
+          - self-hosted
+          - ubuntu-latest
+
+      runner_with_tags:
+        description: 'Whether to run on self-hosted runners (json format)'
+        required: false
+        default: ''
+        type: string
+
+      push_author:
+        # The author to attach to the workflow name
+        description: 'Internal Use Only'
+        required: false
+        default: ''
+        type: string
+      emoji:
+        # The emoji to attach to the workflow name
+        description: 'Internal Use Only 0'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.inputs.component }}
+  cancel-in-progress: true
+
+jobs:
+  find-internal-tests:
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    outputs:
+      found-tests: ${{ steps.find-tests.outputs.found-tests }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: shellphish-support-syndicate/ci-crs-actions@v2.0.0
+        id: find-tests
+        with:
+          github-token: ${{ github.token }}
+          action: 'find-tests'
+          components-directories: 'components'
+          component: ${{ inputs.component }}
+
+  run-internal-tests:
+    runs-on: ${{ inputs.runner_with_tags && fromJSON(inputs.runner_with_tags) || inputs.runner  }}
+    needs: find-internal-tests
+    strategy:
+      matrix:
+        target-test: ${{ fromJson(needs.find-internal-tests.outputs.found-tests) }}
+    steps:
+      - name: Cleanup CI Worker
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+        with:
+          runner: ${{ inputs.runner }}
+          is-artiphishell: false
+          CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+
+      - uses: actions/checkout@v3
+
+      - name: Setup CI Environment
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/setup-component-test-env@main
+        with:
+          component: ${{ inputs.component }}
+          runner: ${{ inputs.runner }}
+          CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          LITELLM_KEY: ${{ secrets.LITELLM_KEY }}
+
+      # If you need new setup for your branch, add it here
+      # Later, once merged we can migrate it into the setup workflow
+      - name: Branch Specific Setup
+        timeout-minutes: 5
+        run: |
+          echo No Branch Specific Setup
+
+      - name: Run Component Test
+        timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+        uses: shellphish-support-syndicate/ci-crs-actions@v2.0.0
+        id: run-test
+        with:
+          github-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          action: 'run-test'
+          target-test: ${{ matrix.target-test }}
+          components-directories: 'components:libs'
+          component: ${{ inputs.component }}
+          cache: '/tmp/cache'
+
+      - name: Cleanup CI Environment
+        timeout-minutes: 8
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-component-test-env@main
+        continue-on-error: true
+        with:
+          runner: ${{ inputs.runner }}
+
+      # If you need new setup for your branch, add it here
+      # Later, once merged we can migrate it into the setup workflow
+      - name: Branch Specific Cleanup
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo No Branch Specific Cleanup

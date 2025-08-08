@@ -1,0 +1,239 @@
+repo_classes:
+  crs_tasks_cancelled: MetadataRepository
+  cp_image_ready: MetadataRepository
+  vulnerability_submissions: MetadataRepository
+  targets_with_sources: FilesystemRepository
+  crashing_commits: MetadataRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+
+  patch_diffs: BlobRepository
+  patch_metadatas: MetadataRepository
+
+  debug_built_targets_for_patches:
+    cls: FilesystemRepository
+    required: false
+
+  patch_validation_testing_requests:
+    cls: MetadataRepository
+    required: false
+  patch_validation_testing_results: MetadataRepository
+
+  patch_debug_built_targets_with_sources:
+    cls: FilesystemRepository
+    required: false
+
+  post_patch_run_pov_result_metadata_path:
+    cls: MetadataRepository
+    required: false
+
+tasks:
+  debug_build_for_patch_verification:
+    job_quota:
+      max: 0.2
+
+    links:
+      patch_id:
+        repo: patch_metadatas
+        kind: InputId
+      patch_diff:
+        repo: patch_diffs
+        kind: InputFilepath
+      patch_metadata:
+        repo: patch_metadatas
+        kind: InputMetadata
+
+      project_id:
+        repo: cp_image_ready
+        kind: InputId
+        key: patch_metadata.pdt_project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: patch_metadata.pdt_project_id
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+        key: patch_metadata.pdt_project_id
+
+      debug_built_target_for_patch:
+        repo: debug_built_targets_for_patches
+        kind: OutputFilepath
+    
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+          
+          TEMPDIR=/shared/debug_build_for_patch/$PROJECT_ID/$TASK_NAME/{{patch_id}}
+          mkdir -p $TEMPDIR
+          rsync -ra --delete {{target_with_sources}}/ $TEMPDIR/
+          cd $TEMPDIR
+          # TODO these paths are wrong!!!
+          cp /shellphish/crs-utils/components/povguy/.env.docker ./.env.docker
+          ./run.sh -x build {{patch_diff|shquote}} {{patch_metadata.cp_source}}
+
+          rsync -ra --delete $TEMPDIR/ {{debug_built_target_for_patch|shquote}}/
+  patch_verification_rerun_requester:
+    long_running: true
+
+    job_quota:
+      cpu: 100m
+      mem: 256Mi
+    require_success: true
+
+    links:
+      patch_id:
+        repo: patch_metadatas
+        kind: InputId
+      patch_metadata:
+        repo: patch_metadatas
+        kind: InputMetadata
+      patch_metadata_path:
+        repo: patch_metadatas
+        kind: InputFilepath
+
+      project_id:
+        repo: cp_image_ready
+        kind: InputId
+        key: patch_metadata.pdt_project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: patch_metadata.pdt_project_id
+
+      vulnerability_submission:
+        repo: vulnerability_submissions
+        kind: InputMetadata
+        key: patch_metadata.pdt_vds_id
+
+      crashing_commit:
+        repo: crashing_commits
+        kind: InputMetadata
+        key: patch_metadata.pdt_crashing_commit_id
+
+      crashing_commits_streaming:
+        repo: crashing_commits
+        kind: StreamingInputFilepath
+
+      crash_reports_representative_inputs_metadatas_streaming:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: StreamingInputFilepath
+
+      verification_requests_streaming:
+        repo: patch_validation_testing_requests
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+
+          sleep 10  # wait for the streaming data
+
+          # unbuffer python to avoid buffering output
+          PYTHONUNBUFFERED=1 python /shellphish/crs-utils/components/patch_verification/requestor.py \
+            --patch-id {{patch_id}} \
+            --sanitizer-id {{vulnerability_submission.submission.pou.sanitizer|shquote}} \
+            --crashing-commit-sha {{crashing_commit.crashing_commit|shquote}} \
+            --patch-metadata {{patch_metadata_path|shquote}} \
+            --crashing-commit-reports {{crashing_commits_streaming|shquote}} \
+            --crashing-representative-inputs-metadata {{crash_reports_representative_inputs_metadatas_streaming|shquote}} \
+            --output-verification-requests {{verification_requests_streaming|shquote}}
+
+          exit 1
+
+  patch_verification_povguy_run:
+    max_concurrent_jobs: 16
+    links:
+      patch_verification_request_id:
+        repo: patch_validation_testing_requests
+        kind: InputId
+      patch_verification_request:
+        repo: patch_validation_testing_requests
+        kind: InputMetadata
+      patch_verification_request_path:
+        repo: patch_validation_testing_requests
+        kind: InputFilepath
+
+      project_id:
+        repo: cp_image_ready
+        kind: InputId
+        key: LMAO
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: LMAO
+
+      crashing_input_path:
+        repo: pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: patch_verification_request.crash_report_representative_crashing_input_id
+      crashing_input_metadata:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputMetadata
+        key: patch_verification_request.crash_report_representative_crashing_input_id
+      crashing_input_metadata_path:
+        repo: pov_report_representative_crashing_input_metadatas
+        kind: InputFilepath
+        key: patch_verification_request.crash_report_representative_crashing_input_id
+
+      debug_built_target_for_patch:
+        repo: debug_built_targets_for_patches
+        kind: InputFilepath
+        key: patch_verification_request.patch_id
+
+      crash_run_pov_result_metadata_path:
+        repo: post_patch_run_pov_result_metadata_path
+        kind: OutputFilepath
+
+      patch_invalidation_result_path:
+        repo: patch_validation_testing_results
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+          tmpdir=/shared/patch_verification_povguy/{{patch_verification_request_id}}
+          mkdir -p $tmpdir
+          TARGETDIR=${tmpdir}
+          rsync -ra --delete {{ debug_built_target_for_patch }}/ $TARGETDIR/
+          cp /shellphish/crs-utils/components/povguy/.env.docker ./.env.docker
+
+          DUMPDIR=$(realpath ./ignored_output)
+          mkdir -p ${DUMPDIR}/{pov_report_path,representative_crash,representative_crash_metadata}
+
+          python /shellphish/crs-utils/components/povguy/povguy.py \
+            {{crashing_input_metadata_path | shquote}} \
+            {{crash_run_pov_result_metadata_path | shquote}} \
+            "${DUMPDIR}/pov_report_path" \
+            "${DUMPDIR}/representative_crash" \
+            "${DUMPDIR}/representative_crash_metadata" \
+            "$TARGETDIR" \
+            {{crashing_input_metadata.cp_harness_name | shquote}} \
+            {{crashing_input_path | shquote}} \
+            {{patch_verification_request.crash_report_representative_crashing_input_id}}
+
+          python /shellphish/crs-utils/components/patch_verification/output_patch_invalidation_results.py \
+            {{patch_verification_request_path | shquote}} \
+            {{crash_run_pov_result_metadata_path | shquote}} \
+            {{patch_invalidation_result_path | shquote}}
+
+          rm -rf $TARGETDIR

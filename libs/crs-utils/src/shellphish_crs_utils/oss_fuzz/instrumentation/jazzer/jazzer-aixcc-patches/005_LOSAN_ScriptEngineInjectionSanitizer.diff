@@ -1,0 +1,90 @@
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+index 7ef70858..5cf355d9 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/BUILD.bazel
+@@ -53,6 +53,7 @@ java_library(
+     srcs = ["ScriptEngineInjection.java"],
+     deps = [
+         "//src/main/java/com/code_intelligence/jazzer/api:hooks",
++        "shell_utils_lib",
+     ],
+ )
+ 
+diff --git a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ScriptEngineInjection.java b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ScriptEngineInjection.java
+index 267b1362..0f7c3561 100644
+--- a/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ScriptEngineInjection.java
++++ b/sanitizers/src/main/java/com/code_intelligence/jazzer/sanitizers/ScriptEngineInjection.java
+@@ -25,6 +25,11 @@ import java.io.Reader;
+ import java.io.StringReader;
+ import java.lang.invoke.MethodHandle;
+ 
++// LOSAN imports
++import java.nio.charset.StandardCharsets;
++import java.util.List;
++import com.code_intelligence.jazzer.sanitizers.ShellUtils;
++
+ /**
+  * Detects Script Engine injections.
+  *
+@@ -39,6 +44,7 @@ import java.lang.invoke.MethodHandle;
+ @SuppressWarnings("unused")
+ public final class ScriptEngineInjection {
+   private static final String PAYLOAD = "\"jaz\"+\"zer\"";
++  public static String LoSan = System.getenv("SHELL_SAN");
+ 
+   /**
+    * String variants of eval can be intercepted by before hooks, as the script content can directly
+@@ -95,15 +101,19 @@ public final class ScriptEngineInjection {
+ 
+   private static void checkScriptContent(String content, int hookId) {
+     if (content != null) {
+-      if (content.contains(PAYLOAD)) {
+-        Jazzer.reportFindingFromHook(
+-            new FuzzerSecurityIssueCritical(
+-                "Script Engine Injection: Insecure user input was used in script engine"
+-                    + " invocation.\n"
+-                    + "Depending on the script engine's capabilities this could lead to sandbox"
+-                    + " escape and remote code execution."));
+-      } else {
+-        Jazzer.guideTowardsContainment(content, PAYLOAD, hookId);
++      if( LoSan != null){
++        losan_check(content);
++      }else{
++        if (content.contains(PAYLOAD)) {
++          Jazzer.reportFindingFromHook(
++              new FuzzerSecurityIssueCritical(
++                  "Script Engine Injection: Insecure user input was used in script engine"
++                      + " invocation.\n"
++                      + "Depending on the script engine's capabilities this could lead to sandbox"
++                      + " escape and remote code execution."));
++        } else {
++          Jazzer.guideTowardsContainment(content, PAYLOAD, hookId);
++        }
+       }
+     }
+   }
+@@ -117,4 +127,24 @@ public final class ScriptEngineInjection {
+     }
+     return content.toString();
+   }
++
++  private static boolean containsUnprintableOrUtf8(String input) {
++    byte[] byteArray = input.getBytes(StandardCharsets.UTF_8);
++    for (byte b : byteArray) {
++        int c = b & 0xFF; // Convert signed byte to unsigned
++        if (c < 32 || c > 126) { // Check if it's outside the printable ASCII range (32-126)
++            return true;
++        }
++    }
++    return false;
++  }
++
++  private static void losan_check(String p){
++    if ((p.contains(PAYLOAD) || containsUnprintableOrUtf8(p))){
++      List<Integer> found_bytes = ShellUtils.byteArrayToIntList(p.getBytes());
++      List<Integer> expected_bytes = ShellUtils.byteArrayToIntList(PAYLOAD.getBytes());
++      String error_msg = String.format("SHELLPHISH_FOUND_LOSAN: %s and SHELLPHISH_EXPECTED_LOSAN: %s\n",ShellUtils.reprString(found_bytes),ShellUtils.reprString(expected_bytes));
++      Jazzer.reportFindingFromHook(new FuzzerSecurityIssueCritical("[LOSAN] Script Engine Injection: Insecure user input was used in script engine invocation." + error_msg));
++    }
++  }
+ }

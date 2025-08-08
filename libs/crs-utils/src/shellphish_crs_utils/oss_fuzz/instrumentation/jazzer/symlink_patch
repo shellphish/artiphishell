@@ -1,0 +1,15 @@
+if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
+    mv "$OUT/jazzer_driver" "$OUT/jazzer_driver.orig"
+    ln -s "$OUT/wrapper.py" "$OUT/jazzer_driver"
+    cp /shellphish/wrapper.py "$OUT/wrapper.py"
+    mv "$OUT/jazzer_agent_deploy.jar" "$OUT/jazzer_agent_deploy.jar.orig"
+
+    mkdir -p $OUT/shellphish/jazzer-aixcc/jazzer-build/
+    mkdir -p $OUT/shellphish/nautilus/
+
+    cp $SRC/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver $OUT/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver
+    cp $SRC/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar $OUT/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar
+    cp $SRC/shellphish/nautilus/librevolver_mutator.so $OUT/shellphish/nautilus/librevolver_mutator.so
+    cp $SRC/shellphish/nautilus/watchtower $OUT/shellphish/nautilus/watchtower 
+
+fi

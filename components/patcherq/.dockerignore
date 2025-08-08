@@ -1,0 +1,9 @@
+
+# Files
+pipeline_old.yaml
+
+# Folders
+_old/
+__pycache__/
+
+tests/

@@ -1,0 +1,221 @@
+repo_classes:
+
+  ##################### INPUTS #####################
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  project_metadatas: MetadataRepository
+  codeql_db_ready: MetadataRepository
+  codeql_analysis_ready: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  crs_tasks_full: MetadataRepository
+  crs_tasks_delta: MetadataRepository
+  scan_guy_results: { cls: FilesystemRepository, required: false }
+
+tasks:
+  request_gpu_machine:
+    priority: 100
+    job_quota:
+      cpu: 1
+      mem: 1Gi
+    failure_ok: true
+
+    node_labels:
+      "support.shellphish.net/only-gpu": "true"
+    node_taints:
+      "support.shellphish.net/only-gpu": "true"
+    node_affinity:
+      "support.shellphish.net/only-gpu": "true"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-scan-guy
+        template: |
+          set -e
+          set -x
+          sleep 60
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          export VLLM_BASE_URL="http://vllm-server:25002/v1"
+          for i in $(seq 1 200); do
+              if curl "${VLLM_BASE_URL%/}/completions" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "model": "/models/best_n_no_rationale_poc_agent_withjava_final_model_agent_h100",
+                  "prompt": "CRS stands for ",
+                  "max_tokens": 8192,
+                  "temperature": 0
+                }'; then
+                  echo "vllm server is up!"
+                  break
+              fi
+              echo "Attempt $i failed, retrying..."
+              sleep 20
+          done
+          sleep 3600
+
+
+  scan_guy_full:
+    require_success: true
+    priority: 100
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    max_concurrent_jobs: 40
+    failure_ok: true
+
+    node_labels:
+      "support.shellphish.net/only-gpu": "true"
+    node_taints:
+      "support.shellphish.net/only-gpu": "true"
+    node_affinity:
+      "support.shellphish.net/only-gpu": "true"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks_full
+        kind: InputMetadata
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+      # output
+      scan_guy_results:
+        repo: scan_guy_results
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-scan-guy
+        
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        
+        template: |
+          set -e
+          set -x
+
+          export LOCAL_RUN=False
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export TARGET_METADATA={{ project_metadata_path | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export SCAN_GUY_RESULTS={{ scan_guy_results | shquote }}
+
+          echo '[]' > "$SCAN_GUY_RESULTS/scan_results.json"
+          timeout --kill-after=5s 30m /src/run_scan.sh || true
+
+
+  scan_guy_delta:
+    require_success: true
+    priority: 100
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    max_concurrent_jobs: 40
+    failure_ok: true
+
+    node_labels:
+      "support.shellphish.net/only-gpu": "true"
+    node_taints:
+      "support.shellphish.net/only-gpu": "true"
+    node_affinity:
+      "support.shellphish.net/only-gpu": "true"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks_delta
+        kind: InputMetadata
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+      aggregated_harness_info:
+        repo: target_split_metadatas
+        kind: InputFilepath
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputId
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: InputId
+      # output
+      scan_guy_results:
+        repo: scan_guy_results
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-scan-guy
+        
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        
+        template: |
+          set -e
+          set -x
+
+          export LOCAL_RUN=False
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export TARGET_METADATA={{ project_metadata_path | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+          export AGGREGATED_HARNESS_INFO={{ aggregated_harness_info | shquote }}
+          export SCAN_GUY_RESULTS={{ scan_guy_results | shquote }}
+
+          echo '[]' > "$SCAN_GUY_RESULTS/scan_results.json"
+          timeout --kill-after=5s 15m /src/run_scan.sh || true

@@ -1,0 +1,119 @@
+{
+    "$schema": "https://json.schemastore.org/sarif-2.1.0",
+    "version": "2.1.0",
+    "runs": [
+        {
+            "tool": {
+                "driver": {
+                    "name": "Custom Static Analysis Tool",
+                    "informationUri": "https://example.com",
+                    "rules": [
+                        {
+                            "id": "CUP-001",
+                            "name": "Segmentation Fault due to improper bounds checking",
+                            "shortDescription": {
+                                "text": "The program crashed due to a segmentation fault (SEGV) triggered by AddressSanitizer."
+                            },
+                            "fullDescription": {
+                                "text": "The crash occurred in the function `scan_ps` at line 1054 in the file `cups/raster-interpret.c`, where a loop iterates over a pointer `cur` without proper bounds checking. This function was called by `_cupsRasterExecPS` at line 542 in the same file, which in turn was invoked by the `main` function at line 20 in `cups/testjson.c`. The issue likely stems from improper handling of pointers or memory, leading to an invalid memory access."
+                            },
+                            "helpUri": "https://example.com/CUP-001",
+                            "properties": {
+                                "tags": [
+                                    "security",
+                                    "segmentation fault",
+                                    "memory safety"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+            "results": [
+                {
+                    "ruleId": "Null pointer dereference",
+                    "level": "error",
+                    "message": {
+                        "text": "The program crashed due to a segmentation fault (SEGV) triggered by AddressSanitizer. The crash occurred in the function `scan_ps` at line 1054 in the file `cups/raster-interpret.c`, where a loop iterates over a pointer `cur` without proper bounds checking."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "raster-interpret.c"
+                                },
+                                "region": {
+                                    "startLine": 1054,
+                                    "startColumn": 1,
+                                    "endLine": 1054,
+                                    "endColumn": 1
+                                },
+                                "contextRegion": {
+                                    "startLine": 1050,
+                                    "endLine": 1060
+                                }
+                            }
+                        },
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "raster-interpret.c"
+                                },
+                                "region": {
+                                    "startLine": 542,
+                                    "startColumn": 1,
+                                    "endLine": 542,
+                                    "endColumn": 1
+                                },
+                                "contextRegion": {
+                                    "startLine": 540,
+                                    "endLine": 550
+                                }
+                            }
+                        }
+                    ],
+                    "codeFlows": [
+                        {
+                            "threadFlows": [
+                                {
+                                    "locations": [
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "raster-interpret.c"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 1054,
+                                                        "startColumn": 1,
+                                                        "endLine": 1054,
+                                                        "endColumn": 1
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "raster-interpret.c"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 542,
+                                                        "startColumn": 1,
+                                                        "endLine": 542,
+                                                        "endColumn": 1
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+load("@rules_jni//jni:defs.bzl", "cc_jni_library")
+load("//bazel:compat.bzl", "SKIP_ON_WINDOWS")
+
+cc_jni_library(
+    name = "native_value_profile_fuzzer",
+    srcs = ["native_value_profile_fuzzer.cpp"],
+    copts = [
+        "-fsanitize=fuzzer-no-link",
+    ],
+    linkopts = [
+        "-fsanitize=fuzzer-no-link",
+    ],
+    target_compatible_with = SKIP_ON_WINDOWS,
+    visibility = ["//tests:__pkg__"],
+    deps = ["//tests:native_value_profile_fuzzer.hdrs"],
+)

@@ -1,0 +1,42 @@
+{% if existing %}
+<existing_server>
+Here is the existing server implementation which may be outdated from the swagger schema.
+
+```python
+{{ existing }}
+```
+</existing_server>
+{% endif %}
+
+<api_models>
+Here are the pydantic models which describe the types used by the API
+```python
+{{ api_models }}
+```
+</api_models>
+
+<impl_base_class>
+Here is the base class for our implementation of the API, which you should call into to implement the endpoints.
+```python
+{{ impl_base_class }}
+```
+</impl_base_class>
+
+<competition_api_schema>
+{{ competition_api_schema }}
+</competition_api_schema>
+
+Please output the python server implementation. You can use the following imports to start out:
+
+```python
+from uuid import UUID
+from enum import Enum
+from shellphish_crs_utils.models.aixcc_api import *
+from .server_impl import CompetitionServerImpl
+
+app = Flask(__name__)
+```
+
+<output_format>
+{{ output_format }}
+</output_format> 

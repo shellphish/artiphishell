@@ -1,0 +1,34 @@
+rules:
+  - id: zip_slip_canonical_path_validation
+    patterns:
+      # Find the canonical path pattern that's common in zip slip vulnerabilities
+      - pattern: |
+          $PATH1 = $FILE1.getCanonicalPath();
+          ...
+          $PATH2 = $FILE2.getCanonicalPath();
+      # Make sure there's no validation check in either direction
+      - pattern-not: |
+          if (!$PATH1.startsWith($PATH2)) {
+            ...
+          }
+      - pattern-not: |
+          if (!$PATH2.startsWith($PATH1)) {
+            ...
+          }
+      - pattern-not: |
+          if ($PATH1.startsWith($PATH2) == false) {
+            ...
+          }
+      - pattern-not: |
+          if ($PATH2.startsWith($PATH1) == false) {
+            ...
+          }
+    message: >-
+      Potential zip slip vulnerability detected: Canonical paths are obtained but not validated.
+      Always check that file paths (especially from archives) stay within the intended directory
+      by adding "if (!extractedPath.startsWith(targetDir)) { throw new SecurityException(); }"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      vuln_type: "path-traversal"

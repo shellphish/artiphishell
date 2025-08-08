@@ -1,0 +1,104 @@
+load("@buildifier_prebuilt//:rules.bzl", "buildifier", "buildifier_test")
+load("@rules_license//rules:license.bzl", "license")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//bazel:compat.bzl", "SKIP_ON_WINDOWS")
+
+license(
+    name = "license",
+    copyright_notice = "Copyright 2024 Code Intelligence GmbH",
+    license_text = "LICENSE",
+    visibility = ["//visibility:public"],
+)
+
+exports_files(["LICENSE"])
+
+pkg_tar(
+    name = "jazzer_release",
+    srcs = [
+        "//launcher:jazzer",
+        "//src/main/java/com/code_intelligence/jazzer:jazzer_standalone_deploy.jar",
+    ],
+    extension = "tar.gz",
+    mode = "0777",
+    remap_paths = {
+        "src/main/java/com/code_intelligence/jazzer/jazzer_standalone_deploy.jar": "jazzer_standalone.jar",
+    } | select({
+        "@platforms//os:windows": {"launcher/jazzer": "jazzer.exe"},
+        "//conditions:default": {"launcher/jazzer": "jazzer"},
+    }),
+    strip_prefix = select({
+        "@platforms//os:windows": ".\\",
+        "//conditions:default": "./",
+    }),
+    visibility = ["//tests:__pkg__"],
+)
+
+alias(
+    name = "jazzer",
+    actual = "//launcher:jazzer",
+)
+
+alias(
+    name = "addlicense",
+    actual = select({
+        "@platforms//os:macos": "@addlicense-darwin-universal//file:addlicense",
+        "@platforms//os:linux": "@addlicense-linux-amd64//file:addlicense",
+    }),
+    tags = ["manual"],
+)
+
+BUILDIFIER_EXCLUDE_PATTERNS = [
+    "./.git/*",
+    "./.ijwb/*",
+    "./.clwb/*",
+]
+
+buildifier(
+    name = "buildifier",
+    diff_command = "diff -u",
+    exclude_patterns = BUILDIFIER_EXCLUDE_PATTERNS,
+    mode = "fix",
+    tags = ["manual"],
+)
+
+buildifier_test(
+    name = "buildifier_test",
+    diff_command = "diff -u",
+    exclude_patterns = BUILDIFIER_EXCLUDE_PATTERNS,
+    no_sandbox = True,
+    target_compatible_with = SKIP_ON_WINDOWS,
+    workspace = "//:WORKSPACE.bzlmod",
+)
+
+alias(
+    name = "clang-format",
+    actual = select({
+        "@platforms//os:macos": "@clang-format-15-darwin-x64//file:clang-format",
+        "@platforms//os:linux": "@clang-format-15-linux-x64//file:clang-format",
+    }),
+    tags = ["manual"],
+)
+
+java_binary(
+    name = "google-java-format",
+    add_exports = [
+        "jdk.compiler/com.sun.tools.javac.api",
+        "jdk.compiler/com.sun.tools.javac.code",
+        "jdk.compiler/com.sun.tools.javac.file",
+        "jdk.compiler/com.sun.tools.javac.parser",
+        "jdk.compiler/com.sun.tools.javac.tree",
+        "jdk.compiler/com.sun.tools.javac.util",
+    ],
+    main_class = "com.google.googlejavaformat.java.Main",
+    tags = ["manual"],
+    runtime_deps = ["@google-java-format//jar"],
+)
+
+platform(
+    name = "android_arm64",
+    constraint_values = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:android",
+    ],
+    visibility = ["//:__subpackages__"],
+)

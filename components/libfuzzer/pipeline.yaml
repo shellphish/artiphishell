@@ -1,0 +1,668 @@
+repo_classes:
+
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  base_project_metadatas: MetadataRepository
+  
+  libfuzzer_build_artifacts:
+    cls: FilesystemRepository
+    required: false
+    compress_backend: true
+    compress_backup: true
+  # libfuzzer_cmplog_build_artifacts: {cls: FilesystemRepository, required: false}
+
+  ################### OUTPUTS #####################
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+
+tasks:
+  libfuzzer_build:
+    priority: 100
+    timeout:
+      minutes: 180
+
+    job_quota:
+      cpu: 0.5
+      mem: "2Gi"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+      
+      libfuzzer_built_artifact:
+        repo: libfuzzer_build_artifacts
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-shellphish-libfuzzer
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export IN_PIPELINE="1"
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          export CRS_TASK_NAME={{ crs_task.project_name | shquote }}
+          export OSS_FUZZ_PROJECT={{ project_oss_fuzz_repo | shquote }}
+
+          echo "============&&&&&&&&&&&&&&&&&&&&&&======================="
+          export PROJECT_ID={{ project_id | shquote }}
+          export BUILD_ARTIFACTS={{ libfuzzer_built_artifact | shquote }}
+          export BUILD_SANITIZER={{ build_configuration.sanitizer | shquote }}
+          export BUILD_ARCHITECTURE={{ build_configuration.architecture | shquote }}
+          export OSS_FUZZ_PROJECT_DIR=$OSS_FUZZ_PROJECT/projects/$CRS_TASK_NAME
+          export TARGET_SPLIT_METADATA={{ target_split_metadata | shquote }}
+
+          echo "============"
+          /shellphish/libfuzzer/run_scripts/run-libfuzzer-build.sh
+
+
+  libfuzzer_fuzz:
+    long_running: true
+    # cache_dir: /pdt-per-node-cache
+    replicable: false
+    scale_replicas: false
+
+    # We limit how many total jobs for this task can be running at once
+    # It will scale up the node pool until it reaches this number
+    # TODO this should be templated based on the # of crs tasks
+    max_concurrent_jobs: 20
+
+    # TODO tune these based on resource needs of this task
+    # starting_replicas: 5
+    # replicas_per_minute: 4
+
+    priority_addend: '{{ target_split_metadata.num_harness_infos }}'
+
+    max_spawn_jobs: 100
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing-lf: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing-lf: "true"
+
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing-lf: "true"
+
+    # TODO(finaldeploy): For big runs, increase cpu
+    # Ideally, we only want one instance of libfuzzer per harness info
+    job_quota:
+      cpu: "5"
+      mem: "8Gi"
+    timeout:
+      minutes: 3000
+
+    links:
+      # The project_id is provided by the run request
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      target_split_metadata:
+        repo: target_split_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+        template_cache_key: "project_analysis_sources-{{ build_configuration.project_id }}"
+
+      project_metadata:
+        repo: base_project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_metadata_path:
+        repo: base_project_metadatas
+        kind: InputFilepath
+        key: build_configuration.project_id
+      libfuzzer_build_artifacts_dir:
+        repo: libfuzzer_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "libfuzzer_build_artifacts-{{ harness_info.build_configuration_id }}"
+
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--shellphish_libfuzzer"
+
+        host_mounts:
+          "/shared/": "/shared/"
+          # "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          # if [ "$REPLICA_ID" = "0" ]; then
+          #   echo "🙈  We are replica 0, so we will be very careful not to crash!"
+          #   while true; do
+          #     sleep 10
+          #     sleep infinity
+          #   done
+          # fi
+          echo "LEEEEROYYY JENKIIIIINS!!!"
+
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ libfuzzer_build_artifacts_dir | shquote }}/artifacts/
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_SHELLPHISH_PROJECT_ID={{ project_id | shquote }}
+
+          export FUZZING_ENGINE="libfuzzer"
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+   
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+          
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            echo "Processing directory: $dir"
+            echo "Source: $SHELLPHISH_BUILD_ARTIFACTS_DIR/$dir/"
+            echo "Destination: /$dir/"
+
+            if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD/
+          echo "Running fuzzing in $PWD"
+
+          # Fuzzing and seeds dir for libfuzzer for each harness
+          export ARTIPHISHELL_FUZZER_BASEDIR=/shared/libfuzzer/fuzz
+          export LIBFUZZER_INSTANCE_UNIQUE_NAME=${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/
+          export LIBFUZZER_INSTANCE_PATH_FOR_EACH_HARNESS="$ARTIPHISHELL_FUZZER_BASEDIR/$LIBFUZZER_INSTANCE_UNIQUE_NAME"
+
+          # libfuzzer replicas
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL="${ARTIPHISHELL_SHELLPHISH_PROJECT_ID}-${JOB_ID}-${REPLICA_ID}"
+          export ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR=$LIBFUZZER_INSTANCE_PATH_FOR_EACH_HARNESS/$ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL
+          mkdir -p $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR
+
+          export ARTIPHISHELL_LIBFUZZER_BENIGN_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/queue"
+          export ARTIPHISHELL_LIBFUZZER_CRASHING_SEEDS="${ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR}/crashes/"
+          mkdir -p "$ARTIPHISHELL_LIBFUZZER_CRASHING_SEEDS" "$ARTIPHISHELL_LIBFUZZER_BENIGN_SEEDS"
+
+          echo "ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR: $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR"
+          echo "ARTIPHISHELL_LIBFUZZER_CRASHING_SEEDS: $ARTIPHISHELL_LIBFUZZER_CRASHING_SEEDS"
+          echo "ARTIPHISHELL_LIBFUZZER_BENIGN_SEEDS: $ARTIPHISHELL_LIBFUZZER_BENIGN_SEEDS"
+          export CORPUS_DIR=$ARTIPHISHELL_LIBFUZZER_BENIGN_SEEDS
+
+          # FUZZER SYNC DIR to get all mimimized seeds during fuzzing
+          export ARTIPHISHELL_FUZZER_SYNC_PATH="/shared/fuzzer_sync/$LIBFUZZER_INSTANCE_UNIQUE_NAME/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/libfuzzer-all/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/libfuzzer-all/queue/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/libfuzzer-minimized/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/libfuzzer-minimized/queue/"
+
+          # fuzzing log for debugging
+          ARTIPHISHELL_LIBFUZZER_FUZZING_LOG_DIR="${ARTIPHISHELL_FUZZER_SYNC_PATH}/libfuzzer-debug-info/logs/"
+          export ARTIPHISHELL_LIBFUZZER_FUZZING_LOG=$ARTIPHISHELL_LIBFUZZER_FUZZING_LOG_DIR/"${TASK_NAME}_${REPLICA_ID}"
+          mkdir -p "$ARTIPHISHELL_LIBFUZZER_FUZZING_LOG_DIR"
+
+          export MODE=fuzz
+
+
+          touch /shellphish/dict.txt
+          ls -al /out/
+          run_fuzzer {{harness_info.cp_harness_name | shquote}}
+
+  libfuzzer_fuzz_same_node_sync:  
+    long_running: true
+    require_success: true
+    # cache_dir: /pdt-per-node-cache
+
+    job_quota:
+      cpu: "400m"
+      mem: "1Gi"
+    resource_limits:
+      cpu: "400m"
+      mem: "8Gi"
+    
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      "support.shellphish.net/allow-fuzzing-lf": "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      "support.shellphish.net/only-fuzzing-lf": "true"
+      "kubernetes.azure.com/scalesetpriority": "spot"
+    # Prioritize launching on these nodes
+    node_affinity:
+      "support.shellphish.net/only-fuzzing-lf": "true"
+
+    timeout:
+      minutes: 3000
+
+    links:
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+        template_cache_key: "project_analysis_sources-{{ build_configuration.project_id }}"
+      project_metadata:
+        repo: base_project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+      libfuzzer_build_artifacts_dir:
+        repo: libfuzzer_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "libfuzzer_build_artifacts-{{ harness_info.build_configuration_id }}"
+
+    executable:
+      cls: ContainerSet
+      args:
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--shellphish_libfuzzer"
+
+        host_mounts:
+          "/shared/": "/shared/"
+          # "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+          set -x
+          set -e
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ libfuzzer_build_artifacts_dir | shquote }}/artifacts/
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_SHELLPHISH_PROJECT_ID={{ project_id | shquote }}
+          export ARTIPHISHELL_FUZZER_SYNC_DIR="/shared/fuzzer_sync/${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_DIR"
+
+          export FUZZING_ENGINE="libfuzzer"
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD/out
+          echo "Running fuzzing in $PWD"
+
+          if [ -f /shared/sync-ssh-key ]; then
+            export SSH_KEY=/shared/sync-ssh-key
+          fi
+          ls -al /shellphish/
+
+
+          /shellphish/minimize_corpus_and_same_node_sync.sh
+
+  libfuzzer_fuzz_cross_node_sync:
+    long_running: true
+    require_success: true
+
+    job_quota:
+      cpu: 500m
+      mem: "1Gi"
+    resource_limits:
+      cpu: 500m
+      mem: "2Gi"
+
+    timeout:
+      minutes: 3000  # ContainerSets must have timeouts!
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+      
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing-lf: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing-lf: "true"
+      kubernetes.azure.com/scalesetpriority: "spot"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing-lf: "true"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+      project_metadata:
+        repo: base_project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      libfuzzer_build_artifacts_dir:
+        repo: libfuzzer_build_artifacts
+        kind: InputFilepath
+      
+      target_split_metadata_path:
+        repo: target_split_metadatas
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+
+    executable:
+      cls: ContainerSet
+      args:
+        image: aixcc-shellphish-libfuzzer
+
+        host_mounts:
+          "/shared/": "/shared/"
+
+        template: |
+          set -x
+          set -e
+          echo "============CROSS NODE SYNC======================="
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ libfuzzer_build_artifacts_dir | shquote }}
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_SHELLPHISH_PROJECT_ID={{ project_id | shquote }}
+          export TARGET_SPLIT_METADATA={{ target_split_metadata_path | shquote }}
+
+          export SSH_KEY=/shared/sync-ssh-key
+
+          ls -al /shellphish/libfuzzer/
+          /shellphish/libfuzzer/cross_node_sync_seeds.sh
+
+  libfuzzer_fuzz_merge:
+    long_running: true
+    require_success: true
+    # cache_dir: /pdt-per-node-cache
+
+    priority: 10000
+    job_quota:
+      cpu: "100m"
+      mem: "4Gi"
+
+    timeout:
+      minutes: 3000
+
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    node_labels:
+      support.shellphish.net/allow-fuzzing-lf: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing-lf: "true"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing-lf: "true"
+
+
+    links:
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+        template_cache_key: "project_analysis_sources-{{ build_configuration.project_id }}"
+      project_metadata:
+        repo: base_project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      libfuzzer_build_artifacts_dir:
+        repo: libfuzzer_build_artifacts
+        kind: InputFilepath
+        key: harness_info.build_configuration_id
+        template_cache_key: "libfuzzer_build_artifacts-{{ harness_info.build_configuration_id }}"
+
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: benign_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_info_id }}"
+          build_configuration_id: "{{ harness_info.build_configuration_id }}"
+          project_harness_metadata_id: "{{ harness_info.project_harness_metadata_id }}"
+          project_id: "{{ harness_info.project_id }}"
+          project_name: "{{ harness_info.project_name }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          architecture: "{{ harness_info.architecture }}"
+          sanitizer: "{{ harness_info.sanitizer }}"
+          fuzzer: libfuzzer
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          harness_info_id: "{{ harness_info_id }}"
+          build_configuration_id: "{{ harness_info.build_configuration_id }}"
+          project_harness_metadata_id: "{{ harness_info.project_harness_metadata_id }}"
+          project_id: "{{ harness_info.project_id }}"
+          project_name: "{{ harness_info.project_name }}"
+          cp_harness_name: "{{ harness_info.cp_harness_name }}"
+          cp_harness_binary_path: "{{ harness_info.cp_harness_binary_path }}"
+          architecture: "{{ harness_info.architecture }}"
+          sanitizer: "{{ harness_info.sanitizer }}"
+          fuzzer: libfuzzer
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-shellphish-libfuzzer
+
+        host_mounts:
+          "/shared/": "/shared/"
+          # "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ libfuzzer_build_artifacts_dir | shquote }}
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          export ARTIPHISHELL_BUILD_CONFIGURATION_ID={{ harness_info.build_configuration_id | shquote }}
+          export ARTIPHISHELL_HARNESS_BINARY_PATH={{ harness_info.cp_harness_binary_path | shquote }}
+
+          export SANITIZER_NAME={{ harness_info.sanitizer | shquote }}
+          export ARCHITECTURE={{ harness_info.architecture | shquote }}
+
+          # Fuzzing and seeds dir for libfuzzer for each harness
+          export ARTIPHISHELL_FUZZER_BASEDIR=/shared/libfuzzer/fuzz
+          export LIBFUZZER_INSTANCE_UNIQUE_NAME=${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/
+          export LIBFUZZER_INSTANCE_PATH_FOR_EACH_HARNESS="$ARTIPHISHELL_FUZZER_BASEDIR/$LIBFUZZER_INSTANCE_UNIQUE_NAME"
+
+          # libfuzzer replicas
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL="{{project_id}}-${JOB_ID}-${REPLICA_ID}"
+          export ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR=$LIBFUZZER_INSTANCE_PATH_FOR_EACH_HARNESS/$ARTIPHISHELL_FUZZER_INSTANCE_NAME_REPLICA_FULL
+          mkdir -p $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR
+
+          # FUZZER SYNC DIR to get all mimimized seeds during fuzzing
+          export ARTIPHISHELL_FUZZER_SYNC_PATH="/shared/fuzzer_sync/$LIBFUZZER_INSTANCE_UNIQUE_NAME/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/libfuzzer-all/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/libfuzzer-all/queue/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_PATH/libfuzzer-minimized/crashes/" "$ARTIPHISHELL_FUZZER_SYNC_PATH/libfuzzer-minimized/queue/"
+
+          echo "ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR: $ARTIPHISHELL_FUZZER_INSTANCE_REPLICA_DIR"
+
+          PDT_SEEDS_DIR={{benign_harness_inputs | shquote}}
+          PDT_CRASHES_DIR={{crashing_harness_inputs | shquote}}
+          export PDT_SEEDS_DIR PDT_CRASHES_DIR
+          ls -al /shellphish/libfuzzer/
+          
+          /shellphish/libfuzzer/output_to_pdt.sh

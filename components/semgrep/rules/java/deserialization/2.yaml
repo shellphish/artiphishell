@@ -1,0 +1,15 @@
+rules:
+  - id: java-unsafe-object-deserialization-try-with-resources
+    patterns:
+      - pattern: |
+          try (ObjectInputStream $OIS = new ObjectInputStream($INPUT)) {
+            ...
+            $OIS.readObject();
+            ...
+          }
+    message: "Java deserialization in try-with-resources block detected. Validate input before deserialization."
+    severity: WARNING
+    metadata:
+      cwe: Deserialization
+      vuln_type: deserialization
+    languages: [java]

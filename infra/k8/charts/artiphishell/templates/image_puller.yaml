@@ -1,0 +1,180 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: image-puller
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      name: image-puller
+  template:
+    metadata:
+      labels:
+        name: image-puller
+    spec:
+      nodeSelector:
+        kubernetes.azure.com/mode: user
+      priorityClassName: system-node-critical
+      imagePullSecrets:
+        - name: acr-docker-secret
+        - name: ci-acr-pull-secret
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: image-puller
+        image: {{ .Values.global.deployment_registry.value }}/aixcc-image-puller:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -x
+          echo "Image puller container is running..."
+
+          if [ ! -f ./crictl ]; then
+            # Download crictl with retry logic to handle GitHub resolution failures
+            echo "📥 Downloading crictl..."
+            while true; do
+              if wget https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.33.0/crictl-v1.33.0-linux-amd64.tar.gz; then
+                echo "✅ Successfully downloaded crictl"
+                if tar xzf crictl-v1.33.0-linux-amd64.tar.gz && chmod +x crictl; then
+                  echo "✅ Successfully extracted crictl"
+                  break
+                else
+                  echo "❌ Failed to extract crictl, retrying in 1 second..."
+                  rm -f crictl-v1.33.0-linux-amd64.tar.gz || true
+                  sleep 1
+                fi
+              else
+                echo "❌ Failed to download crictl, retrying in 1 second..."
+                sleep 1
+              fi
+            done
+          fi
+
+          function pull_image() {
+            set -x
+            local image=$1
+            local request=$2
+            local max_retries=24
+            local retry_count=0
+            
+            echo "📥 Pulling image $image (will retry up to $max_retries times)"
+            
+            while [ $retry_count -lt $max_retries ]; do
+              retry_count=$((retry_count + 1))
+              echo "🔄 Attempt $retry_count/$max_retries for image $image"
+              
+              if (
+                ./crictl pull \
+                  --creds "$CRS_IMAGE_REGISTRY_USERNAME:$CRS_IMAGE_REGISTRY_PASSWORD" \
+                  "$image" \
+                || ./crictl pull \
+                  --creds "$ACR_USERNAME:$ACR_PASSWORD" \
+                  "$image"
+              ); then
+                echo "✅ Successfully pulled image $image on attempt $retry_count"
+                touch "$request.complete"
+                return 0
+              else
+                echo "❌ Failed to pull image $image on attempt $retry_count"
+                if [ $retry_count -lt $max_retries ]; then
+                  echo "⏳ Waiting 5 seconds before retry..."
+                  sleep 5
+                fi
+              fi
+            done
+            
+            echo "💥 Failed to pull image $image after $max_retries attempts"
+            touch "$request.failed"
+            return 1
+          }
+
+          mkdir -p /shared/docker-pull-requests/
+          touch /shared/docker-pull-requests/puller-started.complete
+
+          pull_image "$DEPLOYMENT_REGISTRY/aixcc-dependencies-base:latest" || true
+          pull_image "$DEPLOYMENT_REGISTRY/aixcc-component-base:latest" || true
+
+
+          while true; do
+            # Check if there are any files before attempting to loop
+            files=$(ls /shared/docker-pull-requests/ 2>/dev/null)
+            if [ -n "$files" ]; then
+              for request in /shared/docker-pull-requests/*; do
+                # Skip if not a regular file
+                [ -f "$request" ] || continue
+
+                # Skip files with .complete or .failed extension
+                case "$request" in
+                  *.complete|*.failed|*.logs) continue ;;
+                esac
+
+                # Check if already processed
+                [ -f "$request.complete" ] && continue
+                [ -f "$request.failed" ] && continue
+                
+                
+                echo " 📦 Processing request file: $request"
+                image_name="$(cat $request)"
+                (pull_image "$image_name" "$request" 2>&1 | tee "$request.logs") || true
+              done
+            fi
+            
+            # Sleep between checks
+            sleep 10
+          done
+
+          sleep infinity
+        env:
+        - name: ACR_SERVER
+          valueFrom:
+            secretKeyRef:
+              name: pydatatask-agent-acr-creds
+              key: server
+        - name: ACR_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: pydatatask-agent-acr-creds
+              key: username
+        - name: ACR_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pydatatask-agent-acr-creds
+              key: password
+        - name: CRS_IMAGE_REGISTRY
+          valueFrom:
+            secretKeyRef:
+              name: pydatatask-agent-acr-creds
+              key: crs_image_registry
+        - name: CRS_IMAGE_REGISTRY_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: pydatatask-agent-acr-creds
+              key: crs_image_registry_username
+        - name: CRS_IMAGE_REGISTRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pydatatask-agent-acr-creds
+              key: crs_image_registry_password
+        - name: DEPLOYMENT_REGISTRY
+          value: "{{ .Values.global.deployment_registry.value }}"
+
+        volumeMounts:
+        - name: host-shared
+          mountPath: /shared
+        - name: crictl-socket  # needed for crictl to work
+          mountPath: /run/containerd/containerd.sock
+        resources:
+          requests:
+            cpu: 250m
+            memory: 1000Mi
+          limits:
+            cpu: 1000m
+            memory: 4000Mi
+      volumes:
+        - name: host-shared
+          hostPath:
+            path: /shared
+            type: DirectoryOrCreate
+        - name: crictl-socket
+          hostPath:
+            path: /run/containerd/containerd.sock

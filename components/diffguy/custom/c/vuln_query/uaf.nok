@@ -1,0 +1,31 @@
+import cpp
+import semmle.code.cpp.dataflow.new.DataFlow
+import semmle.code.cpp.pointsto.CallGraph
+
+predicate edge(Function src, Function dst) {
+  src = dst or
+  allCalls(src, dst)
+}
+
+predicate freeFunction(Function f) { f.hasGlobalName("free") }
+
+predicate callsFree(Function caller) {
+  exists(Function free |
+    edge+(caller, free) and
+    freeFunction(free)
+  )
+}
+
+predicate derefAfterFree(Function f) {
+  exists(Call freeCall, Expr deref |
+    freeCall.getEnclosingFunction() = f and
+    deref.getEnclosingFunction() = f and
+    callsFree(freeCall.getTarget()) and
+    freeCall.getLocation().getStartLine() < deref.getLocation().getStartLine() and
+    dereferenced(deref)
+  )
+}
+
+from Function candidate
+where derefAfterFree(candidate) //and candidate.getName().matches("%ngx_http_get_host_specs%")
+select candidate.getLocation() as id, candidate.getName() as name, "This function has at lease one deref after calling free function." as note

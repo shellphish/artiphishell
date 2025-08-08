@@ -1,0 +1,113 @@
+# Default values for agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# Image configuration
+image:
+  pullPolicy: Always
+
+# Define the container ports
+containerPorts:
+  - name: http
+    containerPort: 4000
+    protocol: TCP
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets:
+  - name: acr-docker-secret
+  - name: ci-acr-pull-secret
+
+# This is to override the chart name.
+nameOverride: "analysisgraph"
+fullnameOverride: "analysisgraph"
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "analysisgraph-sa"
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # Internal service for port 8080
+  type: ClusterIP
+  port: 7687
+
+resources:
+  limits:
+    cpu: 16000m
+    memory: 20Gi
+  requests:
+    cpu: 5000m
+    memory: 10Gi
+
+# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe: {} # TODO this should be setup
+readinessProbe: {}
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+env:
+  - name: NEO4J_apoc_export_file_enabled
+    value: "true"
+  - name: NEO4J_apoc_import_file_enabled
+    value: "true"
+  - name: NEO4J_apoc_import_file_use__neo4j__config
+    value: "true"
+  - name: NEO4J_PLUGINS
+    value : '["apoc", "graph-data-science"]'
+
+volumeMounts:
+- name: host-shared
+  mountPath: /shared
+- name: neo4j-data
+  mountPath: /data
+- name: neo4j-logs
+  mountPath: /logs
+- name: neo4j-plugins
+  mountPath: /plugins
+- name: neo4j-import
+  mountPath: /var/lib/neo4j/import
+
+tolerations:
+  - key: "support.shellphish.net/only-critical"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+affinity: {}
+
+# TODO(finaldeploy) set these back to 4Ti
+persistence:
+  enabled: true
+  storageClass: "managed-csi-premium"
+  size: 4Ti
+  accessMode: ReadWriteOnce
+  name: neo4j-data

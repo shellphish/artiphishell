@@ -1,0 +1,13 @@
+{% for func in functions %}
+    Function #{{ loop.index }}: {{ func.function_name }}
+    Source code:
+    {{ func.function_code }}
+{% endfor %}
+
+{% if calling_relationships %}
+    Calling Relationships:
+    {% for call in calling_relationships %}
+        - Function {{ function_map[call.source].function_name }}  calls {{ function_map[call.target].function_name }} at
+        line {{ call.linetext }}
+    {% endfor %}
+{% endif %}

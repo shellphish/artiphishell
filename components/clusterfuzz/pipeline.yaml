@@ -1,0 +1,173 @@
+repo_classes:
+  ######################## INPUTS ########################
+  cp_image_ready: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  targets_with_sources: FilesystemRepository
+  target_harness_infos: MetadataRepository
+
+  ######################## OUTPUTS ########################
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  crashing_harness_inputs_coverages: BlobRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs_coverages: BlobRepository
+
+  ###################### INTERMEDIATES ######################
+  clusterfuzz_built_targets:
+    cls: FilesystemRepository
+    required: false
+
+tasks:
+  clusterfuzz_build:
+    annotations:
+      maturity: inProgress
+      authors:
+        - 4rbit3r
+    require_success: true
+    job_quota:
+      max: 0.45
+    links:
+      target_id:
+        repo: cp_image_ready
+        kind: InputId
+      project_id:
+        repo: cp_image_ready
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      clusterfuzz_built_target:
+        repo: clusterfuzz_built_targets
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-clusterfuzz
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export TARGET_ID={{ target_id | shquote }}
+          export TARGET_WITH_SOURCES={{ target_with_sources | shquote }}
+          export CLUSTERFUZZ_BUILT_TARGET={{ clusterfuzz_built_target | shquote }}
+
+          TEMP_DIR="/shared/clusterfuzz/build/${TARGET_ID}"
+          if [ -d "${TEMP_DIR}" ]; then
+            rm -rf "${TEMP_DIR}"
+          fi
+          mkdir -p "${TEMP_DIR}/.clusterfuzzlite"
+
+          rsync -ravz "${TARGET_WITH_SOURCES}/" "${TEMP_DIR}/"
+
+          cp "${TEMP_DIR}/build.sh" "${TEMP_DIR}/.clusterfuzzlite/build.sh"
+          cp "${TEMP_DIR}/Dockerfile" "${TEMP_DIR}/.clusterfuzzlite/Dockerfile"
+          cp "${TEMP_DIR}/project.yaml" "${TEMP_DIR}/.clusterfuzzlite/project.yaml"
+
+          python /oss-fuzz/infra/helper.py build_image --pull --external "${TEMP_DIR}"
+          python /oss-fuzz/infra/helper.py build_fuzzers --external "${TEMP_DIR}"
+          python /oss-fuzz/infra/helper.py check_build --external "${TEMP_DIR}"
+
+          rsync -ravz "${TEMP_DIR}/" "${CLUSTERFUZZ_BUILT_TARGET}"
+          
+  cluster_fuzz:
+    annotations:
+      maturity: inProgress
+      authors:
+        - 4rbit3r
+    replicable: true
+    priority_addend: 1
+    long_running: true
+    require_success: true
+    job_quota:
+      cpu: 16 
+      mem: "12Gi"
+    links:
+      harness_info_id:
+        repo: target_harness_infos
+        kind: InputId
+      harness_info:
+        repo: target_harness_infos
+        kind: InputMetadata
+
+      clusterfuzz_built_target:
+        repo: clusterfuzz_built_targets
+        kind: InputFilepath
+
+      crashing_harness_inputs:
+        repo: crashing_harness_inputs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: crashing_harness_inputs_metadatas
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/clusterfuzz/corpus-{job}/crash_corpus/
+        auto_meta: meta
+        auto_values:
+          harness_info_id: '{{ harness_info_id }}'
+          target_id: '{{ harness_info.target_id }}'
+          cp_harness_id: '{{ harness_info.cp_harness_id }}'
+          cp_harness_name: '{{ harness_info.cp_harness_name }}'
+          fuzzer: clusterfuzz
+      benign_harness_inputs:
+        repo: benign_harness_inputs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: benign_harness_inputs_metadatas
+        force_path: /shared/clusterfuzz/corpus-{job}/benign_corpus
+        auto_meta: meta
+        DANGEROUS_filename_is_key: true
+        auto_values:
+          harness_info_id: '{{ harness_info_id }}'
+          target_id: '{{ harness_info.target_id }}'
+          cp_harness_id: '{{ harness_info.cp_harness_id }}'
+          cp_harness_name: '{{ harness_info.cp_harness_name }}'
+          fuzzer: clusterfuzz
+      benign_coverage_dir:
+        repo: benign_harness_inputs_coverages
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/clusterfuzz/corpus-{job}/benign_coverage
+      crash_coverage_dir:
+        repo: crashing_harness_inputs_coverages
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+        force_path: /shared/clusterfuzz/corpus-{job}/crash_coverage/
+
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: aixcc-clusterfuzz
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          # INPUTS
+          export TARGET_ID={{ harness_info.target_id | shquote }}
+          export CP_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export BUILT_TARGET={{ clusterfuzz_built_target | shquote }}
+
+          CORPUS_DIR=/inputs
+          mkdir -p "${CORPUS_DIR}"
+          echo "adsf" > "${CORPUS_DIR}/test"
+
+          TEMP_DIR="/shared/clusterfuzz/fuzz/${TARGET_ID}"
+          if [ -d "${TEMP_DIR}" ]; then
+            rm -rf "${TEMP_DIR}"
+          fi
+          mkdir -p "${TEMP_DIR}"
+
+          rsync -ravz "${BUILT_TARGET}/" "${TEMP_DIR}"
+
+          python /oss-fuzz/infra/helper.py run_fuzzer --external --corpus-dir="${CORPUS_DIR}" "${TEMP_DIR}" "${CP_HARNESS_NAME}"

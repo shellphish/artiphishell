@@ -1,0 +1,103 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks_analysis_sources: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  project_metadatas: MetadataRepository
+  patch_requests_meta: MetadataRepository
+  patch_bypass_requests: MetadataRepository
+  saved_logs: BlobRepository
+  
+  emperors_crash_submission_edicts: BlobRepository
+  emperors_patch_submission_edicts: BlobRepository
+
+
+tasks:
+  patcherg:
+    require_success: true
+    priority: 1000000
+    long_running: true
+    job_quota:
+      cpu: 1
+      mem: "4Gi"
+
+    # This will call a function to determine what pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Run this in the critical node pool
+    node_labels:
+      support.shellphish.net/pool: "critical-task"
+    node_taints:
+      support.shellphish.net/only-critical: "true"
+
+    # first, the component interface
+    links:
+      crs_task:
+        repo: crs_tasks
+        kind: InputFilepath
+      crs_task_metadata:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      patch_requests_meta:
+        repo: patch_requests_meta
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      patch_bypass_requests:
+        repo: patch_bypass_requests
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      emperors_crash_submission_edicts:
+        repo: emperors_crash_submission_edicts
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      emperors_patch_submission_edicts:
+        repo: emperors_patch_submission_edicts
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+
+      saved_logs:
+        repo: saved_logs
+        kind: StreamingOutputFilepath
+
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-patcherg
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+          export PROJECT_ID={{ project_id | shquote }}
+          
+          mkdir -p /shared/patcherg/${PROJECT_ID}
+          TEMP_DIR=$(mktemp -d -p /shared/patcherg/${PROJECT_ID})
+          
+          export CRS_TASK_NUM={{ crs_task_metadata.concurrent_target_num | default('1') }}
+          export CRS_TASK_TYPE={{ crs_task_metadata.type | shquote }}
+          export PROJECT_NAME={{ crs_task_metadata.project_name | shquote }}
+          export DEADLINE={{ crs_task_metadata.deadline | shquote }}
+          export PATCH_REQUEST_META={{ patch_requests_meta | shquote }}
+          export DISPATCH=0
+          export EMPERORS_CRASH_SUBMISSION_EDICTS={{ emperors_crash_submission_edicts | shquote }}
+          export EMPERORS_PATCH_SUBMISSION_EDICTS={{ emperors_patch_submission_edicts | shquote }}
+          export PATCH_BYPASS_REQUESTS={{ patch_bypass_requests | shquote }}
+          export LOGS={{ saved_logs | shquote }}
+          export TEMP_LOGS="${TEMP_DIR}/patcherg.log"
+
+          /patcherg/scripts/run_patcherg.sh 2>&1 | tee -a "${TEMP_DIR}"/patcherg.log
+          rm -rf "${TEMP_DIR}"

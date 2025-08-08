@@ -1,0 +1,142 @@
+Available harness_infos to run: 
+264db8b8d5cb9fafeb32bae78b58e10f
+45b046015e51fd93c548b89654718d1c
+f4f1c21575d124a21730b9b98c5c5e54
+Which harness_infos would you like to run?
+/aixcc-backups/backup-cups-14760642842/
+Created output dir: 
+Using harness info file: f4f1c21575d124a21730b9b98c5c5e54
+Running grammar_guy with backup dir: /aixcc-backups/backup-cups-14760642842/
+Exporting seeds to triage to: /tmp/tmp.NExVNGopzn//seeds_to_triage
+Exporting events to: /tmp/tmp.NExVNGopzn//events
++ TARGET_SHARED_DIR=/shared/grammar_guy/fuzz/3bedce64839946039c6a351d65d77073-f4f1c21575d124a21730b9b98c5c5e54
++ mkdir -p /shared/grammar_guy/fuzz/3bedce64839946039c6a351d65d77073-f4f1c21575d124a21730b9b98c5c5e54
++ rsync -ra /aixcc-backups/backup-cups-14760642842//grammar_guy_fuzz.coverage_build_artifact/3bedce64839946039c6a351d65d77073/ /shared/grammar_guy/fuzz/3bedce64839946039c6a351d65d77073-f4f1c21575d124a21730b9b98c5c5e54/
++ AFL_SYNC_PATH=/shared/fuzzer_sync/cups-fuzz_ipp-f4f1c21575d124a21730b9b98c5c5e54/sync-grammar-guy/queue
++ mkdir -p /shared/fuzzer_sync/cups-fuzz_ipp-f4f1c21575d124a21730b9b98c5c5e54/sync-grammar-guy/queue
++ mkdir -p /shared/fuzzer_sync/cups-fuzz_ipp-f4f1c21575d124a21730b9b98c5c5e54//sync-grammar-guy-0/
++ PYTHONUNBUFFERED=TRUE
++ ipython --pdb -- /shellphish/grammar_guy/src/grammar_guy/gg/gg_sarif.py -n 20 --harness-info-id f4f1c21575d124a21730b9b98c5c5e54 --project-metadata /aixcc-backups/backup-cups-14760642842//grammar_guy_fuzz.project_metadata_path//3bedce64839946039c6a351d65d77073.yaml -t /shared/grammar_guy/fuzz/3bedce64839946039c6a351d65d77073-f4f1c21575d124a21730b9b98c5c5e54/ -b /aixcc-backups/backup-cups-14760642842//grammar_guy_fuzz.harness_info_fp//f4f1c21575d124a21730b9b98c5c5e54.yaml -idx /aixcc-backups/backup-cups-14760642842//grammar_guy_fuzz.functions_index/3bedce64839946039c6a351d65d77073 -jd /aixcc-backups/backup-cups-14760642842//grammar_guy_fuzz.functions_jsons_dir/3bedce64839946039c6a351d65d77073 -ifd /tmp/tmp.NExVNGopzn//seeds_to_triage -s /tmp/tmp.NExVNGopzn//events -afl /shared/fuzzer_sync/cups-fuzz_ipp-f4f1c21575d124a21730b9b98c5c5e54/sync-grammar-guy/queue -sarif /shellphish/grammar_guy/test_sarif.sarif -fsd /shared/fuzzer_sync/cups-fuzz_ipp-f4f1c21575d124a21730b9b98c5c5e54//sync-grammar-guy-0/
+/usr/local/lib/python3.10/dist-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'underscore_attrs_are_private' has been removed
+  warnings.warn(message, UserWarning)
+WARNING | crs_telemetry | PD agent URL is not set in environment variables 
+WARNING | crs_telemetry | PD client not found, removing some telemetry info: PD agent URL is not set in environment variables
+ERROR | analysis_graph | Could not install CFGFunction labels
+ERROR | analysis_graph | Could not install HarnessInput labels
+No INFLUXDB_URL found, telemetry is disabled
+INIT LLM OTEL
+NAME: oss_fuzz
+INFO | openlit | Starting openLIT initialization...
+INFO | openlit | Instrumented openai
+INFO | openlit | Instrumented anthropic
+INFO | openlit | Instrumentor cohere is disabled
+INFO | openlit | Instrumentor mistral is disabled
+INFO | openlit | Instrumentor bedrock is disabled
+INFO | openlit | Instrumentor vertexai is disabled
+INFO | openlit | Instrumentor groq is disabled
+INFO | openlit | Instrumentor ollama is disabled
+INFO | openlit | Instrumentor gpt4all is disabled
+INFO | openlit | Instrumentor elevenlabs is disabled
+INFO | openlit | Instrumentor vllm is disabled
+INFO | openlit | Instrumented google-ai-studio
+INFO | openlit | Instrumentor azure-ai-inference is disabled
+INFO | openlit | Instrumented langchain
+INFO | openlit | Instrumentor llama_index is disabled
+INFO | openlit | Instrumentor haystack is disabled
+INFO | openlit | Instrumentor embedchain is disabled
+INFO | openlit | Instrumentor chroma is disabled
+INFO | openlit | Instrumentor pinecone is disabled
+INFO | openlit | Instrumentor qdrant is disabled
+INFO | openlit | Instrumentor milvus is disabled
+INFO | openlit | Instrumentor transformers is disabled
+<function chat at 0x7f786bcdc4c0>
+INIT LLM OTEL
+NAME: oss_fuzz
+INFO | openlit | Starting openLIT initialization...
+WARNING | opentelemetry.instrumentation.instrumentor | Attempting to instrument while already instrumented
+INFO | openlit | Instrumented openai
+WARNING | opentelemetry.instrumentation.instrumentor | Attempting to instrument while already instrumented
+INFO | openlit | Instrumented anthropic
+INFO | openlit | Instrumentor cohere is disabled
+INFO | openlit | Instrumentor mistral is disabled
+INFO | openlit | Instrumentor bedrock is disabled
+INFO | openlit | Instrumentor vertexai is disabled
+INFO | openlit | Instrumentor groq is disabled
+INFO | openlit | Instrumentor ollama is disabled
+INFO | openlit | Instrumentor gpt4all is disabled
+INFO | openlit | Instrumentor elevenlabs is disabled
+INFO | openlit | Instrumentor vllm is disabled
+WARNING | opentelemetry.instrumentation.instrumentor | Attempting to instrument while already instrumented
+INFO | openlit | Instrumented google-ai-studio
+INFO | openlit | Instrumentor azure-ai-inference is disabled
+WARNING | opentelemetry.instrumentation.instrumentor | Attempting to instrument while already instrumented
+INFO | openlit | Instrumented langchain
+INFO | openlit | Instrumentor llama_index is disabled
+INFO | openlit | Instrumentor haystack is disabled
+INFO | openlit | Instrumentor embedchain is disabled
+INFO | openlit | Instrumentor chroma is disabled
+INFO | openlit | Instrumentor pinecone is disabled
+INFO | openlit | Instrumentor qdrant is disabled
+INFO | openlit | Instrumentor milvus is disabled
+INFO | openlit | Instrumentor transformers is disabled
+<function chat at 0x7f786bcdc4c0>
+Building shellphish-oss-fuzz-builder-cups with Dockerfile /shared/grammar_guy/fuzz/3bedce64839946039c6a351d65d77073-f4f1c21575d124a21730b9b98c5c5e54/Dockerfile in /shared/grammar_guy/fuzz/3bedce64839946039c6a351d65d77073-f4f1c21575d124a21730b9b98c5c5e54 with args ()
+INFO | shellphish_crs_utils.oss_fuzz.project | + docker build -t shellphish-oss-fuzz-builder-cups -f /shared/grammar_guy/fuzz/3bedce64839946039c6a351d65d77073-f4f1c21575d124a21730b9b98c5c5e54/Dockerfile /shared/grammar_guy/fuzz/3bedce64839946039c6a351d65d77073-f4f1c21575d124a21730b9b98c5c5e54
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.21kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for ghcr.io/aixcc-finals/base-builder:v1.0.0
+#2 ...
+
+#3 [auth] aixcc-finals/base-builder:pull token for ghcr.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for ghcr.io/aixcc-finals/base-builder:v1.0.0
+#2 DONE 1.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/9] FROM ghcr.io/aixcc-finals/base-builder:v1.0.0@sha256:9b069dceb4f35aaf9c6598448449bbd45f28b328917d5feded7ed1c9bc18fcb3
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 64B done
+#6 DONE 0.1s
+
+#7 [3/9] RUN mkdir cups
+#7 CACHED
+
+#8 [4/9] RUN git clone --depth 1 https://github.com/OpenPrinting/fuzzing.git
+#8 CACHED
+
+#9 [5/9] RUN rm /src/fuzzing/projects/cups/fuzzer/Makefile
+#9 CACHED
+
+#10 [6/9] COPY Makefile.new /src/fuzzing/projects/cups/fuzzer/Makefile
+#10 CACHED
+
+#11 [7/9] COPY systemd.pc /usr/share/pkgconfig/systemd.pc
+#11 CACHED
+
+#12 [8/9] RUN cp /src/fuzzing/projects/cups/oss_fuzz_build.sh /src/build.sh
+#12 CACHED
+
+#13 [2/9] RUN apt-get update && apt-get install -y zlib1g-dev libavahi-client-dev libsystemd-dev
+#13 CACHED
+
+#14 [9/9] WORKDIR /src/cups
+#14 CACHED
+
+#15 exporting to image
+#15 exporting layers done
+#15 writing image sha256:0f05afd550360f5ea024084ef1681bb447b4a4ab07619a755f4ae8701e12f722 done
+#15 naming to docker.io/library/shellphish-oss-fuzz-builder-cups done
+#15 DONE 0.0s
+Building shellphish-oss-fuzz-builder-cups--coverage_fast with Dockerfile /shellphish/libs/crs-utils/src/shellphish_crs_utils/oss_fuzz/instrumentation/coverage_fast/Dockerfile.builder.c in /shellphish/libs/crs-utils/src/shellphish_crs_utils/oss_fuzz/instrumentation/coverage_fast with args ('--build-arg', 'BASE_IMAGE=shellphish-oss-fuzz-builder-cups', '--build-arg', 'PREBUILD_IMAGE=None')
+INFO | shellphish_crs_utils.oss_fuzz.project | + docker build -t shellphish-oss-fuzz-builder-cups--coverage_fast -f /shellphish/libs/crs-utils/src/shellphish_crs_utils/oss_fuzz/instrumentation/coverage_fast/Dockerfile.builder.c --build-arg BASE_IMAGE=shellphish-oss-fuzz-builder-cups --build-arg PREBUILD_IMAGE=None /shellphish/libs/crs-utils/src/shellphish_crs_utils/oss_fuzz/instrumentation/coverage_fast

@@ -1,0 +1,62 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+proto_library(
+    name = "proto3_proto",
+    srcs = ["proto3.proto"],
+    deps = [
+        "@protobuf//:any_proto",
+    ],
+)
+
+java_proto_library(
+    name = "proto3_java_proto",
+    testonly = True,
+    visibility = ["//src/test/java/com/code_intelligence/jazzer/mutation/mutator:__pkg__"],
+    deps = [":proto3_proto"],
+)
+
+proto_library(
+    name = "proto2_proto",
+    srcs = ["proto2.proto"],
+)
+
+java_proto_library(
+    name = "proto2_java_proto",
+    testonly = True,
+    visibility = [
+        "//src/test/java/com/code_intelligence/jazzer/mutation/mutator:__pkg__",
+        "//tests:__pkg__",
+    ],
+    deps = [":proto2_proto"],
+)
+
+cc_proto_library(
+    name = "proto2_cc_proto",
+    testonly = True,
+    visibility = [
+        "//tests:__pkg__",
+    ],
+    deps = [":proto2_proto"],
+)
+
+java_test_suite(
+    name = "ProtoTests",
+    size = "small",
+    srcs = glob(["*.java"]),
+    runner = "junit5",
+    deps = [
+        ":proto2_java_proto",
+        ":proto3_java_proto",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/annotation",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/annotation/proto",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/api",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/engine",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/mutator/collection",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/mutator/lang",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/mutator/proto",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/support",
+        "//src/main/java/com/code_intelligence/jazzer/mutation/utils",
+        "//src/test/java/com/code_intelligence/jazzer/mutation/support:test_support",
+        "@protobuf//java/core",
+    ],
+)

@@ -1,0 +1,25 @@
+
+[package]
+name = "watchtower"
+version = "0.1.0"
+authors = ["mzakocs <mzakocs@asu.edu>", "zolutal <jmill@asu.edu>"]
+edition = "2018"
+
+[dependencies]
+regex-syntax = "0.6.17"
+ron = "*"
+serde_derive = "1.0"
+serde_json = "1.0"
+serde = "1.0"
+pyo3 = "0.21.2"
+clap = { version = "4.2", features = ["derive"] }
+rand = "0.8.5"
+notify = "8.0.0"
+md5 = "0.7.0"
+fuzzer = { path = "../fuzzer" }
+grammartec = { path = "../grammartec" }
+lazy_static = "1.5.0"
+
+[[bin]]
+name = "watchtower"
+path = "src/main.rs"

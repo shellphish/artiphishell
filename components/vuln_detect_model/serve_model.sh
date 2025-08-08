@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=4,5,6,7 vllm serve secmlr/DS-Noisy_DS-Clean_QWQ-Noisy_QWQ-Clean_Qwen2.5-7B-Instruct_full_sft_1e-5 --dtype=bfloat16 --tensor-parallel-size=4 --port 25002 --enable-auto-tool-choice --tool-call-parser hermes

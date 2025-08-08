@@ -1,0 +1,41 @@
+{
+    "name": "patcherq Dev Container",
+    "runArgs": ["--privileged"],
+    "build": {
+      "dockerfile": "../Dockerfile",
+      "context": "../"
+    },
+    "workspaceMount": "source=${localWorkspaceFolder}/src,target=/src,type=bind,consistency=cached",
+    "workspaceFolder": "/src",
+    "mounts": [
+      "source=${localWorkspaceFolder}/../../services/,target=${localWorkspaceFolder}/../../services/,type=bind,consistency=cached",
+      "source=${localWorkspaceFolder}/../../libs/,target=/shellphish/libs/,type=bind,consistency=cached",
+      "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+      "source=/shared/,target=/shared,type=bind,consistency=cached",
+      "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
+    "containerEnv": {
+      "SERVICE_FOLDER_COMMAND": "echo $(dirname $(dirname ${localWorkspaceFolder}))/services"
+    },
+    "customizations": {
+      "env": {
+        "AIXCC_LITELLM_HOSTNAME": "'http://wiseau.seclab.cs.ucsb.edu:666'",
+        "LITELLM_KEY": "sk-artiphishell-da-best!!!"
+      },
+      "vscode": {
+        "extensions": [
+      "github.copilot",
+          "ms-azuretools.vscode-docker",
+          "ms-vscode.vscode-remote-extensionpack",
+          "ms-python.python"
+        ],
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash"
+        }
+      }
+    },
+    "forwardPorts": [
+      8050,
+      8080
+    ]
+  }

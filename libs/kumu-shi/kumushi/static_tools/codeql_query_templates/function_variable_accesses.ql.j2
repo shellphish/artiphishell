@@ -1,0 +1,14 @@
+/**
+ * @id cpp/function_variable_accesses
+ * @kind problem
+ * @name List all variable accesses in a given function
+ * @severity information
+ */
+
+import cpp
+
+from
+    VariableAccess va
+where
+    va.getEnclosingFunction().toString()="{{ function_name }}"
+select va, va.getType().toString() as type, va.getLocation() as location

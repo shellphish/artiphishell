@@ -1,0 +1,95 @@
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+    check_collector_pipeline:
+      enabled: true
+      interval: "5m"
+      exporter_failure_threshold: 5
+
+
+receivers:
+  otlp: # the OTLP receiver the app is sending traces to
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+  kubeletstats:
+    collection_interval: 10s
+    auth_type: 'serviceAccount'
+    endpoint: '${env:K8S_NODE_NAME}:10250'
+    insecure_skip_verify: true
+    metric_groups:
+      - node
+      - pod
+      - container
+
+
+processors:
+  batch:
+  k8sattributes:
+  k8sattributes/2:
+    auth_type: "serviceAccount"
+    passthrough: false
+    filter:
+      # only retrieve pods running on the same node as the collector
+      node_from_env_var: KUBE_NODE_NAME
+    extract:
+      # The attributes provided in 'metadata' will be added to associated resources
+      metadata:
+        - k8s.pod.name
+        - k8s.pod.uid
+        - k8s.deployment.name
+        - k8s.namespace.name
+        - k8s.node.name
+        - k8s.pod.start_time
+      labels:
+      # This label extraction rule takes the value 'app.kubernetes.io/component' label and maps it to the 'app.label.component' attribute which will be added to the associated resources
+      - tag_name: app.label.component
+        key: app.kubernetes.io/component
+        from: pod
+    pod_association:
+      - sources:
+          # This rule associates all resources containing the 'k8s.pod.ip' attribute with the matching pods. If this attribute is not present in the resource, this rule will not be able to find the matching pod.
+          - from: resource_attribute
+            name: k8s.pod.ip
+      - sources:
+          # This rule associates all resources containing the 'k8s.pod.uid' attribute with the matching pods. If this attribute is not present in the resource, this rule will not be able to find the matching pod.
+          - from: resource_attribute
+            name: k8s.pod.uid
+      - sources:
+          # This rule will use the IP from the incoming connection from which the resource is received, and find the matching pod, based on the 'pod.status.podIP' of the observed pods
+          - from: connection
+
+exporters:
+  otlp/telegraf:
+    endpoint: http://telegraf:4317
+    tls:
+      insecure: true
+
+  otlp/signoz:
+    endpoint: "${env:SIGNOZ_OTEL_EXPORTER_OTLP_ENDPOINT}"
+    tls:
+      insecure: ${env:SIGNOZ_TLS_INSECURE:-true}
+    headers: 
+      Authorization: "Basic ${env:SIGNOZ_BASIC_AUTH}" #Env variable should be base64 encoded username:password
+
+  debug: 
+    verbosity: detailed
+
+
+service:
+  extensions: [health_check]
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch, k8sattributes/2]
+      exporters: [otlp/telegraf, otlp/signoz]
+    metrics:
+      receivers: [otlp, kubeletstats]
+      processors: [batch, k8sattributes/2]
+      exporters: [otlp/telegraf, otlp/signoz]
+    traces/dev:
+      receivers: [otlp]
+      processors: [batch, k8sattributes/2]
+      exporters: [otlp/telegraf, otlp/signoz]
+  

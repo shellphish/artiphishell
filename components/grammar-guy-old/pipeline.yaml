@@ -1,0 +1,191 @@
+repo_classes:
+  ##################### INPUTS #####################
+  targets_with_sources: FilesystemRepository
+  cp_image_ready: MetadataRepository
+  target_harness_infos: MetadataRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  fuzz_requests: MetadataRepository
+  info_extraction_requests: MetadataRepository
+
+  ##################### OUTPUTS #####################
+  to_triage_harness_inputs:
+    cls: BlobRepository
+    required: false
+  to_triage_harness_inputs_metadatas:
+    cls: MetadataRepository
+    required: false
+  # crashing_harness_inputs: BlobRepository
+  # crashing_harness_inputs_metadatas: MetadataRepository
+  # benign_harness_inputs: BlobRepository
+  # benign_harness_inputs_metadatas: MetadataRepository
+
+  ##################### INTERMEDIATES #####################
+  grammar_guy_built_targets: { "cls": "FilesystemRepository", "required": false }
+  event_logs: { "cls": "MetadataRepository", "required": false }
+
+tasks:
+  # grammar_guy_build:
+  #   priority: 100
+  #   job_quota:
+  #     max: 0.2
+  #   links:
+  #     project_id:
+  #       repo: targets_with_sources
+  #       kind: InputId
+  #     cp_image_ready:
+  #       repo: cp_image_ready
+  #       kind: InputId
+  #     target:
+  #       repo: targets_with_sources
+  #       kind: InputFilepath
+  #     built_target:
+  #       repo: grammar_guy_built_targets
+  #       kind: OutputFilepath
+  #   executable:
+  #     cls: Container
+  #     args:
+  #       image: aixcc-grammar-guy
+
+  #       host_mounts:
+  #         "/var/run/docker.sock": "/var/run/docker.sock"
+  #         "/shared/": "/shared/"
+  #       template: |
+  #         set -e
+  #         set -x
+
+  #         # temp dir in /shared/grammar_guy_old/build/ for the build
+  #         mkdir -p /shared/grammar_guy_old/build/{{project_id}}
+  #         TEMP_DIR=$(mktemp -d -p /shared/grammar_guy_old/build/{{project_id}}/)
+  #         rsync -raz {{target | shquote}}/ ${TEMP_DIR}/
+  #         (
+  #           cd "${TEMP_DIR}"
+
+  #           mkdir -p ./shellphish
+  #           rsync -raz /shellphish/target_building/ ./shellphish/
+  #           mv ./shellphish/.env.docker ./.env.docker
+  #           cp -r /shellphish/wrap-lib ./shellphish/wrap-lib/
+
+  #           CP_NAME=$(yq '.cp_name' ./project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')
+  #           BASE_IMAGE=$(yq -r '.docker_image' ./project.yaml)
+  #           export DOCKER_IMAGE_NAME="aixcc-grammar-guy-${CP_NAME}-{{project_id}}"
+  #           docker build --build-context llvm=/llvm --build-arg BASE_IMAGE="${BASE_IMAGE}" -t "${DOCKER_IMAGE_NAME}" -f ./shellphish/Dockerfile.grammar-guy .
+
+  #           ./run.sh -x build
+  #           rsync -raz ./ {{built_target | shquote}}/
+  #         )
+          
+  #         rm -rf "${TEMP_DIR}"
+
+  grammar_guy_fuzz_old:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    links:
+      fuzz_request:
+        repo: fuzz_requests
+        kind: InputMetadata
+      fuzz_request_id:
+        repo: fuzz_requests
+        kind: InputId
+
+      info_extraction_requests:
+        repo: info_extraction_requests
+        kind: InputMetadata
+        key: fuzz_request.reachability_request_id
+      info_extraction_request_path:
+        repo: info_extraction_requests
+        kind: InputFilepath
+        key: fuzz_request.reachability_request_id
+        
+      harness_info:
+        repo: target_harness_infos
+        kind: InputMetadata
+        key: fuzz_request.harness_id
+      harness_info_fp: 
+        repo: target_harness_infos
+        kind: InputFilepath
+        key: fuzz_request.harness_id
+      harness_info_id:
+        repo: target_harness_infos
+        kind: InputId
+        key: fuzz_request.harness_id
+
+      built_target:
+        repo: targets_with_sources
+        kind: InputFilepath
+        key: fuzz_request.project_id
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: fuzz_request.project_id
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: fuzz_request.project_id
+      
+      seeds_to_triage:
+        repo: to_triage_harness_inputs
+        kind: StreamingOutputFilepath
+        cokeyed:
+          meta: to_triage_harness_inputs_metadatas
+        auto_meta: meta
+        auto_values:
+          fuzz_request_id: "{{ fuzz_request_id }}"
+          harness_info_id: "{{ harness_info_id }}"
+          project_id: "{{ harness_info.project_id }}"
+          fuzzer: grammar_guy
+
+      events_dir:
+        repo: event_logs
+        kind: StreamingOutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-grammar-guy-old
+        
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        
+        template: |
+          set -e
+          set -x
+
+          export ALLOW_RAW_DOCKER_USAGE=1
+
+          TEMP_DIR=/shared/grammar_guy_old/fuzz/{{harness_info.project_id}}-{{harness_info_id}}
+          mkdir -p "${TEMP_DIR}"
+      
+          rsync -ra {{built_target | shquote}}/ ${TEMP_DIR}/
+        
+          cd "${TEMP_DIR}"
+          rsync -ra /shellphish/grammar_guy/target_building/ ./shellphish/
+          CP_NAME=$(yq '.cp_name' ./project.yaml | sed 's/"//g' | sed 's/[^a-zA-Z0-9]/_/g' | tr '[:upper:]' '[:lower:]')
+          BASE_IMAGE=$(yq -r '.docker_image' ./project.yaml)
+          export DOCKER_IMAGE_NAME="aixcc-grammar-guy-old-${CP_NAME}-{{harness_info.project_id}}"
+
+          echo "Keine Ahnung"
+
+          fuzzer_sync_PATH="/shared/fuzzer_sync/$CP_NAME-{{harness_info.cp_harness_name}}-{{harness_info_id}}/grammar-guy-old/queue"
+          mkdir -p "$fuzzer_sync_PATH"
+
+          PYTHONUNBUFFERED=TRUE python3 -u /shellphish/grammar_guy/src/shellphish_crs_utils/spearfuzz/grammar-guy.py \
+                    -i 1 \
+                    -n 200 \
+                    -t "${TEMP_DIR}" \
+                    -b {{ harness_info_fp | shquote }} \
+                    -idx {{ functions_index | shquote }} \
+                    -jd {{ functions_jsons_dir | shquote }} \
+                    -ifd {{seeds_to_triage | shquote}} \
+                    -f {{info_extraction_request_path | shquote}} \
+                    -s {{events_dir | shquote}}
+          COUNT=0
+          for f in {{seeds_to_triage | shquote}}/*; do
+            out_name="id:$(printf "%06d" $COUNT),$(basename $f)"
+            cp $f "${fuzzer_sync_PATH}/${out_name}"
+            COUNT=$((COUNT+1))
+          done
+

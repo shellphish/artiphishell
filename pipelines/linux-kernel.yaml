@@ -1,0 +1,93 @@
+repo_classes:
+  cp_image_ready: MetadataRepository
+
+  kernel_targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+
+  target_metadatas: MetadataRepository
+  target_harness_infos: MetadataRepository
+  full_functions_by_file_index_jsons: BlobRepository
+
+  kernel_reachability_results: MetadataRepository
+
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  crashing_harness_inputs_coverages: BlobRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs_coverages: BlobRepository
+
+  points_of_interest: MetadataRepository
+
+  syzlang_grammar:
+    cls: BlobRepository
+    required: false
+
+  syscall_filter:
+    cls: BlobRepository
+    required: false
+
+  snapchange_built_targets: FilesystemRepository
+
+imports:
+  # syzkaller:
+  #   path: ../../components/linux/syzkaller/pipeline.yaml
+  #   repos:
+  #     targets_with_sources: kernel_targets_with_sources
+  #     target_metadatas: target_metadatas
+  #     linux_harness_infos: target_harness_infos
+  #     kernel_reachability_results: kernel_reachability_results
+  #     syzlang_crashes_descriptions: syzlang_crashes_descriptions
+  #     syzlang_crashes_descriptions_metadatas: syzlang_crashes_descriptions_metadatas
+  #     syzlang_crashes_reports: syzlang_crashes_reports
+  #     syzlang_crashes_reports_metadatas: syzlang_crashes_reports_metadatas
+  #     syzlang_crashes_logs: syzlang_crashes_logs
+  #     syzlang_crashes_logs_metadatas: syzlang_crashes_logs_metadatas
+
+  #     syzlang_reproducers: syzlang_reproducers
+  #     c_reproducers: c_reproducers
+
+  #     syzlang_benign: syzlang_benign
+  #     syzlang_benign_meta: syzlang_benign_meta
+  #     cprogs_benign: cprogs_benign
+  #     cprogs_benign_meta: cprogs_benign_meta
+
+  snapchange:
+    path: ../components/snapchange/pipeline.yaml
+    repos:
+      cp_image_ready: cp_image_ready
+      linux_targets_with_sources: kernel_targets_with_sources
+      linux_harness_infos: target_harness_infos
+      target_metadatas: target_metadatas
+      syzlang_grammar: syzlang_grammar
+
+      snapchange_built_targets: snapchange_built_targets
+
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      crashing_harness_inputs_coverages: crashing_harness_inputs_coverages
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      benign_harness_inputs_coverages: benign_harness_inputs_coverages
+  syzgrammar-gen:
+    path: ../components/syzgrammar-gen/pipeline.yaml
+    repos:
+      linux_targets_with_sources: kernel_targets_with_sources
+      linux_harness_infos: target_harness_infos
+      target_metadatas: target_metadatas
+
+      syzlang_grammar: syzlang_grammar
+      syscall_filter: syscall_filter
+
+  poiguy_kasan:
+    path: ../components/poiguy/pipeline_poiguy_kasan.yaml
+    repos:
+      target_metadatas: target_metadatas
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+
+      points_of_interest: points_of_interest

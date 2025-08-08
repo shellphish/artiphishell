@@ -1,0 +1,52 @@
+repo_classes:
+  targets_with_sources: FilesystemRepository
+  cp_image_ready: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+tasks:
+  pushpull:
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        # The goal of this task is to make sure that the CP images make their way from the org-provided dind to our triple-dind
+        # If there is no triple-dind, this can be skipped
+        # If there is no triple-dind, DOCKER_HOST will equal DOCKER_HOST_ORIG
+        # org-provided dind will already have the images
+        # at entry, DOCKER_HOST_ORIG will have the value of DOCKER_HOST provided via docker-compose or kubernetes to the crs
+        template: |
+          set -ex
+          IMAGE=$(yq  -r '.shellphish_docker_image' {{ target_with_sources }}/project.yaml)
+          DOCKER_HOST=${DOCKER_HOST:-}
+          DOCKER_HOST_ORIG=${DOCKER_HOST_ORIG:-}
+
+          if ! [ "$DOCKER_HOST" = "$DOCKER_HOST_ORIG" ]; then
+            # EXTREMELY PARANOID
+            DOCKER_HOST=unix:///var/run/docker.sock.orig docker image inspect "$IMAGE" && DOCKER_HOST_ORIG=unix:///var/run/docker.sock.orig || true
+
+            while ! docker version; do
+              echo "Waiting for per-host dind to spin up..."
+            done
+
+            DOCKER_HOST=$DOCKER_HOST_ORIG docker pull $IMAGE || true
+            DOCKER_HOST=$DOCKER_HOST_ORIG docker save $IMAGE | docker load
+          fi
+
+          # SANITY CHECK
+          docker image inspect "$IMAGE" || DOCKER_HOST=unix://var/run/docker.sock.orig docker image inspect "$IMAGE"
+
+          echo works: true >{{ cp_image_ready }}
+        mounts:
+          "/var/run/docker.sock.orig": /var/run/docker.sock
+    links:
+      target_with_sources:
+        repo: targets_with_sources
+        kind: InputFilepath
+      cp_image_ready:
+        repo: cp_image_ready
+        kind: OutputFilepath
+      project_id:
+        repo: targets_with_sources
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel

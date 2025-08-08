@@ -1,0 +1,172 @@
+name: Build, push and update the pipeline images in the registry
+run-name: "👷🏗️ Build, push and update the docker registry: ${{ github.event.head_commit.message }} by @${{ github.actor }}"
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+  workflow_dispatch:
+    inputs:
+      push-to-registry:
+        type: string
+        description: If provided, the images will be pushed to this registry. Username and password must be provided. You may also use a namespace like `foo.io/bar/` 
+        default: ''
+      registry-username:
+        type: string
+        description: username for the registry
+        default: ''
+      registry-password:
+        type: string
+        description: password for the registry
+        default: ''
+      deployment-name:
+        type: string
+        description: Set this to push images to a specific CI deployment, overwriting what is currently there 🚨 Dangerous!
+        default: ''
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.inputs.deployment-name }}-${{ github.event.inputs.push-to-registry }}
+  cancel-in-progress: true
+
+jobs:
+  update_docker_images:
+    # On main we use a specific runner so that we have the same cache as the registry
+    runs-on: [self-hosted, "${{ (github.ref == 'refs/heads/main') && 'docker-build' || 'docker-build' }}"]
+    steps:
+      - name: Wait for cluster to be ready
+        id: decode-sts-token
+        if: ${{ github.event.inputs.deployment-name != '' }}
+        timeout-minutes: 5
+        run: |
+          set -x
+          while true; do
+            RES=$(curl "https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/k8s/deployment/status?token=${{ secrets.WORKER_TOKEN }}&name=${{ github.event.inputs.deployment-name }}&t=$(date +%s)")
+            echo $RES
+            API_IP=$(echo "$RES" | jq -r '.api_ip')
+            if [ ! -z "$API_IP" ] && [ "$API_IP" != "null" ] && [ "$API_IP" != "0.0.0.0" ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          STS_TOKEN=$(echo "$RES" | jq -r '.sts_token' | base64 -w0)
+          echo "sts_token=$STS_TOKEN" >> $GITHUB_OUTPUT
+          CONNECTION_STRING=$(echo "$RES" | jq -r '.storage_connection_string' | base64 -w0)
+          echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+          API_IP=$(echo "$RES" | jq -r '.api_ip')
+          echo "api_ip=${API_IP}" >> $GITHUB_OUTPUT
+          CRS_URL=$(echo "$RES" | jq -r '.crs_endpoint')
+          echo "crs_url=${CRS_URL}" >> $GITHUB_OUTPUT
+
+      #- name: Cleanup CI Worker
+      #  uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+      #  if: ${{ github.ref != 'refs/heads/main' }}
+      #  with:
+      #    runner: 'self-hosted'
+      #    is-artiphishell: true
+      #    CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+      - name: Cleanup Leftover Files
+        shell: bash
+        run: |
+          sudo rm -rf /home/runner/actions-runner/_work/artiphishell/ || true
+          mkdir -p /home/runner/actions-runner/_work/artiphishell/artiphishell/
+          sudo rm -rf /shared/docker-locks/
+
+      - name: Check out the code
+        uses: actions/checkout@v2
+
+      # Generic Env Setup
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Login to Provided Container Registry
+        uses: docker/login-action@v2
+        if: ${{ github.event.inputs.push-to-registry != '' }}
+        with:
+          registry: ${{ github.event.inputs.push-to-registry }}
+          username: ${{ github.event.inputs.registry-username }}
+          password: ${{ github.event.inputs.registry-password }}
+      - name: Login to Cluster Container Registry
+        uses: docker/login-action@v2
+        if: ${{ github.event.inputs.deployment-name != '' }}
+        with:
+          registry: ${{ steps.decode-sts-token.outputs.crs_url }}
+          username: ${{ steps.decode-sts-token.outputs.sts_token }}
+          password: ${{ steps.decode-sts-token.outputs.connection_string }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: git
+          password: ${{ secrets.CI_DEPLOY_TOKEN }}
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: artiphishell.azurecr.io
+          username: ARTIPHISHELL-CI-ACR-PUSH-TOKEN
+          password: ${{ secrets.ACR_TOKEN }}
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: artiphishelltiny.azurecr.io
+          username: ARTIPHISHELL-CI-ACR-PUSH-TOKEN
+          password: ${{ secrets.ACR_TOKEN_TINY }}
+
+      - name: Install necessary yq version
+        shell: bash
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.local/bin"
+          which yq || (wget https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64.tar.gz && tar -xzvf ./yq_linux_amd64.tar.gz && mv yq_linux_amd64 "$GITHUB_WORKSPACE/.local/bin/yq"  && echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH)
+
+
+      - name: Install required libs
+        shell: bash
+        run: |
+          cp -r libs libs-installed/
+          pip install -e ./libs-installed/crs-telemetry
+          pip install -e ./libs-installed/pydatatask
+          pip install -e ./libs-installed/crs-utils
+          sudo apt-get install expect -y
+
+        
+
+      - name: run rebuild_parallel.sh for deployed cluster
+        if: ${{ github.event.inputs.deployment-name != '' }}
+        run: |
+          export WORKER_TOKEN=${{ secrets.WORKER_TOKEN }}
+          export EXTERNAL_REGISTRY="${{ steps.decode-sts-token.outputs.crs_url }}"
+          export USE_DOCKER_CACHE="true"
+          ./local_run/rebuild_parallel.sh remote
+
+      - name: run rebuild_parallel.sh for external registry
+        if: ${{ github.event.inputs.push-to-registry != '' }}
+        run: |
+          export WORKER_TOKEN=${{ secrets.WORKER_TOKEN }}
+          export USE_DOCKER_CACHE="true"
+          export EXTERNAL_REGISTRY=${{ github.event.inputs.push-to-registry }}
+          ./local_run/rebuild_parallel.sh remote
+
+      - name: run rebuild_parallel.sh main branch
+        if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.push-to-registry == '' && github.event.inputs.push-to-registry == '' }}
+        run: |
+          export WORKER_TOKEN=${{ secrets.WORKER_TOKEN }}
+          export EXTERNAL_REGISTRY=ghcr.io/shellphish-support-syndicate
+          export USE_DOCKER_CACHE="true"
+          ./local_run/rebuild_parallel.sh remote
+          export EXTERNAL_REGISTRY=artiphishelltiny.azurecr.io
+          ./local_run/rebuild_parallel.sh remote
+
+      - name: run rebuild_parallel.sh other branch
+        if: ${{ github.ref != 'refs/heads/main' && github.event.inputs.push-to-registry == '' && github.event.inputs.push-to-registry == '' }}
+        run: |
+          export WORKER_TOKEN=${{ secrets.WORKER_TOKEN }}
+          export USE_DOCKER_CACHE="true"
+          export DOCKER_ONLY_CHECK="true"
+          ./local_run/rebuild_parallel.sh build-all

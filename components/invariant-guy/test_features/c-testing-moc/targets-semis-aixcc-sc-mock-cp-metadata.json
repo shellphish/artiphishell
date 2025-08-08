@@ -1,0 +1,31 @@
+{
+  "cp_name": "Mock CP",
+  "language": "c",
+  "cp_sources": {
+    "samples": {
+      "address": "https://github.com/shellphish-support-syndicate/aixcc-sc-mock-cp-src.git",
+      "ref": "v2.0.1",
+      "artifacts": [
+        "src/samples/mock_vp"
+      ]
+    }
+  },
+  "docker_image": "ghcr.io/shellphish-support-syndicate/mock-cp:v3.0.2",
+  "sanitizers": {
+    "id_1": "AddressSanitizer: global-buffer-overflow",
+    "id_2": "AddressSanitizer: SEGV"
+  },
+  "harnesses": {
+    "id_1": {
+      "name": "filein_harness",
+      "source": "src/test/filein_harness.c",
+      "binary": "out/filein_harness"
+    }
+  },
+  "shellphish": {
+    "known_sources": {},
+    "files_by_type": {
+      "c": 2
+    }
+  }
+}

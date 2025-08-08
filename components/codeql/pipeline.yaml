@@ -1,0 +1,722 @@
+repo_classes:
+
+  ################### INPUTS ###################
+  crs_tasks_analysis_sources: { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  crs_tasks: MetadataRepository
+  java_crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  info_extraction_requests: MetadataRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  delta_mode_tasks: MetadataRepository
+
+  ################### OUTPUTS ###################
+
+  codeql_reports: BlobRepository
+  codeql_qlpack_reports: BlobRepository
+
+  info_extraction_results: MetadataRepository
+  # kernel_reachability_results: MetadataRepository
+  codeql_db_ready: MetadataRepository
+  codeql_base_db_ready: MetadataRepository
+  codeql_analysis_ready: MetadataRepository
+
+  libfuzzer_reaching_functions_dicts: BlobRepository
+  libfuzzer_reaching_files_dicts: BlobRepository
+  quickseed_codeql_reports: BlobRepository
+  discovery_vuln_reports: BlobRepository
+
+  # CWE Queries
+  codeql_cwe_sarif_report: BlobRepository
+  codeql_cwe_report: BlobRepository
+
+  # CWE Queries Base (for delta mode)
+  codeql_cwe_sarif_report_base: BlobRepository
+  codeql_cwe_report_base: BlobRepository
+
+  ################### INTERMEDIATES ###################
+  codeql_image_ready:
+    cls: MetadataRepository
+    required: false
+  codeql_build_reports:
+    cls: MetadataRepository
+    required: false
+  database_dirs:
+    cls: FilesystemRepository
+    required: false
+  info_extraction_bqrs_results_dirs:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+    required: false
+
+  # this is only here for the purpose of the CI backup
+  codeql_database_zip_files: { cls: FilesystemRepository, compress_backend: true, compress_backup: true, required: false }
+  codeql_buildless_database_zip_files: { cls: FilesystemRepository, compress_backend: true, compress_backup: true, required: false }
+  codeql_base_database_zip_files: { cls: FilesystemRepository, compress_backend: true, compress_backup: true, required: false }
+  codeql_base_database_buildless_zip_files: { cls: FilesystemRepository, compress_backend: true, compress_backup: true, required: false }
+  codeql_analysis_graph_debug_output: { cls: FilesystemRepository, compress_backend: true, compress_backup: true, required: false }
+
+tasks:
+  codeql_build_base:
+    require_success: true
+    timeout:
+      minutes: 180
+
+    priority: 20000000000
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      # Won't start if not diff
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputFilepath
+
+      # OUTPUTS
+      codeql_database_path:
+        repo: codeql_base_database_zip_files
+        kind: OutputFilepath
+
+      codeql_db_ready:
+        repo: codeql_base_db_ready
+        kind: OutputFilepath
+
+      codeql_database_path_buildless:
+        repo: codeql_base_database_buildless_zip_files
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          cat <<EOF > {{codeql_db_ready | shquote}}
+          {
+             "success": false,
+             "project_id": "{{ project_id }}"
+          }
+          EOF
+          trap 'if [ $? -eq 33 ]; then exit 1; else exit 0; fi' EXIT
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation shellphish_codeql $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then echo "BUILDER_IMAGE is empty"; exit 33; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then echo "RUNNER_IMAGE is empty"; exit 33; fi
+
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture x86_64 \
+            --sanitizer {{ meta.get("sanitizers", ["address"])[0] }} \
+            --instrumentation shellphish_codeql \
+            --git-ref "HEAD~1" \
+            --priority 50 \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          codeql-upload-db \
+            --cp_name {{ crs_task.project_name | shquote}} \
+            --project_id {{ (project_id ~ "-base") | shquote }} \
+            --language {{ meta.language }} \
+            --db_file "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database.zip
+
+          cp "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database.zip {{ codeql_database_path | shquote }}
+
+
+          if [ -f "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database-no-build.zip ]; then
+            echo "----------------BUILDLESS DB FOUND--------------------"
+            project_name={{ crs_task.project_name | shquote }}
+            codeql-upload-db \
+              --cp_name "${project_name}-buildless" \
+              --project_id {{ (project_id ~ "-base") | shquote }} \
+              --language {{ meta.language }} \
+              --db_file "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database-no-build.zip
+            cp "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database-no-build.zip {{ codeql_database_path_buildless | shquote }}
+            echo "-----------------------------------------------------"
+          fi
+
+          cat <<EOF > {{codeql_db_ready | shquote}}
+          {
+             "success": true,
+             "project_id": "{{ project_id }}"
+          }
+          EOF
+
+  codeql_build:
+    require_success: true
+    timeout:
+      minutes: 180
+
+    priority: 20000000000
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      # OUTPUTS
+      codeql_build_report:
+        repo: codeql_build_reports
+        kind: OutputFilepath
+
+      codeql_database_path:
+        repo: codeql_database_zip_files
+        kind: OutputFilepath
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: OutputFilepath
+
+      codeql_database_path_buildless:
+        repo: codeql_buildless_database_zip_files
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          cat <<EOF > {{codeql_db_ready | shquote}}
+          {
+             "success": false,
+             "project_id": "{{ project_id }}"
+          }
+          EOF
+          trap 'if [ $? -eq 33 ]; then exit 1; else exit 0; fi' EXIT
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation shellphish_codeql $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then echo "BUILDER_IMAGE is empty"; exit 33; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then echo "RUNNER_IMAGE is empty"; exit 33; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture x86_64 \
+            --sanitizer {{ meta.get("sanitizers", ["address"])[0] }} \
+            --instrumentation shellphish_codeql \
+            --priority 75 \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+          echo "-----------------------------------------------------"
+          echo "LOCATING DB AT: $OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database.zip
+          ls $OSS_FUZZ_PROJECT_DIR
+          echo "-----------------------------------------------------"
+
+
+          codeql-upload-db \
+            --cp_name {{crs_task.project_name | shquote}} \
+            --project_id {{ project_id | shquote }} \
+            --language {{ meta.language }} \
+            --db_file "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database.zip
+
+          echo "-----------------------------------------------------"
+          echo "LOCATING DB AT: $OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database.zip
+          ls $OSS_FUZZ_PROJECT_DIR
+          echo "-----------------------------------------------------"
+
+          if [ -f "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database-no-build.zip ]; then
+            echo "----------------BUILDLESS DB FOUND--------------------"
+            project_name={{ crs_task.project_name | shquote }}
+            codeql-upload-db \
+              --cp_name "${project_name}-buildless" \
+              --project_id {{ project_id | shquote }} \
+              --language {{ meta.language }} \
+              --db_file "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database-no-build.zip
+            cp "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database-no-build.zip {{ codeql_database_path_buildless | shquote }}
+            echo "-----------------------------------------------------"
+          fi
+
+          cat <<EOF > {{ codeql_build_report | shquote }}
+          {
+            "builder_image": "${BUILDER_IMAGE}",
+            "runner_image": "${RUNNER_IMAGE}",
+            "project_name": "{{ crs_task.project_name }}",
+            "project_id": "{{ project_id }}"
+          }
+          EOF
+
+          cp "$OSS_FUZZ_PROJECT_DIR"/artifacts/work/sss-codeql-database.zip {{ codeql_database_path | shquote }}
+
+          cat <<EOF > {{codeql_db_ready | shquote}}
+          {
+             "success": true,
+             "project_id": "{{ project_id }}"
+          }
+          EOF
+
+  codeql_analysis_graph:
+    priority: 10000000000
+    job_quota:
+      cpu: 4
+      mem: "8Gi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      # Hopefully this will push analysis_graph off until db ready
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputFilepath
+
+      # Hopefully this can push it off until remote resolver is ready
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+
+      # Function indices and JSONs for local resolver fallback
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      # OUTPUTS
+      # codeql_build_report:
+      #   repo: codeql_build_reports
+      #   kind: OutputFilepath
+
+      # codeql_database_path:
+      #   repo: codeql_database_zip_files
+      #   kind: OutputFilepath
+
+      codeql_analysis_ready:
+        repo: codeql_analysis_ready
+        kind: OutputFilepath
+
+      codeql_analysis_graph_debug_output:
+        repo: codeql_analysis_graph_debug_output
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-codeql
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export CP_NAME={{crs_task.project_name | shquote}}
+          export PROJ_ID={{ project_id | shquote }}
+          export LANG={{ meta.language }}
+          export FUNCTION_INDEX_PATH={{ full_functions_indices | shquote }}
+          export FUNCTION_JSON_DIR={{ full_functions_jsons_dir | shquote }}
+
+          timeout 60m python3 /shellphish/codeql/callgraph/analysis_query.py || true
+
+          cp -r /shellphish/codeql/callgraph {{ codeql_analysis_graph_debug_output | shquote }} || true
+
+          cat <<EOF > {{codeql_analysis_ready | shquote}}
+          {
+             "success": true
+          }
+          EOF
+
+  quickseed_codeql_query:
+    priority: 100
+    job_quota:
+      cpu: 4
+      mem: 8Gi
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      proj_meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputFilepath
+      quickseed_codeql_report:
+        repo: quickseed_codeql_reports
+        kind: OutputFilepath
+      discovery_vuln_reports:
+        repo: discovery_vuln_reports
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-codeql
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+
+        template: |
+          #!/bin/bash
+          set -x
+          set -e
+
+          # Create empty reports at the beginning
+          echo '{}' > {{ discovery_vuln_reports | shquote }}
+          cat > {{ quickseed_codeql_report | shquote }} << EOF
+          {
+            "LastHopEdges": [],
+            "Sinks": {
+              "CommandInjection": [],
+              "Deserialization": [],
+              "ExpressionLanguage": [],
+              "LdapInjection": [],
+              "NamingContextLookup": [],
+              "PathTraversal": [],
+              "ReflectionCallInjection": [],
+              "RegexInjection": [],
+              "ScriptEngineInjection": [],
+              "ServerSideRequestForgery": [],
+              "SqlInjection": [],
+              "XPathInjection": [],
+              "XXEInjection": []
+            }
+          }
+          EOF
+
+          # Trap for exit and return 0
+          trap 'exit 0' EXIT
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export QUICKSEED_CODEQL_REPORT={{ quickseed_codeql_report | shquote }}
+          export CODEQL_VULN_REPORT={{ discovery_vuln_reports | shquote }}
+
+
+          LANG={{ proj_meta.language | shquote }}
+
+          echo "Report output path: $CODEQL_VULN_REPORT"
+
+          if [ "$LANG" = "java" ] || [ "$LANG" = "jvm" ]; then
+            echo "Matched: Java-based language"
+            /shellphish/codeql/quickseed_query/run_quickseed_query.sh
+            python3 /shellphish/codeql/java_vuln_query/exec.py --project-name "$PROJECT_NAME" --project-id "$PROJECT_ID"
+          elif [ "$LANG" = "c" ] || [ "$LANG" = "cpp" ] || [ "$LANG" = "c++" ]; then
+            echo "Matched: C-based language"
+            python3 /shellphish/codeql/c_vuln_query/exec.py
+            python3 /shellphish/codeql/callgraph/dump_c.py
+          else
+            echo "----------------------------------------------------------------------"
+            echo "Error: Unsupported language: $LANG"
+            echo "Error: Unsupported language: $LANG"
+            echo "Error: Unsupported language: $LANG"
+            echo "----------------------------------------------------------------------"
+            exit 10
+          fi
+          sleep 10
+
+  codeql_cwe_queries:
+    priority: 100
+    job_quota:
+      cpu: 8
+      mem: "12Gi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      codeql_database_zip_files:
+        repo: codeql_database_zip_files
+        kind: InputFilepath
+
+      # Hopefully this can push it off until remote resolver is ready
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+
+      # Function indices and JSONs for local resolver fallback
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+
+      # Outputs
+      codeql_cwe_sarif_report:
+        repo: codeql_cwe_sarif_report
+        kind: OutputFilepath
+
+      codeql_cwe_report:
+        repo: codeql_cwe_report
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-codeql
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          # Create empty reports at the beginning
+          echo '{"version": "2.1.0", "runs": []}' > {{ codeql_cwe_sarif_report | shquote }}
+          cat > {{ codeql_cwe_report | shquote }} << EOF
+          {
+            "metadata": {
+              "language": "{{ meta.language }}",
+              "total_vulnerable_functions": 0,
+              "total_vulnerabilities": 0,
+              "findings_per_rule_id": {}
+            },
+            "vulnerable_functions": {}
+          }
+          EOF
+
+          # Trap for exit and return 0
+          trap 'exit 0' EXIT
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          CODEQL_DB_PATH=$(mktemp -d /tmp/cqlcweq-cqldb-XXXXXX)
+          unzip -q {{ codeql_database_zip_files | shquote }}/sss-codeql-database.zip -d "$CODEQL_DB_PATH"
+
+          echo "Running CWE queries for {{ meta.language }} project: {{ crs_task.project_name | shquote }}"
+
+          python3 /shellphish/codeql/cwe_queries/run_cwe_queries.py \
+            --project-name {{ crs_task.project_name | shquote }} \
+            --project-id {{ project_id | shquote }} \
+            --codeql-cwe-sarif-report {{ codeql_cwe_sarif_report | shquote }} \
+            --codeql-cwe-report {{ codeql_cwe_report | shquote }} \
+            --language {{ meta.language }} \
+            --full-functions-indices {{ full_functions_indices | shquote }} \
+            --functions-json-dir {{ full_functions_jsons_dir | shquote }} \
+            --codeql-database-path "$CODEQL_DB_PATH/.sss-codeql-database"
+
+          # Clean the temp directories
+          if [ -d "$CODEQL_DB_PATH" ]; then
+            rm -rf "$CODEQL_DB_PATH"
+          fi
+
+  codeql_cwe_queries_base:
+    priority: 100
+    job_quota:
+      cpu: 8
+      mem: "12Gi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      # This ensures it only runs in delta mode
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputFilepath
+
+      # Base database (available in delta mode)
+      codeql_base_database_zip_files:
+        repo: codeql_base_database_zip_files
+        kind: InputFilepath
+
+      # Function indices and JSONs for local resolver fallback
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+
+      # Base outputs
+      codeql_cwe_sarif_report_base:
+        repo: codeql_cwe_sarif_report_base
+        kind: OutputFilepath
+
+      codeql_cwe_report_base:
+        repo: codeql_cwe_report_base
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-codeql
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          # Create empty base reports at the beginning
+          echo '{"version": "2.1.0", "runs": []}' > {{ codeql_cwe_sarif_report_base | shquote }}
+          cat > {{ codeql_cwe_report_base | shquote }} << EOF
+          {
+            "metadata": {
+              "language": "{{ meta.language }}",
+              "total_vulnerable_functions": 0,
+              "total_vulnerabilities": 0,
+              "findings_per_rule_id": {}
+            },
+            "vulnerable_functions": {}
+          }
+          EOF
+
+          # Trap for exit and return 0
+          trap 'exit 0' EXIT
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          echo "Running CWE queries in DELTA mode for {{ meta.language }} project: {{ crs_task.project_name | shquote }}"
+
+          # Process base database
+          CODEQL_BASE_DB_PATH=$(mktemp -d /tmp/cqlcweq-base-cqldb-XXXXXX)
+          unzip -q {{ codeql_base_database_zip_files | shquote }}/sss-codeql-database.zip -d "$CODEQL_BASE_DB_PATH"
+
+          echo "Processing base database..."
+          echo "Skipping analysis graph..."
+          python3 /shellphish/codeql/cwe_queries/run_cwe_queries.py \
+            --project-name {{ crs_task.project_name | shquote }} \
+            --project-id {{ (project_id ~ "-base") | shquote }} \
+            --codeql-cwe-sarif-report {{ codeql_cwe_sarif_report_base | shquote }} \
+            --codeql-cwe-report {{ codeql_cwe_report_base | shquote }} \
+            --language {{ meta.language }} \
+            --full-functions-indices {{ full_functions_indices | shquote }} \
+            --functions-json-dir {{ full_functions_jsons_dir | shquote }} \
+            --codeql-database-path "$CODEQL_BASE_DB_PATH/.sss-codeql-database" \
+            --skip-analysis-graph
+
+          # Clean the temp directories
+          if [ -d "$CODEQL_BASE_DB_PATH" ]; then
+            rm -rf "$CODEQL_BASE_DB_PATH"
+          fi

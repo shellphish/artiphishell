@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# Variables initialization
+cp_part=""
+blob_file=""
+
+echo "FAKE JAZZER YOLO-ING"
+
+# Loop through the command line arguments
+while (( "$#" )); do
+  case "$1" in
+    --cp=*)
+      cp_part="${1#--cp=}"
+      shift # Shift past the '--cp' argument and its value
+      ;;
+    --runs=*|--agent_path=*|"--target_class=${FULL_CLASS_NAME}"|"--instrumentation_excludes=org.apache.logging.**:com.fasterxml.**:org.apache.commons.**"|"--disabled_hooks=com.code_intelligence.jazzer.sanitizers.IntegerOverflow"|"--jvm_args=-Djdk.attach.allowAttachSelf=true:-XX\:+StartAttachListener")
+      shift # Ignore known flags and their arguments
+      ;;
+    *)
+      # If we get here, assume it's the BLOB_FILE or another unrecognized argument
+      blob_file="$1"
+      shift
+      ;;
+  esac
+done
+
+# Check if cp_part is empty; exit if it is
+if [ -z "$cp_part" ]; then
+  echo "Classpath component '--cp' is missing."
+  exit 1
+fi
+
+echo "$blob_file"
+echo "-----------------------------"
+echo "$cp_part"
+echo "============================="
+
+
+# {
+#   POV_FILENAME="$blob_file" java \
+#         -cp "$cp_part":/out/harnesses/two/aixcc-harness.jar \
+#         -javaagent:/shellphish/btrace/libs/btrace-agent.jar=script=/shellphish/ShitTrace.class,stdout=true \
+#         <HARNESS_NAME_FULL_JAVA_NAMESPACE>
+#         # com.aixcc.jenkins.harnesses.two.JenkinsTwo
+# } 2> >(tee -a stderr.log >&2) || exit_code=$?
+
+
+# Attempt to run the specified command and log errors to stderr.log
+{
+  POV_FILENAME="$blob_file" java \
+        -cp "$cp_part":<HARNESS_JAR_PATH> \
+        -javaagent:/shellphish/btrace/libs/btrace-agent.jar=script=/shellphish/ShitTrace.class,stdout=true \
+        <HARNESS_NAME_FULL_JAVA_NAMESPACE>
+} 2> >(tee -a stderr.log >&2) || exit_code=$?
+
+# Check and print the exit code if it is present
+if [ ! -z "$exit_code" ]; then
+  echo "Command failed with exit code $exit_code"
+fi
+
+exit 0

@@ -1,0 +1,11 @@
+services:
+  functionresolver-server:
+    image: aixcc-functionresolver-server
+    build: .
+    container_name: aixcc-functionresolver-server
+    network_mode: bridge
+    restart: always
+    ports:
+      - "4033:4033" # Accessible from the host
+    volumes:
+      - "./:/app/aixcc-functionresolver-server"

@@ -1,0 +1,278 @@
+
+#!/bin/bash -u
+
+set -eux
+
+########################################################################
+# SETUP ENVIRONMENT
+########################################################################
+touch $COVLIB_RESULTS/.oss-fuzz-coverage_live.started
+
+HARNESS_NAME=$1
+
+
+PINTRACER_COVERAGE=${PINTRACER_COVERAGE:-false}
+PINTRACER_FUNCTIONS=${PINTRACER_FUNCTIONS:-1} # traced by default
+PINTRACER_INLINES=${PINTRACER_INLINES:-0} # not traced by default
+MYROCO_COVERAGE=${MYROCO_COVERAGE:-false}
+YAJTA_COVERAGE=${YAJTA_COVERAGE:-false}
+
+# if the COVERAGE_AGGREGATE env var is set, we are working in bulk mode, we can deactivate MYROCO
+if [[ $COVERAGE_AGGREGATE == "true" ]]; then
+   MYROCO_COVERAGE=false
+fi
+
+export PINTRACER_COVERAGE=$PINTRACER_COVERAGE
+export PINTRACER_FUNCTIONS=$PINTRACER_FUNCTIONS
+export PINTRACER_INLINES=$PINTRACER_INLINES
+export HARNESS_NAME=$HARNESS_NAME
+export MYROCO_COVERAGE=$MYROCO_COVERAGE
+export YAJTA_COVERAGE=$YAJTA_COVERAGE
+export OSS_FUZZ_SCRIPT_NAME=/usr/local/bin/oss-fuzz-coverage
+
+########################################################################
+# SETUP MYROCO FOR JAVA TRACING
+########################################################################
+# if the MYROCO_COVERAGE env var is set, we are using myroco, so we have to set it up
+if [[ $MYROCO_COVERAGE == "true" ]]; then
+   if [[ $FUZZING_LANGUAGE == "jvm" ]]; then
+      echo "=== Setting up myroco for JVM ==="
+      # Let's setup myroco
+
+      # First, let's make a copy of the current jazzer_driver
+      mv $OUT/jazzer_driver $OUT/jazzer_driver-original
+      mv $OUT/jazzer_agent_deploy.jar $OUT/jazzer_agent_deploy-original.jar
+
+      # Now copy the the modified jazzer drivers
+      mv /shellphish/myroco/jazz-build/jazzer_driver $OUT/jazzer_driver
+      mv /shellphish/myroco/jazz-build/jazzer_agent_deploy.jar $OUT/jazzer_agent_deploy.jar
+
+      # Make sure the MYROCO_CONFIG environment variable is set 
+      if [[ -z "${MYROCO_CONFIG:-}" ]]; then
+         echo "MYROCO_CONFIG environment variable is not set. Please set it to the path of the myroco config file."
+         exit 1
+      fi
+
+      # Copy the config file where the modified jazzer expects it to be
+      # NOTE: this is hardcoded in the Suraj&Justin version of Jazzer.
+      cp $MYROCO_CONFIG /shellphish/myroco/config
+      # check if the classes_final file exists
+      if [[ ! -f /out/antlr-out/classes_final ]]; then
+         echo "classes_final file not found. Please make sure the classes_final file is generated."
+         exit 1
+      fi
+      # open the config file and replace <CLASSES_IN_SCOPE> with the contents of file /out/antlr-out/classes_final
+      sed -i "s|<CLASSES_IN_SCOPE>|$(cat /out/antlr-out/classes_final)|g" /shellphish/myroco/config
+      touch /tmp/Jazzer_ID_SYNC
+      COVERAGE_RESULT_NAME=/out/dumps/myroco.xml
+   else
+      echo "MYROCO is not supported for $FUZZING_LANGUAGE" >&2
+      exit 1
+   fi
+else
+   COVERAGE_RESULT_NAME=/out/dumps/jacoco.xml
+fi
+
+########################################################################
+# SETUP CONDOM FOR C TRACING
+########################################################################
+# if the language is C, we need to get the address of the __llvm_profile_write_file function
+# to enable the sigsev_condom
+if [[ $FUZZING_LANGUAGE == "c" ]] || [[ $FUZZING_LANGUAGE == "c++" ]]; then
+
+   # NOTE: DO NOT MOVE THIS, llvm-dwarfdump IS ONLY AVAILABLE IN THE DOCKER.RUNNER.C
+   export LLVM_DWARFDUMP=$(which llvm-dwarfdump)
+   LLVM_PROFILE_OFFSET_AT=$(nm $OUT/$HARNESS_NAME | grep __llvm_profile_write_file | awk '{print $1}')
+   # Check if the LLVM_PROFILE_OFFSET_AT is not empty
+   if [[ -z "$LLVM_PROFILE_OFFSET_AT" ]]; then
+      echo "LLVM_PROFILE_OFFSET_AT is empty. Please make sure the __llvm_profile_write_file function is present in the binary."
+      export COVERAGE_WITH_SIGSEV_CONDOM=false
+   else
+      echo "Activating SIGSEV condom for coverage tracing!"
+      export COVERAGE_WITH_SIGSEV_CONDOM=true
+      export LLVM_PROFILE_WRITE_OFFSET=$LLVM_PROFILE_OFFSET_AT
+   fi
+   export OSS_FUZZ_SCRIPT_NAME=/usr/local/bin/oss-fuzz-coverage
+fi
+
+########################################################################
+# COVERAGE MONITORING LOOP
+########################################################################
+
+# if the environment variable COVERAGE_AGGREGATE is true we are working in bulk mode
+# NOTE: Yatja DO NOT SUPPORT AGGREGATE MODE.
+if [[ $COVERAGE_AGGREGATE == "true" ]]; then
+   echo "=== Starting aggregate mode ==="
+   # We are still gonna monitor the folder, but we are waiting for ALL the seeds to be there
+   # before running the oss-fuzz-coverage
+   while true; do
+   active_seeds=$(find $FOLDER_TO_MONITOR/ -type f)
+   if [[ -z "$active_seeds" ]]; then
+      echo "No active seeds found. Waiting for new seeds..."
+      sleep 1
+      continue
+   fi
+   # Check if the .covlib.done file is present
+   if [[ -f $FOLDER_TO_MONITOR/.covlib.done ]]; then
+      # Remove the .covlib.done file
+      rm $FOLDER_TO_MONITOR/.covlib.done
+      # Move all the seeds to the corpus
+      mv $FOLDER_TO_MONITOR/* /corpus/$HARNESS_NAME/
+      # Run oss-fuzz-coverage on the seeds
+      $OSS_FUZZ_SCRIPT_NAME "$@"
+
+      if [[ $FUZZING_LANGUAGE == "c" ]] || [[ $FUZZING_LANGUAGE == "c++" ]]; then
+         if [[ -f "/out/dumps/merged.profdata" ]]; then
+            #echo "<<< MERGED PROF-DATA FILE FOUND >>>"
+            # If the file is not empty, we can process it with the internal command
+            if [[ -s "/out/dumps/merged.profdata" ]]; then
+               if [[ -n "${SHELLPHISH_PARSING_COMMAND:-}" ]]; then
+                  #echo "<<< EXECUTING INTERNAL PARSER: $SHELLPHISH_PARSING_COMMAND >>>"
+                  eval $SHELLPHISH_PARSING_COMMAND
+                  # NOTE: the custom internal command must rename the result to merged.profdata.processed
+                  #       by moving the result in $COVLIB_RESULTS/$seed, we are triggering the monitor in covlib.
+                  mv /out/dumps/merged.profdata.processed $COVLIB_RESULTS/coverage
+                  touch $COVLIB_DONE_FILES/coverage
+               else
+                  # File not empty and no custom command, we can move the file to the results folder
+                  mv /out/dumps/merged.profdata $COVLIB_RESULTS/coverage
+                  # Signal we are done writing the result file!
+                  touch $COVLIB_DONE_FILES/coverage
+               fi
+            else
+               # File is empty, we can move the file to the results folder
+               mv /out/dumps/merged.profdata $COVLIB_RESULTS/coverage
+               touch $COVLIB_DONE_FILES/coverage
+            fi
+       else
+         echo "<<< ERROR: NO MERGED PROF-DATA FILE >>>"
+         exit 1
+       fi
+      else
+       if [[ $FUZZING_LANGUAGE == "jvm" ]]; then
+         if [[ -f $COVERAGE_RESULT_NAME ]]; then
+            if [[ -n "${SHELLPHISH_PARSING_COMMAND:-}" ]]; then
+               #echo "<<< EXECUTING INTERNAL PARSER: $SHELLPHISH_PARSING_COMMAND >>>"
+               eval $SHELLPHISH_PARSING_COMMAND
+               # NOTE: the custom internal command must rename the result to jacoco.xml.processed
+               mv $COVERAGE_RESULT_NAME.processed $COVLIB_RESULTS/coverage
+               touch $COVLIB_DONE_FILES/coverage
+            else
+               mv $COVERAGE_RESULT_NAME $COVLIB_RESULTS/coverage
+               touch $COVLIB_DONE_FILES/coverage
+            fi
+         else
+            echo "<<< ERROR: NO XML FILE >>>"
+            exit 1
+         fi
+       else
+         echo "Fuzzing language $FUZZING_LANGUAGE is not supported"
+         exit 1
+       fi
+      fi
+
+      # Wipe the /out/dumps to restart clean!
+      rm -rf /corpus/$HARNESS_NAME/*
+      rm -rf /out/dumps/*
+      rm -rf /out/dumps/
+      mkdir -p /out/dumps/
+   else
+      echo "Not all seeds are present. Waiting..."
+      sleep 0.5
+      continue
+   fi
+   done
+
+else
+   while true; do
+      # Get the current seed from the folder
+      active_seeds=$(find $FOLDER_TO_MONITOR/ -type f)
+      if [[ -z "$active_seeds" ]]; then
+         echo "No active seeds found. Waiting for new seeds..."
+         sleep 1
+         continue
+      fi
+
+      while true; do
+         # Check if the .covlib.done file is present
+         # (this means covlib finished to copy ALL the seeds we want to trace)
+         if [[ -f $FOLDER_TO_MONITOR/.covlib.done ]]; then
+            # Remove the .covlib.done file
+            rm $FOLDER_TO_MONITOR/.covlib.done
+            break
+         else
+            sleep 0.1
+            continue
+         fi
+      done
+
+      # Refresh active seeds (so we exclude the .covlib.done file)
+      active_seeds=$(find $FOLDER_TO_MONITOR/ -type f)
+
+      # DO NOT CHANGE THIS TO inotify (apparently we are hitting a limit in the CRS)
+      for seed_path in ${active_seeds}; do
+         seed=$(basename -- "$seed_path")
+         export CURR_SEED_NAME=$seed
+         echo "Seed found: $seed_path"
+         mv "$seed_path" /corpus/$HARNESS_NAME/
+
+         # Run oss-fuzz-coverage on the seed
+         $OSS_FUZZ_SCRIPT_NAME "$@"
+
+         if [[ $FUZZING_LANGUAGE == "c" ]] || [[ $FUZZING_LANGUAGE == "c++" ]]; then
+            if [[ -f "/out/dumps/merged.profdata" ]]; then
+               #echo "<<< MERGED PROF-DATA FILE FOUND >>>"
+               # If the file is not empty, we can process it with the internal command
+               if [[ -s "/out/dumps/merged.profdata" ]]; then
+                  if [[ -n "${SHELLPHISH_PARSING_COMMAND:-}" ]]; then
+                     #echo "<<< EXECUTING INTERNAL PARSER: $SHELLPHISH_PARSING_COMMAND >>>"
+                     eval $SHELLPHISH_PARSING_COMMAND
+                     # NOTE: the custom internal command must rename the result to merged.profdata.processed
+                     #       by moving the result in $COVLIB_RESULTS/$seed, we are triggering the monitor in covlib.
+                     mv /out/dumps/merged.profdata.processed $COVLIB_RESULTS/$seed
+                     touch $COVLIB_DONE_FILES/$seed
+                  else
+                     # File not empty and no custom command, we can move the file to the results folder
+                     mv /out/dumps/merged.profdata $COVLIB_RESULTS/$seed
+                     touch $COVLIB_DONE_FILES/$seed
+                  fi
+               else
+                  # File is empty, we can move the file to the results folder
+                  mv /out/dumps/merged.profdata $COVLIB_RESULTS/$seed
+                  touch $COVLIB_DONE_FILES/$seed
+               fi
+            else
+               echo "<<< ERROR: NO MERGED PROF-DATA FILE >>>"
+               exit 1
+            fi
+         else
+            if [[ $FUZZING_LANGUAGE == "jvm" ]]; then
+               if [[ -f $COVERAGE_RESULT_NAME ]]; then
+                  if [[ -n "${SHELLPHISH_PARSING_COMMAND:-}" ]]; then
+                     #echo "<<< EXECUTING INTERNAL PARSER: $SHELLPHISH_PARSING_COMMAND >>>"
+                     eval $SHELLPHISH_PARSING_COMMAND
+                     # NOTE: the custom internal command must rename the result to jacoco.xml.processed
+                     mv $COVERAGE_RESULT_NAME.processed $COVLIB_RESULTS/$seed
+                     touch $COVLIB_DONE_FILES/$seed
+                  else
+                     mv $COVERAGE_RESULT_NAME $COVLIB_RESULTS/$seed
+                     touch $COVLIB_DONE_FILES/$seed
+                  fi
+               else
+                  echo "<<< ERROR: NO XML FILE >>>"
+                  exit 1
+               fi
+            else
+               echo "Fuzzing language $FUZZING_LANGUAGE is not supported"
+               exit 1
+            fi
+         fi
+
+         # Wipe the /out/dumps to restart clean!
+         rm -rf /corpus/$HARNESS_NAME/*
+         rm -rf /out/dumps/*
+         rm -rf /out/dumps/
+         mkdir -p /out/dumps/
+      done
+   done
+fi

@@ -1,0 +1,102 @@
+load("@contrib_rules_jvm//java:defs.bzl", "JUNIT5_DEPS", "java_junit5_test")
+
+java_test(
+    name = "FuzzTargetRunnerTest",
+    srcs = ["FuzzTargetRunnerTest.java"],
+    jvm_flags = [
+        "-ea",
+        "-XX:+IgnoreUnrecognizedVMOptions",
+        "-XX:+EnableDynamicAgentLoading",
+    ],
+    use_testrunner = False,
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/agent:agent_installer",
+        "//src/main/java/com/code_intelligence/jazzer/api",
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+        "//src/main/java/com/code_intelligence/jazzer/driver:fuzz_target_finder",
+        "//src/main/java/com/code_intelligence/jazzer/driver:fuzz_target_holder",
+        "//src/main/java/com/code_intelligence/jazzer/driver:fuzz_target_runner",
+        "//src/main/java/com/code_intelligence/jazzer/runtime:coverage_map",
+        "//src/main/java/com/code_intelligence/jazzer/utils:unsafe_provider",
+    ],
+)
+
+java_test(
+    name = "FuzzedDataProviderImplTest",
+    srcs = ["FuzzedDataProviderImplTest.java"],
+    use_testrunner = False,
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api",
+        "//src/main/java/com/code_intelligence/jazzer/driver:fuzzed_data_provider_impl",
+    ],
+)
+
+java_junit5_test(
+    name = "OptItemTest",
+    srcs = ["OptItemTest.java"],
+    env = {
+        "JAZZER_SOME_ARG": "env_1,env_2",
+        "JAZZER_OTHER_ARG": "env_3",
+        "JAZZER_VALID_BOOLEAN": "1",
+        "JAZZER_INVALID_BOOLEAN": "not_true",
+    },
+    deps = JUNIT5_DEPS + [
+        ":direct_dep",
+        ":direct_manifest_dep_deploy.jar",
+        "//src/main/java/com/code_intelligence/jazzer/driver:opt_item",
+        "@maven//:com_google_truth_extensions_truth_java8_extension",
+        "@maven//:com_google_truth_truth",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+)
+
+java_library(
+    name = "direct_dep",
+    runtime_deps = [
+        ":indirect_dep",
+        ":indirect_manifest_dep_deploy.jar",
+    ],
+)
+
+java_binary(
+    name = "direct_manifest_dep",
+    deploy_manifest_lines = [
+        "Jazzer-Some-Arg: manifest_7",
+        "Jazzer-Other-Arg: manifest_6",
+    ],
+)
+
+java_library(
+    name = "indirect_dep",
+    runtime_deps = [
+        ":even_more_indirect_manifest_dep_deploy.jar",
+    ],
+)
+
+java_binary(
+    name = "indirect_manifest_dep",
+    deploy_manifest_lines = [
+        "Jazzer-Some-Arg: manifest_4,manifest_5",
+    ],
+)
+
+java_binary(
+    name = "even_more_indirect_manifest_dep",
+    deploy_manifest_lines = [
+        "jazzer-some-arg: manifest_3",
+        "JAZZER-OTHER-ARG: manifest_1,manifest_2",
+    ],
+)
+
+java_test(
+    name = "RecordingFuzzedDataProviderTest",
+    srcs = [
+        "RecordingFuzzedDataProviderTest.java",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api",
+        "//src/main/java/com/code_intelligence/jazzer/driver:fuzzed_data_provider_impl",
+        "//src/main/java/com/code_intelligence/jazzer/driver:recording_fuzzed_data_provider",
+        "@maven//:junit_junit",
+    ],
+)

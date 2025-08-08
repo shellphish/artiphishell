@@ -1,0 +1,15 @@
+import java
+from Field privateField, Assignment assign, Expr expr
+where
+    assign.getDest() = privateField.getAnAccess() and
+    expr = privateField.getAnAccess() and
+    expr.getEnclosingCallable().getDeclaringType().hasQualifiedName("{{ class_name_prefix }}", "{{ class_name }}") and
+    (
+    {% for i, name in enumerate(target_functions) %}
+     {% if i > 0 %}or {% endif %}expr.getEnclosingCallable().getQualifiedName().matches("%.{{ name }}")
+    {% endfor %}
+    )
+select 
+assign.getEnclosingCallable() as source_name, 
+assign.getEnclosingCallable().getDeclaringType().getQualifiedName() as source_class_name, 
+expr.getLocation() as target_location

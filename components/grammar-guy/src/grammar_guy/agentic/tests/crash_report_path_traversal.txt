@@ -1,0 +1,15 @@
+== Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical: File path traversal: <REDACTED>
+        at com.code_intelligence.jazzer.sanitizers.FilePathTraversal.check(FilePathTraversal.java:348)
+        at com.code_intelligence.jazzer.sanitizers.FilePathTraversal.checkFile(FilePathTraversal.java:304)
+        at com.code_intelligence.jazzer.sanitizers.FilePathTraversal.checkObj(FilePathTraversal.java:288)
+        at com.code_intelligence.jazzer.sanitizers.FilePathTraversal.processFileOutputStartHook(FilePathTraversal.java:256)
+        at net.lingala.zip4j.tasks.AbstractExtractFileTask.unzipFile(AbstractExtractFileTask.java:105)
+        at net.lingala.zip4j.tasks.AbstractExtractFileTask.extractFile(AbstractExtractFileTask.java:67)
+        at net.lingala.zip4j.tasks.ExtractAllFilesTask.executeTask(ExtractAllFilesTask.java:41)
+        at net.lingala.zip4j.tasks.ExtractAllFilesTask.executeTask(ExtractAllFilesTask.java:17)
+        at net.lingala.zip4j.tasks.AsyncZipTask.performTaskWithErrorHandling(AsyncZipTask.java:51)
+        at net.lingala.zip4j.tasks.AsyncZipTask.execute(AsyncZipTask.java:45)
+        at net.lingala.zip4j.ZipFile.extractAll(ZipFile.java:500)
+        at net.lingala.zip4j.ZipFile.extractAll(ZipFile.java:471)
+        at Zip4jFuzzer.fuzzerTestOneInput(Zip4jFuzzer.java:82)
+DEDUP_TOKEN: 1783a2505b6b6f55

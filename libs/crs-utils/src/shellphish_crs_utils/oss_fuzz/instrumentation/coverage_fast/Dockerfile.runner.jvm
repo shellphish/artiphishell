@@ -1,0 +1,36 @@
+ARG BASE_IMAGE=
+ARG PREBUILD_IMAGE=
+
+FROM ${PREBUILD_IMAGE} AS prebuild
+FROM ${BASE_IMAGE}
+
+COPY --from=prebuild /home/myre/myroco/jazz-build/jazzer_agent_deploy.jar /shellphish/myroco/jazz-build/jazzer_agent_deploy.jar
+COPY --from=prebuild /home/myre/myroco/jazz-build/jazzer_driver /shellphish/myroco/jazz-build/jazzer_driver
+
+# We built the new coverage script based on the one 
+# at https://github.com/aixcc-finals/oss-fuzz-aixcc/blob/master/infra/base-images/base-runner/coverage
+# commit: 8bc2e0b5cfeffaee2cd8f6dd27e0b72ca87bac88.
+# So, if anything changes there, we want to know: Check md5sum before starting.
+RUN md5sum /usr/local/bin/coverage > ./coverage.md5sum 2>&1 
+RUN cat ./coverage.md5sum
+# Check if the md5sum of the coverage script matches the expected value a8f56f76b7949a8333e605aa3dfd3344
+RUN grep "a8f56f76b7949a8333e605aa3dfd3344" ./coverage.md5sum || { echo "Error: The specified line was not found in coverage.md5sum | ping @degrigis"; exit 1; }
+
+# oss-fuzz-coverage is our modified coverage bash script
+COPY oss-fuzz-coverage /usr/local/bin/
+# The oss-fuzz-coverage_live is basically keeping the coverage container up and trace every seed appearing in the 
+# monitored folder
+COPY oss-fuzz-coverage_live /usr/local/bin/
+# coverage is our wrapper that decides between watchdog or not
+COPY coverage /usr/local/bin/
+
+# Modified jacococli that doesn't freaking throw stupid exceptions
+COPY my_jacococli.jar /opt/jacoco-cli.jar
+
+COPY yajta-2.0.0-jar-with-dependencies-degrigis.jar /opt/yajta-2.0.0-jar-with-dependencies.jar
+
+RUN chmod +x /usr/local/bin/coverage
+RUN chmod +x /usr/local/bin/oss-fuzz-coverage
+RUN chmod +x /usr/local/bin/oss-fuzz-coverage_live
+RUN chmod +x /opt/jacoco-cli.jar
+RUN chmod +x /opt/yajta-2.0.0-jar-with-dependencies.jar

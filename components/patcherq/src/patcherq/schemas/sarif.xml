@@ -1,0 +1,20 @@
+<sarif>
+    <rule_id>PY0001</rule_id>
+    <rule_name>NullDereference</rule_name>
+    <rule_description>Possible null pointer dereference detected when accessing attribute of None</rule_description>
+    <level>error</level>
+    <flow>
+        <flow_item>
+            <filepath>src/main.py</filepath>
+            <startline>42</startline>
+        </flow_item>
+        <flow_item>
+            <filepath>src/utils/helpers.py</filepath>
+            <startline>87</startline>
+        </flow_item>
+        <flow_item>
+            <filepath>tests/test_null_checks.py</filepath>
+            <startline>15</startline>
+        </flow_item>
+    </flow>
+</sarif>

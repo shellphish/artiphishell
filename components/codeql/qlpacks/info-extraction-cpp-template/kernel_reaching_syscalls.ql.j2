@@ -1,0 +1,26 @@
+/**
+ * @id cpp/kernel_reaching_files
+ * @kind problem
+ * @name Finds syscalls involved with reaching a given set of target functions
+ * @severity information
+ */
+
+import kernel_calls_analysis
+
+predicate is_target_function(Function f) {
+{% for i, name in enumerate(target_functions) %}
+  {% if i > 0 %}or {% endif %}f.hasGlobalName({{ json.dumps(name) }})
+{% endfor %}
+}
+
+
+from CallGraph::PathNode source, CallGraph::PathNode reachable, CallGraph::PathNode sys_call_table
+where
+  source.asFunction().getName().matches("__do_sys_%")
+  and
+  CallGraph::edges+(source, reachable)
+  and
+  CallGraph::edges+(sys_call_table, source)
+  and
+  is_target_function(reachable.asFunction())
+select source.asFunction().getName().suffix(9)

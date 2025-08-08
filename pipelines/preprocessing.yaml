@@ -1,0 +1,1110 @@
+repo_classes:
+
+  project_metadatas: MetadataRepository
+  crs_tasks: MetadataRepository
+  c_crs_tasks: MetadataRepository
+  java_crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+  full_mode_tasks: MetadataRepository
+
+  base_project_metadatas: MetadataRepository
+  augmented_project_metadatas: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+
+  crs_tasks_base_sources: FilesystemRepository
+  crs_tasks_diffs: BlobRepository
+
+  sarif_reports: BlobRepository
+  sarif_metadatas: MetadataRepository
+  jazzer_build_shellphish_dir: FilesystemRepository
+
+  fuzzers_started: BlobRepository
+
+  # Outputs
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_harness_only_metadatas: MetadataRepository
+  debug_build_artifacts: FilesystemRepository
+  canonical_build_artifacts: {cls: FilesystemRepository, required: false}
+  canonical_build_delta_artifacts: {cls: FilesystemRepository, required: false}
+  coverage_build_artifacts: FilesystemRepository
+  crs_tasks_analysis_sources: FilesystemRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  commit_functions_indices: BlobRepository
+  full_functions_indices: BlobRepository
+  info_extraction_requests: MetadataRepository
+  canonical_build_delta_failures: MetadataRepository
+
+  codeql_reports: BlobRepository
+  codeql_qlpack_reports: BlobRepository
+  codeql_db_ready: MetadataRepository
+  codeql_analysis_ready: MetadataRepository
+  codeql_base_db_ready: {cls: MetadataRepository, required: false} # Only available in pre-processing!
+
+  info_extraction_results: MetadataRepository
+
+  libfuzzer_reaching_functions_dicts: BlobRepository
+  libfuzzer_reaching_files_dicts: BlobRepository
+
+  likely_input_formats_corpuses: FilesystemRepository
+  likely_input_formats_corpus_diffs: FilesystemRepository
+  likely_input_formats_dictionaries: FilesystemRepository
+  likely_input_formats_grammars: FilesystemRepository
+  likely_input_formats_metadatas: MetadataRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+  losan_dedup_pov_report_representative_crashing_inputs: BlobRepository
+  losan_dedup_pov_report_representative_metadatas: MetadataRepository
+  losan_dedup_pov_report_representative_full_reports: BlobRepository
+
+  codeswipe_rankings: BlobRepository
+  debug_build_base_artifacts: {cls: FilesystemRepository, required: false}
+
+  crashing_harness_inputs:            BlobRepository
+  crashing_harness_inputs_metadatas:  MetadataRepository
+  # aggregated_harness_infos: MetadataRepository
+  # aggregated_build_configurations: MetadataRepository
+
+  project_compile_commands: BlobRepository
+  patch_bypass_requests: MetadataRepository
+
+  # Quickseed repos
+  quickseed_codeql_reports: BlobRepository
+  quickseed_log: FilesystemRepository
+
+  # diffguy repos
+  diffguy_reports: FilesystemRepository
+  discovery_vuln_reports: { cls: BlobRepository, required: false }
+
+  # semgrep repos
+  project_analysis_sources: FilesystemRepository
+  semgrep_analysis_report: {cls: BlobRepository, required: false}
+  semgrep_analysis_raw_findings: {cls: BlobRepository, required: false}
+
+  # semgrep base repos (for delta mode)
+  semgrep_analysis_report_base: {cls: BlobRepository, required: false}
+  semgrep_analysis_raw_findings_base: {cls: BlobRepository, required: false}
+
+  dyva_build_artifacts: FilesystemRepository
+  sarif_retry_metadatas: MetadataRepository
+  sarif_heartbeat_paths: MetadataRepository
+  locs_of_interest: BlobRepository
+
+  # discoguy repos
+  patched_artifacts_dirs:       FilesystemRepository
+  # Bypass guy
+  project_build_artifacts: { "cls": "FilesystemRepository", "required": false }
+  discovery_guy_bypass_results: { cls: MetadataRepository, required: false }
+  discovery_guy_output_seeds: BlobRepository
+  discovery_guy_output_reports: {cls: BlobRepository, required: false}
+
+  # codeql cwe repos
+  codeql_cwe_sarif_report: {cls: BlobRepository, required: false}
+  codeql_cwe_report: {cls: BlobRepository, required: false}
+
+  # codeql cwe base repos (for delta mode)
+  codeql_cwe_sarif_report_base: {cls: BlobRepository, required: false}
+  codeql_cwe_report_base: {cls: BlobRepository, required: false}
+
+  # backdoorguy repos
+  suspicious_functions: BlobRepository
+
+  # scanguy repos
+  scan_guy_results: { cls: FilesystemRepository, required: false }
+
+imports:
+
+  # diffguy pipeline
+  diffguy:
+    path: ../components/diffguy/pipeline.yaml
+    repos:
+      codeql_db_ready: codeql_db_ready
+      codeql_base_db_ready: codeql_base_db_ready
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_metadatas: project_metadatas
+      commit_functions_indices: commit_functions_indices
+      diffguy_reports: diffguy_reports
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      crs_tasks_diffs: crs_tasks_diffs
+
+
+  sarifguy:
+    path: ../components/sarifguy/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      sarif_reports: sarif_reports
+      sarif_metadatas: sarif_metadatas
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      sarif_retry_metadatas: sarif_retry_metadatas
+      sarif_heartbeat_paths: sarif_heartbeat_paths
+      
+
+  target-identifier:
+    path: ../components/target-identifier/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      canonical_build_artifacts: canonical_build_artifacts
+      base_project_metadatas: base_project_metadatas
+      augmented_project_metadatas: augmented_project_metadatas
+      crs_tasks_cancelled: crs_tasks_cancelled
+
+  configuration_splitter:
+    path: ../components/configuration-splitter/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      base_project_metadatas: base_project_metadatas
+      augmented_project_metadatas: augmented_project_metadatas
+      project_build_configurations: project_build_configurations
+      project_harness_infos: project_harness_infos
+      project_harness_only_metadatas: project_harness_only_metadatas
+      crs_tasks_cancelled: crs_tasks_cancelled
+      target_split_metadatas: target_split_metadatas
+
+  function_indexer:
+    path: ../components/function-index-generator/pipeline.yaml
+    repos:
+      commit_functions_indices: commit_functions_indices
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      full_functions_indices: full_functions_indices
+
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+
+      info_extraction_requests: info_extraction_requests
+
+      crs_tasks_cancelled: crs_tasks_cancelled
+
+      crs_tasks: crs_tasks
+
+  codeql:
+    path: ../components/codeql/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      java_crs_tasks: java_crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      base_project_metadatas: base_project_metadatas
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      codeql_reports: codeql_reports
+      codeql_qlpack_reports: codeql_qlpack_reports
+      info_extraction_requests: info_extraction_requests
+      info_extraction_results: info_extraction_results
+      libfuzzer_reaching_functions_dicts: libfuzzer_reaching_functions_dicts
+      libfuzzer_reaching_files_dicts: libfuzzer_reaching_files_dicts
+      codeql_db_ready: codeql_db_ready
+      codeql_analysis_ready: codeql_analysis_ready
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+      quickseed_codeql_reports: quickseed_codeql_reports
+      delta_mode_tasks: delta_mode_tasks
+      codeql_base_db_ready: codeql_base_db_ready
+      discovery_vuln_reports: discovery_vuln_reports
+      codeql_cwe_sarif_report: codeql_cwe_sarif_report
+      codeql_cwe_report: codeql_cwe_report
+      codeql_cwe_sarif_report_base: codeql_cwe_sarif_report_base
+      codeql_cwe_report_base: codeql_cwe_report_base
+
+  corpus_guy:
+    path: ../components/corpus-guy/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_diffs: crs_tasks_diffs
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_metadatas: project_metadatas
+      project_harness_infos: project_harness_infos
+      target_split_metadatas: target_split_metadatas
+      canonical_build_artifacts: canonical_build_artifacts
+      coverage_build_artifacts: coverage_build_artifacts
+      codeql_db_ready: codeql_db_ready
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      likely_input_formats_corpuses: likely_input_formats_corpuses
+      likely_input_formats_corpus_diffs: likely_input_formats_corpus_diffs
+      likely_input_formats_dictionaries: likely_input_formats_dictionaries
+      likely_input_formats_grammars: likely_input_formats_grammars
+      likely_input_formats_metadatas: likely_input_formats_metadatas
+
+  grammar_guy:
+    path: ../components/grammar-guy/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_full: full_mode_tasks
+      crs_tasks_delta: delta_mode_tasks
+      commit_functions_indices: commit_functions_indices
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_harness_infos: project_harness_infos
+      project_metadatas: project_metadatas
+      project_harness_only_metadatas: project_harness_only_metadatas
+      target_split_metadatas: target_split_metadatas
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      coverage_build_artifacts: coverage_build_artifacts
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      losan_dedup_pov_report_representative_crashing_inputs: losan_dedup_pov_report_representative_crashing_inputs
+      losan_dedup_pov_report_representative_metadatas: losan_dedup_pov_report_representative_metadatas
+      losan_dedup_pov_report_representative_full_reports: losan_dedup_pov_report_representative_full_reports
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+      sarif_reports: sarif_reports
+      sarif_metadatas: sarif_metadatas
+      fuzzers_started: fuzzers_started
+
+  grammaroomba:
+    path: ../components/grammaroomba/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      commit_functions_indices: commit_functions_indices
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_harness_infos: project_harness_infos
+      project_metadatas: project_metadatas
+      project_harness_only_metadatas: project_harness_only_metadatas
+      target_split_metadatas: target_split_metadatas
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      coverage_build_artifacts: coverage_build_artifacts
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+
+  semgrep:
+    path: ../components/semgrep/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_analysis_sources: project_analysis_sources
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      project_metadatas: project_metadatas
+      delta_mode_tasks: delta_mode_tasks
+      crs_tasks_base_sources: crs_tasks_base_sources
+      semgrep_analysis_raw_findings: semgrep_analysis_raw_findings
+      semgrep_analysis_report: semgrep_analysis_report
+      semgrep_analysis_raw_findings_base: semgrep_analysis_raw_findings_base
+      semgrep_analysis_report_base: semgrep_analysis_report_base
+
+  grammar_composer:
+    path: ../components/grammar-composer/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_metadatas: project_metadatas
+      project_harness_infos: project_harness_infos
+      target_split_metadatas: target_split_metadatas
+      coverage_build_artifacts: coverage_build_artifacts
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      fuzzers_started: fuzzers_started
+
+  code_swipe:
+    path: ../components/code-swipe/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      canonical_build_artifacts: canonical_build_artifacts
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      commit_functions_indices: commit_functions_indices
+      project_metadatas: project_metadatas
+      codeswipe_rankings: codeswipe_rankings
+      crs_tasks_cancelled: crs_tasks_cancelled
+      diffguy_reports: diffguy_reports
+      full_mode_tasks: full_mode_tasks
+      discovery_vuln_reports: discovery_vuln_reports
+      semgrep_analysis_report: semgrep_analysis_report
+      codeql_cwe_report: codeql_cwe_report
+      semgrep_analysis_report_base: semgrep_analysis_report_base
+      codeql_cwe_report_base: codeql_cwe_report_base
+      #scan_guy_results: scan_guy_results
+
+
+  quickseed:
+    path: ../components/quickseed/pipeline.yaml
+    repos:
+      codeql_analysis_ready: codeql_analysis_ready
+      crs_tasks: crs_tasks
+      project_build_configurations: project_build_configurations
+      target_split_metadatas: target_split_metadatas
+      crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      codeql_db_ready: codeql_db_ready
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_metadatas: project_metadatas
+      project_harness_infos: project_harness_infos
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      coverage_build_artifacts: coverage_build_artifacts
+      debug_build_artifacts: debug_build_artifacts
+      delta_mode_tasks: delta_mode_tasks
+      full_mode_tasks: full_mode_tasks
+      java_crs_tasks: java_crs_tasks
+      codeswipe_rankings: codeswipe_rankings
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      # aggregated_harness_infos: aggregated_harness_infos
+      # aggregated_build_configurations: aggregated_build_configurations
+
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      quickseed_codeql_reports: quickseed_codeql_reports
+      quickseed_log: quickseed_log
+      sarif_reports: sarif_reports
+      sarif_metadatas: sarif_metadatas
+      sarif_retry_metadatas: sarif_retry_metadatas
+      sarif_heartbeat_paths: sarif_heartbeat_paths
+
+  discovery_guy:
+    path: ../components/discoveryguy/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      java_crs_tasks: java_crs_tasks
+      full_mode_tasks: full_mode_tasks
+      crs_tasks_diffs: crs_tasks_diffs
+      delta_mode_tasks: delta_mode_tasks
+      codeql_db_ready: codeql_db_ready
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      debug_build_artifacts: debug_build_artifacts
+      target_split_metadatas: target_split_metadatas
+      project_metadatas: project_metadatas
+      full_functions_by_file_index_jsons: full_functions_by_file_index_jsons
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      discovery_vuln_reports: discovery_vuln_reports
+      codeql_analysis_ready: codeql_analysis_ready
+      codeswipe_rankings: codeswipe_rankings
+      project_analysis_sources: project_analysis_sources
+      commit_functions_indices: commit_functions_indices
+      sarif_reports: sarif_reports
+      sarif_metadatas: sarif_metadatas
+      discovery_guy_output_seeds: discovery_guy_output_seeds
+      discovery_guy_output_reports: discovery_guy_output_reports
+      patch_bypass_requests: patch_bypass_requests
+      discovery_guy_bypass_results: discovery_guy_bypass_results
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      project_build_artifacts: project_build_artifacts
+      dedup_pov_report_representative_metadatas: dedup_pov_report_representative_metadatas
+      sarif_retry_metadatas: sarif_retry_metadatas
+      sarif_heartbeat_paths: sarif_heartbeat_paths
+      suspicious_functions: suspicious_functions
+
+  scanguy:
+    path: ../components/scanguy/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_full: full_mode_tasks
+      crs_tasks_delta: delta_mode_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_metadatas: project_metadatas
+      target_split_metadatas: target_split_metadatas
+      codeql_db_ready: codeql_db_ready
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      codeql_analysis_ready: codeql_analysis_ready
+      scan_guy_results: scan_guy_results
+
+  backdoorguy:
+    path: ../components/backdoorguy/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      full_functions_indices: full_functions_indices
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      project_metadatas: project_metadatas
+      suspicious_functions: suspicious_functions
+      project_analysis_sources: project_analysis_sources
+
+tasks:
+  diff_mode_create_analysis_source:
+    links:
+      crs_task:                       {repo: delta_mode_tasks,                             kind: InputMetadata}
+      project_id:                    {repo: delta_mode_tasks,                             kind: InputId}
+      crs_task_diff:                  {repo: crs_tasks_diffs,                              kind: InputFilepath}
+      base_source:                    {repo: crs_tasks_base_sources,                       kind: InputFilepath}
+      analysis_source:                {repo: crs_tasks_analysis_sources,                   kind: OutputFilepath}
+      project_cancel:                 {repo: crs_tasks_cancelled,                          kind: Cancel}
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-dependencies-base"
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          cd {{ base_source | shquote }}
+          git config --global user.email "team@shellphish.net"
+          git config --global user.name "Team Shellphish"
+          (
+            cd ./*/
+            git init
+            git config --global --add safe.directory $(realpath .)
+            git add .
+            git commit -m "Initial commit for {{ crs_task.project_name | shquote }}"
+
+            if [ "{{ crs_task.project_name | shquote }}" = "tika" ]; then
+              git apply --exclude="**/test-documents/*" {{ crs_task_diff | shquote }} || true
+            else
+              git apply {{ crs_task_diff | shquote }} || patch -p1 < {{ crs_task_diff | shquote }} || git apply --reject {{ crs_task_diff | shquote }} || true
+            fi
+
+            git config --global --add safe.directory $(realpath .)
+            echo 'hi' > shellphish-was-here.txt # to make sure there's at least one change
+            git add .
+            git commit -m "Applying diff for {{ crs_task.project_name | shquote }}"
+            cd -
+          )
+          rsync -ra {{ base_source | shquote }}/*/ {{ analysis_source | shquote }}
+
+  full_mode_create_analysis_source:
+    links:
+      crs_task:                       {repo: full_mode_tasks,                              kind: InputMetadata}
+      project_id:                    {repo: full_mode_tasks,                              kind: InputId}
+      base_source:                    {repo: crs_tasks_base_sources,                       kind: InputFilepath}
+      analysis_source:                {repo: crs_tasks_analysis_sources,                   kind: OutputFilepath}
+      project_cancel:                 {repo: crs_tasks_cancelled,                          kind: Cancel}
+
+    executable:
+      cls: Container
+      args:
+        image: "aixcc-dependencies-base"
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          cd {{ base_source | shquote }}
+          git config --global user.email "team@shellphish.net"
+          git config --global user.name "Team Shellphish"
+          (
+            cd ./*/
+            git init
+            git config --global --add safe.directory $(realpath .)
+            git add .
+            git commit -m "Initial commit for {{ crs_task.project_name | shquote }}"
+            cd -
+          )
+          rsync -ra {{ base_source | shquote }}/*/ {{ analysis_source | shquote }}
+
+  canonical_build:
+    require_success: true
+    priority: 20000000000
+
+    timeout:
+      minutes: 180
+
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      base_meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      # OUTPUTS
+      canonical_build_artifacts:
+        repo: canonical_build_artifacts
+        kind: OutputFilepath
+
+    extras:
+      task_id: "{{ project_id }}"
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation libfuzzer $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          $BUILD_IMAGE_COMMAND | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log
+          $BUILD_IMAGE_COMMAND --build-runner-image | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log
+
+          BUILDER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture x86_64 \
+            --sanitizer {{ base_meta.get("sanitizers", ["address"])[0] }} \
+            --instrumentation libfuzzer \
+            --preserve-built-src-dir \
+            --priority 1000 \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{canonical_build_artifacts | shquote}}/
+
+          touch /tmp/.nginx_upload
+
+  java_canonical_build_delta:
+    require_success: true
+    priority: 20000000000
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+
+      project_id:
+        repo: java_crs_tasks
+        kind: InputId
+      crs_task:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      base_meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      build_failure:
+        repo: canonical_build_delta_failures
+        kind: OutputFilepath
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      # OUTPUTS
+      canonical_build_delta_artifacts:
+        repo: canonical_build_delta_artifacts
+        kind: OutputFilepath
+
+    extras:
+      task_id: "{{ project_id }}"
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation libfuzzer $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          $BUILD_IMAGE_COMMAND | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log
+          $BUILD_IMAGE_COMMAND --build-runner-image | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log
+
+          BUILDER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log" | grep IMAGE_NAME: | awk '{print $2}')
+          RUNNER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log" | grep IMAGE_NAME: | awk '{print $2}')
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here, catch here then mark and exit if the build fails
+
+          (
+            set +e
+
+            oss-fuzz-build \
+              --use-task-service \
+              --project-id {{ project_id | shquote }} \
+              --architecture x86_64 \
+              --sanitizer {{ base_meta.get("sanitizers", ["address"])[0] }} \
+              --instrumentation libfuzzer \
+              --git-ref "HEAD~1" \
+              --preserve-built-src-dir \
+              --cpu ${INITIAL_BUILD_CPU:-6} \
+              --mem ${INITIAL_BUILD_MEM:-26Gi} \
+              --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+              --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+              "$OSS_FUZZ_PROJECT_DIR"
+
+            echo "$?" > /tmp/build_exit_code_delta
+
+            set -e
+          )
+
+          # check if the build failed , non zero exit code
+          BUILD_EXIT_CODE_DELTA=$(cat /tmp/build_exit_code_delta || echo 0)
+          if [ $BUILD_EXIT_CODE_DELTA -ne 0 ]; then
+            echo "true" > {{ build_failure | shquote }}
+            exit 0
+          fi
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{canonical_build_delta_artifacts | shquote}}
+
+          touch /tmp/.nginx_upload
+
+  debug_build:
+    require_success: true
+
+    timeout:
+      minutes: 180
+
+    priority: 2
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+      # OUTPUTS
+      debug_build_artifacts:
+        repo: debug_build_artifacts
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation libfuzzer $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          $BUILD_IMAGE_COMMAND | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image.log
+          $BUILD_IMAGE_COMMAND --build-runner-image | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_runner_image.log
+
+          BUILDER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_runner_image.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture {{ build_configuration.architecture | shquote }} \
+            --sanitizer {{ build_configuration.sanitizer | shquote }} \
+            --instrumentation libfuzzer \
+            --preserve-built-src-dir \
+            --priority 50 \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{debug_build_artifacts | shquote}}/
+
+          touch /tmp/.nginx_upload
+
+  debug_build_base:
+    require_success: true
+    priority: 2
+    timeout:
+      minutes: 180
+
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      project_id:
+        repo: delta_mode_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      crs_task:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+      # OUTPUTS
+      debug_build_base_artifacts:
+        repo: debug_build_base_artifacts
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation libfuzzer $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          $BUILD_IMAGE_COMMAND | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image.log
+          $BUILD_IMAGE_COMMAND --build-runner-image | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_runner_image.log
+
+          BUILDER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_runner_image.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture {{ build_configuration.architecture | shquote }} \
+            --sanitizer {{ build_configuration.sanitizer | shquote }} \
+            --instrumentation libfuzzer \
+            --git-ref "HEAD~1" \
+            --preserve-built-src-dir \
+            --priority 25 \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{debug_build_base_artifacts | shquote}}/
+
+          touch /tmp/.nginx_upload
+
+  coverage_build_c:
+    require_success: true
+    priority: 75
+    timeout:
+      minutes: 180
+
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      project_id:
+        repo: c_crs_tasks
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      # OUTPUTS
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation coverage_fast $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          $BUILD_IMAGE_COMMAND | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log
+          $BUILD_IMAGE_COMMAND --build-runner-image | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log
+
+          BUILDER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture x86_64 \
+            --sanitizer coverage \
+            --instrumentation coverage_fast \
+            --preserve-built-src-dir \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{coverage_build_artifacts | shquote}}/
+
+          touch /tmp/.nginx_upload
+
+  coverage_build_java:
+    require_success: true
+    priority: 75
+    timeout:
+      minutes: 180
+
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      project_id:
+        repo: java_crs_tasks
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      full_functions_jsons_dirs:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      canonical_build_artifacts_path:
+        repo: canonical_build_artifacts
+        kind: InputFilepath
+
+      # OUTPUTS
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+          CANONICAL_BUILD_ARTIFACTS={{ canonical_build_artifacts_path | shquote }}
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation coverage_fast $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          $BUILD_IMAGE_COMMAND | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log
+          $BUILD_IMAGE_COMMAND --build-runner-image | tee $OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log
+
+          BUILDER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_builder.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$(cat "$OSS_FUZZ_PROJECT_DIR/.shellphish_build_image_runner.log" | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # for the postprocessing of the java coverage
+          export ARTIPHISHELL_FULL_FUNCTIONS_JSONS={{ full_functions_jsons_dirs | shquote}}
+          export ARTIPHISHELL_FULL_FUNCTIONS_INDEX={{ full_functions_indices | shquote}}
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture x86_64 \
+            --sanitizer coverage \
+            --instrumentation coverage_fast \
+            --preserve-built-src-dir \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/ {{coverage_build_artifacts | shquote}}/
+
+          touch /tmp/.nginx_upload
+
+  ccache_init:
+    priority: 1000
+    job_quota:
+      cpu: 0.1
+      mem: "100Mi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          # Ensure ccache directory exists and has proper permissions
+          mkdir -p /shared/ccache
+          chmod 777 /shared/ccache
+          export CCACHE_DIR=/shared/ccache
+          
+          # Do we need to clear old runs' cache? idk uncomment if you want to run
+          # without old cache
+          # ccache -C
+
+          # Configure ccache defaults
+          ccache --set-config max_size=100G
+          ccache --set-config compression=true
+          ccache --set-config compression_level=2
+
+          ccache -s -v

@@ -1,0 +1,27 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} AS jazzer_patch_build
+
+
+RUN apt-get update && apt-get install -y software-properties-common
+RUN apt-get update && apt-get install -y jq rsync openssh-client curl build-essential python3-dev psmisc 
+RUN pip3 install pyyaml requests pydantic rich
+
+RUN mkdir -p /shellphish
+
+RUN echo "kw1=\"FUZZ\"" > /shellphish/dict.txt
+
+ENV LOSAN_JAZZER_AGENT_JAR=$OUT/shellphish/jazzer-aixcc/jazzer-build/jazzer_agent_deploy.jar
+ENV LOSAN_JAZZER_DRIVER=$OUT/shellphish/jazzer-aixcc/jazzer-build/jazzer_driver
+
+
+COPY jazzer_fuzzing_configs.yaml /shellphish/jazzer_fuzzing_configs.yaml
+COPY minimize_corpus_and_same_node_sync.sh /shellphish/minimize_corpus_and_same_node_sync.sh
+COPY instrumentation_and_strings.py /shellphish/instrumentation_and_strings.py
+COPY auto_kill.sh /shellphish/auto_kill.sh
+RUN echo '{}' > /shellphish/packages_in_scope.json
+
+# TODO: move this to prebuild and use wheels to install
+COPY libcodeql /shellphish/libs/libcodeql
+RUN pip3 install -e /shellphish/libs/libcodeql
+COPY crs-utils /shellphish/libs/crs-utils
+RUN pip3 install -e /shellphish/libs/crs-utils

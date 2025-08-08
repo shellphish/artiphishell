@@ -1,0 +1,12 @@
+services:
+  codeql-server:
+    image: aixcc-codeql-server
+    build: .
+    container_name: aixcc-codeql-server
+    network_mode: bridge
+    restart: always
+    ports:
+      - "4000:4000" # Accessible from the host
+    volumes:
+      - "./:/app/codeql_server"
+      - "/shared:/shared"

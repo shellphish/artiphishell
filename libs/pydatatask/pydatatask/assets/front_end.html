@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/klayjs@0.4.1/klay.js"></script>
+    <script src="https://unpkg.com/cytoscape-klay@3.1.4/cytoscape-klay.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Pipeline Visualization</h1>
+            <div id="task-name" class="task-name">
+                <span class="task-name-text"></span>
+                <span class="task-id" onclick="copyToClipboard(this.textContent)"></span>
+            </div>
+        </div>
+        <div class="controls">
+            <div class="connection-status">
+                <div class="connection-row">
+                    <div class="connection-dot"></div>
+                    <span class="connection-text">Disconnected</span>
+                </div>
+                <span class="last-updated-text">Last updated: Never</span>
+            </div>
+            <div class="view-toggle">
+                <button class="active" data-view="graph">Graph View</button>
+                <button data-view="compact">Compact View</button>
+            </div>
+            <button class="theme-toggle">☀️</button>
+            <button class="purple-backup-btn" id="download-backup-btn"><span style="font-size:1.2em;vertical-align:middle;">&#128190;</span></button>
+            <button class="k8s-pods-btn" id="k8s-pods-btn"><span style="font-size:1.2em;vertical-align:middle;">☸️</span></button>
+            <button class="node-viz-btn" id="node-viz-btn" style="display: none;"><span style="font-size:1.2em;vertical-align:middle;margin-right:0.5em;">🌐</span>Node Viz</button>
+            <button class="reset-button">RESTART</button>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div id="cy"></div>
+        <div class="status-box">
+            <h3>Pipeline Status</h3>
+            <div class="status-stats">
+                <div class="stat-item">
+                    <div class="stat-dot running"></div>
+                    <span class="stat-label">Running:</span>
+                    <span class="stat-value" id="running-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-dot success"></div>
+                    <span class="stat-label">Success:</span>
+                    <span class="stat-value" id="success-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-dot failed"></div>
+                    <span class="stat-label">Failed:</span>
+                    <span class="stat-value" id="failed-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-dot mixed"></div>
+                    <span class="stat-label">Mixed:</span>
+                    <span class="stat-value" id="mixed-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-dot pending"></div>
+                    <span class="stat-label">Pending:</span>
+                    <span class="stat-value" id="pending-count">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="compact-view">
+            <div class="status-grid" id="status-grid"></div>
+        </div>
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <div>Connecting to pipeline...</div>
+        </div>
+    </div>
+
+    <div class="node-details" id="node-details">
+        <div class="details-header">
+            <h2 id="node-title">Node Details</h2>
+            <button class="close-details" style="background: none; font-size: 1.5rem;">×</button>
+        </div>
+        <div class="tabs">
+            <div class="tab active" data-tab="details">Details</div>
+            <div class="tab" data-tab="connections">Connections</div>
+        </div>
+        <div class="details-content" id="details-content"></div>
+    </div>
+
+    <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

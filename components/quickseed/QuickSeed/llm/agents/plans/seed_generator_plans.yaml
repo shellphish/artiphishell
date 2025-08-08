@@ -1,0 +1,114 @@
+1:
+  name: "summarize_harness_code"
+  description: "Read harness_code and think step by step to summarize the code. 
+    Give a detailed breakdown of the input structure that will trigger the harness.
+    Also tell me what function this harness is going to trigger"
+
+2:
+  name: "summarize_source_code"
+  description: "Read the source codes of the functions from the call graph that ends at the sink function.
+    You will be provided multiple functions in the order of triggering.
+    And summarize each function we give you.
+    "
+
+3: 
+  name: "determine_reachibility"
+  description: "Based on the harness code and source code we give you. Determine whether the functions we provide in the last step is reachable from harness
+    Reply `yes` if it is reachable, otherwise reply `no`. And give a brief reasoning of your answer." 
+
+4:
+  name: "generate_seed"
+  description:
+    "Based on the summarization of the harness code and source codes, and the path you proposed,
+      please generate an input seed that will trigger the sink."
+
+5:
+  name: "refine_seed"
+  description:
+    "
+    You should substitute the input you pass to the sink from the last step to a magic string.
+    The following is a json that describes magic strings to trigger jazzer's sanitizers.
+    In the given json, there is a list of dictrionary.
+    Each dictionary represents a vulnerability type, and have three fields: `Vulnerability Classs`, `Sink Class or Method` and `Magic String`.
+    When you see the sink method or class from  `Sink Class or Method`, you should pass the `Magic String` as an argument to sink method or class.
+    For example, if the sink method or class is in FileWriter, File, read or write.
+    You should call this method with the corresponding magic string.
+
+    We provide two examples here:
+
+    exmaple 1:
+    If you identify the sink class is a call to class `File` and the vulnerability type is file read and write.
+    Accoring to the json we provide you, the magic string to file read and write should be `jazzer`
+    Then you should pass `jazzer` as the file name to `File`, so if you identify the vulnerability is file read and write, the constructer of File should be File('jazzer') .
+    And if you identify the vulnerability is File path traversal, the constructer of File should look like `File('../../jazzer-traversal')`.
+    In your script, you might need to adjust the number of `../` to make sure the `../../jazzer-traversal` is the input path to the file operation.
+
+    example 2:
+    Another example is if you identigy the sink class is a call to class `ProcessBuilder`, then the magic string is `jazze`.
+    Then you should pass `jazze` to `ProcessBuilder` like ProcessBuiler('jazze'). 
+
+    A special case is deserialization, what we provide as a magic string is the hex format of the actually magic string.
+    All the other magic string are string literal and can directly pass to sink.
+    Only for deserialization, you should pass a hex decoding the magic string to `ObjectStreamInput`.
+    You MUST pass the correct magic string to the sink method or class, if there is any, to trigger the sink correctly.
+    And for those sink method does not have a corresponding magic string, just pass an input that can trigger the vulnerability.
+    Please find the magic string of this vulneraability if there is any and put it in the correct part of the input.
+    
+    Besides the vulnerability listed here, there is also DoS attack, like infinite loop that causes the fuzzer to time out or out of memory
+    There are many reasons that can cause the DoS attack and there are no specific sink for that.
+    There are many ways to make a service unavailable for legitimate users by manipulating network packets, programming, logical, or resources handling vulnerabilities, among others"
+
+6:
+  name: "generate_script"
+  description:
+    "Based on the summarization of the harness and the detailed breakdown of the input format. 
+    please write a python script that will convert the input seed to bytes. it has to match the size in the seed_structure.
+    If the script only generates one input, please save it in a binary file called `output.bin`. 
+    If you want to generate multiple inputs, you can create a directory called `output` and save all the generated inputs in that directory.
+    If you are confident then please only generate one input, otherwise you can generate multiple inputs that mutate different parts of the input seed.
+    But please do not generate more than 5 inputs.
+    It is very important that the magic string is put there if the vulnerability is in the list we provided.
+    For example a 2 bytes integer 13 is 000d in big endian. PLEASE USE Python and output the script in the following format.
+    ```python
+      {script}
+    ```
+
+    Also if you do not see any the provided sink classes or methods are called in the last function of the  call chain,
+    It can be two cases:
+    1. the vulnerable sink is called in the downstream code
+    2. the vulnerability is not in the provided list.
+
+    For case 1, for example, if the sink class is ProcessBuilder, then probably the provided function calls function b and function b calls function c, and in function c, the ProcessBuilder is called.
+    You can use the tool retrieve_java_source to look around some suspicious functions that called by the provided functions if the provided functions do not directly call sink classes or methods.
+    And also in the scenario that the provided functions DO NOT directly call any of the sink method and class, then you should put magic string to those you think most likely to go into the sink function or class.
+    This is super important, or you will never trigger the crash.
+    If you are unsure about where to put magic string, your script can generate multiple inputs, and in this way, you can output some mutations by replacing some field in the original input to the magic string.
+    If your script is generating multiple inputs, please put them all under the directory named `output`. You need to create the directory `output` in the script if you want to generate multiple inputs.
+
+    # Example for writing a repetetive patterns in strings
+    If you want to craft a string that contains simple repetetive patterns, instead of writing the literal string, use string concatenation with repetition.
+
+    ## Simple example
+    ```python
+    payload = '0'* 40
+    ```
+
+    A special case is XXE injection, you should prioritize generating an xml file that can trigger the SSRF.
+    "
+7:
+  name: "review_script"
+  description:
+    "Review the script you generated in the last step. Make sure the script is correct and will generate the correct input seed. 
+    If you are uncertain of how to directly trigger the sink, you can try to generate the input that can explore as many functions as possible.
+    For example, if the harness expects a http request, you can try to generate a request that can trigger as many endpoints on the path with more headers and parameters as long as they are valid.
+    Or if the harness expect a file format, you can try to generate a file that can trigger as many file parsing functions as possible on the path.
+    If you find any issues, please fix them and generate the script again. PLEASE USE Python and output the script in the following format.
+    If the input you need to generate contains file format, you can use corresponsing or suitable python library to help you generate it instead of constructing the whole input directly.
+    ```python
+      {script}
+    ```
+    Also you are not sure about how to directly trigger the sink, you can also try to generate multiple inputs that mutate different parts of the input seed. 
+    For example, if the input seed is a http request, you can try to generate multiple inputs that mutate different headers or parameters of the request.
+    And please put all of them under the directory named `output` if you are generating multiple inputs.
+    You need to create the directory `output` in your script if you want to generate multiple inputs.
+    "

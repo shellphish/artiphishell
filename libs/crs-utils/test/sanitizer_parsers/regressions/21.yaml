@@ -1,0 +1,202 @@
+# + ENGINE=libfuzzer
+# + SANITIZER=address
+# + REPRO_EXIT=71
+# + STDOUT_FILE=/tmp/tmpd_03tx7e
+# + STDERR_FILE=/tmp/tmpkf1xvp4j
+# + OUTPUT_FILE=/tmp/tmpo3yq7azp/output.json
+# + '[' libfuzzer == null ']'
+# + '[' address == null ']'
+# + '[' '' == null ']'
+# + : python3
+# + : x86_64
+# ++ mktemp /tmp/fuzz.out.XXXXXX
+# + COMBINED_FILE=/tmp/fuzz.out.N5dhtO
+# + cat /tmp/tmpd_03tx7e
+# + echo ''
+# + cat /tmp/tmpkf1xvp4j
+# ++ readlink -f /shellphish/libs/organizers/interpret_crash.sh
+# + SCRIPT_PATH=/shellphish/libs/organizers/interpret_crash.sh
+# ++ dirname /shellphish/libs/organizers/interpret_crash.sh
+# + SCRIPT_DIR=/shellphish/libs/organizers
+# + CRASH_SCRIPT=/shellphish/libs/organizers/example-challenge-evaluation/action-run-pov/crash_interpret_config.py
+# + CONFIG_FILE=/shellphish/libs/organizers/example-challenge-evaluation/action-run-pov/ossfuzz_config.yaml
+# + set +e
+# ++ python3 /shellphish/libs/organizers/example-challenge-evaluation/action-run-pov/crash_interpret_config.py --config_path /shellphish/libs/organizers/example-challenge-evaluation/action-run-pov/ossfuzz_config.yaml --engine libfuzzer --sanitizer address --return_code 71 --stderr_path /tmp/tmpkf1xvp4j --stdout_path /tmp/tmpd_03tx7e --output_path /tmp/tmpo3yq7azp/output.json
+# + PY_OUTPUT='[DEBUG] SANITIZER DETECTION: None.
+# [DEBUG] INTERPRETATION: sig=None msg=Unhandled case: engine libfuzzer, exitcode 71, sanitizer-detected: None.'
+# + SCRIPT_EXIT=0
+# + set -e
+# + exit 0
+# on 5: interpret_crash.sh ([PosixPath('/shellphish/libs/organizers/interpret_crash.sh'), 'libfuzzer', 'address', '71', '/tmp/tmpd_03tx7e', '/tmp/tmpkf1xvp4j', '/tmp/tmpo3yq7azp/output.json']) returned for sanitizer address with return code 0
+# ++ realpath /tmp/tmptmiawvlc/input.txt
+# + INPUT_FILE=/tmp/tmptmiawvlc/input.txt
+# ++ realpath /tmp/tmptmiawvlc/output.json
+# + OUTPUT_FILE=/tmp/tmptmiawvlc/output.json
+# + '[' -z /tmp/tmptmiawvlc/input.txt ']'
+# + '[' -z /tmp/tmptmiawvlc/output.json ']'
+# +++ readlink -f /shellphish/libs/organizers/generate_crash_state.sh
+# ++ dirname /shellphish/libs/organizers/generate_crash_state.sh
+# + cd /shellphish/libs/organizers/dedup/exhibition2
+# + source ./venv/bin/activate
+# ++ deactivate nondestructive
+# ++ '[' -n '' ']'
+# ++ '[' -n '' ']'
+# ++ '[' -n /bin/bash -o -n '' ']'
+# ++ hash -r
+# ++ '[' -n '' ']'
+# ++ unset VIRTUAL_ENV
+# ++ unset VIRTUAL_ENV_PROMPT
+# ++ '[' '!' nondestructive = nondestructive ']'
+# ++ VIRTUAL_ENV=/shellphish/libs/organizers/dedup/exhibition2/venv
+# ++ export VIRTUAL_ENV
+# ++ _OLD_VIRTUAL_PATH=/usr/lib/ccache:/root/.cargo/bin:/shellphish/go/bin:/usr/lib/ccache:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# ++ PATH=/shellphish/libs/organizers/dedup/exhibition2/venv/bin:/usr/lib/ccache:/root/.cargo/bin:/shellphish/go/bin:/usr/lib/ccache:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# ++ export PATH
+# ++ '[' -n '' ']'
+# ++ '[' -z '' ']'
+# ++ _OLD_VIRTUAL_PS1=
+# ++ PS1='(venv) '
+# ++ export PS1
+# ++ VIRTUAL_ENV_PROMPT='(venv) '
+# ++ export VIRTUAL_ENV_PROMPT
+# ++ '[' -n /bin/bash -o -n '' ']'
+# ++ hash -r
+# ++ which python
+# + echo /shellphish/libs/organizers/dedup/exhibition2/venv/bin/python
+# + python ./generate_crash_state.py --input-file /tmp/tmptmiawvlc/input.txt --output-file /tmp/tmptmiawvlc/output.json
+# /shellphish/libs/organizers/dedup/exhibition2/venv/bin/python
+# /shellphish/libs/organizers/dedup/exhibition2/venv/lib/python3.11/site-packages/google/cloud/storage/__init__.py:34: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+#   from pkg_resources import get_distribution
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~
+
+# Crash State:
+
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~
+
+# Instrumentation Key:
+# None
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~
+# Writing these to disk at `/tmp/tmptmiawvlc/output.json`.
+# on 5: 2025-06-05 10:03:45,236 [INFO    ] PoV Patrol:86 | Time taken to run PoV: 25.072827339172363 seconds
+# on 5: 2025-06-05 10:03:45,237 [ERROR   ] PoV Patrol:89 | Error running pov for 022522c018d9de059ebfa79defd62c14: b"Warning: You are using crs_utils in ~~raw docker mode~~. If you know what you are doing you can export ALLOW_RAW_DOCKER_USAGE=1 to suppress this warning.\n+ FUZZER=assimp_fuzzer\n+ shift\n+ '[' '!' -v TESTCASE ']'\n+ '[' '!' -f /work/pov_input ']'\n+ export RUN_FUZZER_MODE=interactive\n+ RUN_FUZZER_MODE=interactive\n+ export FUZZING_ENGINE=libfuzzer\n+ FUZZING_ENGINE=libfuzzer\n+ export SKIP_SEED_CORPUS=1\n+ SKIP_SEED_CORPUS=1\n+ run_fuzzer assimp_fuzzer /work/pov_input\nINFO: Running with entropic power schedule (0xFF, 100).\nINFO: Seed: 977638704\nINFO: Loaded 1 modules   (194872 inline 8-bit counters): 194872 [0x55555701d878, 0x55555704d1b0), \nINFO: Loaded 1 PC tables (194872 PCs): 194872 [0x55555704d1b0,0x555557346530), \n/out/assimp_fuzzer: Running 1 inputs 1 time(s) each.\nRunning: /work/pov_input\n==16== ERROR: libFuzzer: out-of-memory (malloc(12719104784))\n   To change the out-of-memory limit use -rss_limit_mb=<N>\n\n    #0 0x555555d92291 in __sanitizer_print_stack_trace /src/llvm-project/compiler-rt/lib/asan/asan_stack.cpp:87:3\n    #1 0x555555c97228 in fuzzer::PrintStackTrace() /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerUtil.cpp:210:5\n    #2 0x555555c79771 in fuzzer::Fuzzer::HandleMalloc(unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:131:3\n    #3 0x555555c7968b in fuzzer::MallocHook(void const volatile*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:100:6\n    #4 0x555555d99982 in __sanitizer::RunMallocHooks(void*, unsigned long) /src/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_common.cpp:346:5\n    #5 0x555555cf147e in __asan::Allocator::Allocate(unsigned long, unsigned long, __sanitizer::BufferedStackTrace*, __asan::AllocType, bool) /src/llvm-project/compiler-rt/lib/asan/asan_allocator.cpp:658:5\n    #6 0x555555cf1b03 in __asan::asan_memalign(unsigned long, unsigned long, __sanitizer::BufferedStackTrace*, __asan::AllocType) /src/llvm-project/compiler-rt/lib/asan/asan_allocator.cpp:1060:16\n    #7 0x555555dc4de4 in operator new[](unsigned long) /src/llvm-project/compiler-rt/lib/asan/asan_new_delete.cpp:89:3\n    #8 0x55555614cc66 in Assimp::MDLImporter::ParseTextureColorData(unsigned char const*, unsigned int, unsigned int*, aiTexture*) /src/assimp/code/AssetLib/MDL/MDLMaterialLoader.cpp:221:25\n    #9 0x55555614f3a1 in Assimp::MDLImporter::ParseSkinLump_3DGS_MDL7(unsigned char const*, unsigned char const**, aiMaterial*, unsigned int, unsigned int, unsigned int) /src/assimp/code/AssetLib/MDL/MDLMaterialLoader.cpp:520:13\n    #10 0x55555603ace7 in Assimp::HMPImporter::ReadFirstSkin(unsigned int, unsigned char const*, unsigned char const**) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:453:5\n    #11 0x555556039a7a in Assimp::HMPImporter::CreateMaterial(unsigned char const*, unsigned char const**) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:340:9\n    #12 0x555556036e4e in Assimp::HMPImporter::InternReadFile_HMP5() /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:220:5\n    #13 0x5555560363d1 in Assimp::HMPImporter::InternReadFile(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, aiScene*, Assimp::IOSystem*) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:145:9\n    #14 0x555556ae751c in Assimp::BaseImporter::ReadFile(Assimp::Importer*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, Assimp::IOSystem*) /src/assimp/code/Common/BaseImporter.cpp:125:9\n    #15 0x555555df6093 in Assimp::Importer::ReadFile(char const*, unsigned int) /src/assimp/code/Common/Importer.cpp:675:30\n    #16 0x555555df4249 in Assimp::Importer::ReadFileFromMemory(void const*, unsigned long, unsigned int, char const*) /src/assimp/code/Common/Importer.cpp:512:5\n    #17 0x555555dc7066 in LLVMFuzzerTestOneInput /src/assimp/fuzz/assimp_fuzzer.cc:53:34\n    #18 0x555555c7bad0 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13\n    #19 0x555555c66d45 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6\n    #20 0x555555c6c7df in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9\n    #21 0x555555c97a82 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10\n    #22 0x7ffff7c3a082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 5792732f783158c66fb4f3756458ca24e46e827d)\n    #23 0x555555c5ef2d in _start (/out/assimp_fuzzer+0x70af2d)\n\nDEDUP_TOKEN: __sanitizer_print_stack_trace--fuzzer::PrintStackTrace()--fuzzer::Fuzzer::HandleMalloc(unsigned long)\nSUMMARY: libFuzzer: out-of-memory\n"
+#       NoneType: None
+# on 6: 2025-06-05 10:03:45,240 [INFO    ] PoV Patrol:67 | Time taken to check if PoV is already connected to patch: 0.0027747154235839844 seconds
+# on 6: 2025-06-05 10:03:50,593 [INFO    ] PoV Patrol:73 | Time taken to get patch artifacts: 5.351716756820679 seconds
+# on 6: 2025-06-05 10:03:50,650 [INFO    ] shellphish_crs_utils.oss_fuzz.quote_unquote_imported.helper:751 | Running: docker run --privileged --shm-size=2g --platform linux/amd64 --name shellphish_assimp_builder_1749117830_xqs1i6nged -v /shared/pov_patrol/tmp85s61oc9/artifacts/out:/out -v /shared/pov_patrol/tmp85s61oc9/artifacts/work:/work --env-file /shared/pov_patrol/tmp85s61oc9/artifacts/docker/runs/run_in_builder_1749117830_e1dd1f510b78f35211f08896196b3ab18c5a0028/.docker.env --cidfile /shared/pov_patrol/tmp85s61oc9/artifacts/docker/runs/run_in_builder_1749117830_e1dd1f510b78f35211f08896196b3ab18c5a0028/container.id artiphishellcicl15460099815wwn8isbi.azurecr.io/shellphish-oss-fuzz-runner-assimp timeout --preserve-status -s KILL 33 timeout -sINT 32 reproduce assimp_fuzzer.
+# Warning: You are using crs_utils in ~~raw docker mode~~. If you know what you are doing you can export ALLOW_RAW_DOCKER_USAGE=1 to suppress this warning.
+# + FUZZER=assimp_fuzzer
+# + shift
+# + '[' '!' -v TESTCASE ']'
+# + '[' '!' -f /work/pov_input ']'
+# + export RUN_FUZZER_MODE=interactive
+# + RUN_FUZZER_MODE=interactive
+# + export FUZZING_ENGINE=libfuzzer
+# + FUZZING_ENGINE=libfuzzer
+# + export SKIP_SEED_CORPUS=1
+# + SKIP_SEED_CORPUS=1
+# + run_fuzzer assimp_fuzzer /work/pov_input
+# vm.mmap_rnd_bits = 28
+# /out/assimp_fuzzer -rss_limit_mb=2560 -timeout=25 /work/pov_input < /dev/null
+# INFO: Running with entropic power schedule (0xFF, 100).
+# INFO: Seed: 993595385
+# INFO: Loaded 1 modules   (235609 inline 8-bit counters): 235609 [0x555556fa54b8, 0x555556fded11), 
+# INFO: Loaded 1 PC tables (235609 PCs): 235609 [0x555556fded18,0x5555573772a8), 
+# /out/assimp_fuzzer: Running 1 inputs 1 time(s) each.
+# Running: /work/pov_input
+# Info,  T0: Load $$$___magic___$$$.
+# Info,  T0: Found a matching importer for this file format: 3D GameStudio Heightmap (HMP) Importer.
+# Info,  T0: Import root directory is './'
+# ALARM: working on the last Unit for 25 seconds
+#        and the timeout value is 25 (use -timeout=N to change)
+# ==15== ERROR: libFuzzer: timeout after 25 seconds
+#     #0 0x55555606ea24 in __sanitizer_print_stack_trace /src/llvm-project/compiler-rt/lib/ubsan/ubsan_diag_standalone.cpp:31:3
+#     #1 0x555555feda78 in fuzzer::PrintStackTrace() /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerUtil.cpp:210:5
+#     #2 0x555555fd0d87 in fuzzer::Fuzzer::AlarmCallback() /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:304:5
+#     #3 0x7ffff7e6541f  (/lib/x86_64-linux-gnu/libpthread.so.0+0x1441f) (BuildId: 9753720502573b97dbac595b61fd72c2df18e078)
+#     #4 0x555555feb46f in AddValue /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerValueBitMap.h:38:33
+#     #5 0x555555feb46f in HandleCmp<unsigned char> /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerTracePC.cpp:392:19
+#     #6 0x555555feb46f in __sanitizer_cov_trace_cmp1 /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerTracePC.cpp:537:15
+#     #7 0x5555562e9a95 in operator!= /src/assimp/include/assimp/texture.h:104:18
+#     #8 0x5555562e9a95 in Assimp::MDLImporter::ReplaceTextureWithColor(aiTexture const*) /src/assimp/code/AssetLib/MDL/MDLMaterialLoader.cpp:108:22
+#     #9 0x5555562ee280 in Assimp::MDLImporter::ParseSkinLump_3DGS_MDL7(unsigned char const*, unsigned char const**, aiMaterial*, unsigned int, unsigned int, unsigned int) /src/assimp/code/AssetLib/MDL/MDLMaterialLoader.cpp:532:22
+#     #10 0x555556222541 in Assimp::HMPImporter::ReadFirstSkin(unsigned int, unsigned char const*, unsigned char const**) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:453:5
+#     #11 0x5555562205aa in Assimp::HMPImporter::CreateMaterial(unsigned char const*, unsigned char const**) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:340:9
+#     #12 0x55555621e391 in Assimp::HMPImporter::InternReadFile_HMP5() /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:220:5
+#     #13 0x55555621d268 in Assimp::HMPImporter::InternReadFile(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, aiScene*, Assimp::IOSystem*) /src/assimp/code/AssetLib/HMP/HMPLoader.cpp:145:9
+#     #14 0x555556083ef0 in Assimp::BaseImporter::ReadFile(Assimp::Importer*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, Assimp::IOSystem*) /src/assimp/code/Common/BaseImporter.cpp:125:9
+#     #15 0x55555609e20b in Assimp::Importer::ReadFile(char const*, unsigned int) /src/assimp/code/Common/Importer.cpp:675:30
+#     #16 0x55555609ceb8 in Assimp::Importer::ReadFileFromMemory(void const*, unsigned long, unsigned int, char const*) /src/assimp/code/Common/Importer.cpp:512:5
+#     #17 0x55555606fd90 in LLVMFuzzerTestOneInput /src/assimp/fuzz/assimp_fuzzer.cc:53:34
+#     #18 0x555555fd2320 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+#     #19 0x555555fbd595 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+#     #20 0x555555fc302f in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862:9
+#     #21 0x555555fee2d2 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+#     #22 0x7ffff7c3a082 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x24082) (BuildId: 5792732f783158c66fb4f3756458ca24e46e827d)
+#     #23 0x555555fb577d in _start (/out/assimp_fuzzer+0xa6177d)
+
+# DEDUP_TOKEN: __sanitizer_print_stack_trace--fuzzer::PrintStackTrace()--fuzzer::Fuzzer::AlarmCallback()
+# SUMMARY: libFuzzer: timeout
+
+focus_repo_path: "/src/assimp/"
+language: c
+sanitizer: address
+exit_code: 70
+expected_organizer_significance: 212 # RecognizedNonSanitizerNotableCrash
+expected_organizer_crash_description: "LibFuzzer Timeout"
+expected_parser: 'asan'
+expected_summary: 'SUMMARY: libFuzzer: timeout'
+expected_sanitizer: libFuzzer
+expected_crash_type: 'timeout'
+expected_stack_trace_function_signatures:
+  main:
+    - source: __sanitizer_print_stack_trace
+    - source: fuzzer::PrintStackTrace()
+    - source: fuzzer::Fuzzer::AlarmCallback()
+    - binary: # empty function name in this entry
+    - source: AddValue
+    - source: HandleCmp<unsigned char>
+    - source: __sanitizer_cov_trace_cmp1
+    - source: 'operator!='
+    - source: 'Assimp::MDLImporter::ReplaceTextureWithColor(aiTexture const*)'
+    - source: 'Assimp::MDLImporter::ParseSkinLump_3DGS_MDL7(unsigned char const*, unsigned char const**, aiMaterial*, unsigned int, unsigned int, unsigned int)'
+    - source: 'Assimp::HMPImporter::ReadFirstSkin(unsigned int, unsigned char const*, unsigned char const**)'
+    - source: 'Assimp::HMPImporter::CreateMaterial(unsigned char const*, unsigned char const**)'
+    - source: 'Assimp::HMPImporter::InternReadFile_HMP5()'
+    - source: 'Assimp::HMPImporter::InternReadFile(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, aiScene*, Assimp::IOSystem*)'
+    - source: 'Assimp::BaseImporter::ReadFile(Assimp::Importer*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, Assimp::IOSystem*)'
+    - source: 'Assimp::Importer::ReadFile(char const*, unsigned int)'
+    - source: 'Assimp::Importer::ReadFileFromMemory(void const*, unsigned long, unsigned int, char const*)'
+    - source: 'LLVMFuzzerTestOneInput'
+    - source: 'fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long)'
+    - source: 'fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)'
+    - source: 'fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long))'
+    - source: 'main'
+    - binary: '__libc_start_main'
+    - binary: '_start'
+expected_stack_trace_file_names:
+  main:
+    - source: 'ubsan_diag_standalone.cpp'
+    - source: 'FuzzerUtil.cpp'
+    - source: 'FuzzerLoop.cpp'
+    - binary: 'libpthread.so.0'
+    - source: 'FuzzerValueBitMap.h'
+    - source: 'FuzzerTracePC.cpp'
+    - source: 'FuzzerTracePC.cpp'
+    - source: 'texture.h'
+    - source: 'MDLMaterialLoader.cpp'
+    - source: 'MDLMaterialLoader.cpp'
+    - source: 'HMPLoader.cpp'
+    - source: 'HMPLoader.cpp'
+    - source: 'HMPLoader.cpp'
+    - source: 'HMPLoader.cpp'
+    - source: 'BaseImporter.cpp'
+    - source: 'Importer.cpp'
+    - source: 'Importer.cpp'
+    - source: 'assimp_fuzzer.cc'
+    - source: 'FuzzerLoop.cpp'
+    - source: 'FuzzerDriver.cpp'
+    - source: 'FuzzerDriver.cpp'
+    - source: 'FuzzerMain.cpp'
+    - binary: 'libc.so.6'
+    - binary: 'assimp_fuzzer'

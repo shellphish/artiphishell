@@ -1,0 +1,6 @@
+FROM python:3.11
+
+RUN apt-get update && apt-get install -y python3-pip
+
+# install other necessary libs
+RUN pip3 install numpy fpdf2 pillow requests scapy cryptography PyJWT bitstring Faker pyelftools pefile macholib construct protobuf pyminizip xtarfile pydub soundfile moviepy opencv-python openpyxl python-docx pyOpenSSL

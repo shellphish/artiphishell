@@ -1,0 +1,26 @@
+name: Check for any DONOTMERGE annotations in the code"
+run-name: "🔍 Check for any DONOTMERGE annotations in the code: ${{ github.event.head_commit.message }} by @${{ github.actor }}"
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  push:
+    paths: ['components/**', 'libs/**', '.github/workflows/generic-component-test.yaml','.github/workflows/launch-component-tests.yaml']
+  #pull_request: # really we don't need this bc main should never have code with DONOTMERGE
+  #  types: [opened, synchronize, reopened]
+jobs:
+  check_for_donotmerge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v2
+      - name: Check for DONOTMERGE annotations
+        run: |
+          # Check for any DONOTMERGE annotations in the code, exit if found
+
+          if grep -r -i -n -E 'DONOTMERGE' components/ libs/ .github/workflows/generic-component-test.yaml .github/workflows/launch-component-tests.yaml; then
+            echo "Found DONOTMERGE annotations in the code. Exiting."
+            exit 1
+          else
+            echo "No DONOTMERGE annotations found in the code."
+          fi
+          

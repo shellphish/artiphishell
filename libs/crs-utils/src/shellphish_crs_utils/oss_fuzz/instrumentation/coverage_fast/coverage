@@ -1,0 +1,36 @@
+#!/bin/bash -u
+
+set -eux
+
+# This is the folder that the tracer will monitor for new seeds
+# This is a folder with an internal path such as /work/coveragelib-qwerty/seeds-queue
+# The external path is /path/to/target/artifacts/work/coveragelib-qwerty/corpus/harness-name.
+FOLDER_TO_MONITOR=${FOLDER_TO_MONITOR:-""}
+
+# We are gonna copy .profata and .exec in this folder.
+# This folder has an internal path of /work/coveragelib-qwerty/results.
+# The external path is /path/to/target/artifacts/work/coveragelib-qwerty/results.
+COVLIB_RESULTS=${COVLIB_RESULTS:-""}
+
+# Make sure the monitoring folder is different than ""
+if [[ -z "$FOLDER_TO_MONITOR" ]]; then
+    echo "Error: MONITORING_FOLDER is not set"
+    exit 1
+fi
+
+if [[ -z "$COVLIB_RESULTS" ]]; then
+    echo "Error: COVLIB_RESULTS is not set"
+    exit 1
+fi
+
+echo "FOLDER TO MONITOR IS: $FOLDER_TO_MONITOR"
+echo "COVLIB RESULTS FOLDER IS: $COVLIB_RESULTS"
+
+# The /out/dumps of the challenge will be mounted in the container
+# Since the results of the coverage analysis will be saved there, we need
+# to make sure we wipe the content before proceeding.
+rm -rf /out/dumps/ || true
+mkdir -p /out/dumps/
+
+echo "=== Running coverage collection service ==="
+/usr/local/bin/oss-fuzz-coverage_live "$@"

@@ -1,0 +1,3 @@
+imports:
+  clusterfuzz:
+    path: ../pipeline.yaml

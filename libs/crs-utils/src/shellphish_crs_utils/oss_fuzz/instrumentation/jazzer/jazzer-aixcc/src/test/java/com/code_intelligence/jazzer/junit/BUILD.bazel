@@ -1,0 +1,418 @@
+load("@contrib_rules_jvm//java:defs.bzl", "JUNIT5_DEPS", "java_junit5_test")
+
+java_library(
+    name = "test-method",
+    srcs = ["TestMethod.java"],
+    visibility = ["//src/test/java/com/code_intelligence/jazzer/junit:__pkg__"],
+    deps = [
+        "@maven//:org_junit_platform_junit_platform_engine",
+    ],
+)
+
+java_junit5_test(
+    name = "ApiStatsTest",
+    size = "small",
+    srcs = ["ApiStatsTest.java"],
+    deps = JUNIT5_DEPS + [
+        "//src/main/java/com/code_intelligence/jazzer/junit:fuzz_test_executor",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_params",
+    ],
+)
+
+java_junit5_test(
+    name = "UtilsTest",
+    size = "small",
+    srcs = ["UtilsTest.java"],
+    deps = JUNIT5_DEPS + [
+        "//src/main/java/com/code_intelligence/jazzer/junit:utils",
+        "@maven//:com_google_truth_extensions_truth_java8_extension",
+        "@maven//:com_google_truth_truth",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_params",
+    ],
+)
+
+java_junit5_test(
+    name = "FuzzerDictionaryTest",
+    size = "small",
+    srcs = ["FuzzerDictionaryTest.java"],
+    deps = JUNIT5_DEPS + [
+        "//src/main/java/com/code_intelligence/jazzer/junit:fuzz_test",
+        "@maven//:com_google_truth_truth",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+)
+
+java_test(
+    name = "RegressionTestTest",
+    srcs = ["RegressionTestTest.java"],
+    test_class = "com.code_intelligence.jazzer.junit.RegressionTestTest",
+    runtime_deps = [
+        "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+        "//src/main/java/com/code_intelligence/jazzer/junit:common_exceptions",
+        "//src/main/java/com/code_intelligence/jazzer/junit:fuzz_test_configuration_error",
+        "@maven//:com_google_truth_extensions_truth_java8_extension",
+        "@maven//:com_google_truth_truth",
+        "@maven//:junit_junit",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_junit_platform_junit_platform_engine",
+        "@maven//:org_junit_platform_junit_platform_testkit",
+        "@maven//:org_opentest4j_opentest4j",
+    ],
+)
+
+[
+    java_test(
+        name = "FuzzingWithCrashTest" + JAZZER_FUZZ,
+        srcs = ["FuzzingWithCrashTest.java"],
+        env = {
+            "JAZZER_FUZZ": JAZZER_FUZZ,
+        },
+        test_class = "com.code_intelligence.jazzer.junit.FuzzingWithCrashTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "//src/main/java/com/code_intelligence/jazzer/junit:common_exceptions",
+            "//src/test/java/com/code_intelligence/jazzer/junit:test-method",
+            "@maven//:com_google_truth_extensions_truth_java8_extension",
+            "@maven//:com_google_truth_truth",
+            "@maven//:junit_junit",
+            "@maven//:org_assertj_assertj_core",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_launcher",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+            "@maven//:org_opentest4j_opentest4j",
+        ],
+    )
+    for JAZZER_FUZZ in [
+        "",
+        "1",
+    ]
+]
+
+[
+    java_test(
+        name = "FuzzingWithoutCrashTest" + JAZZER_FUZZ,
+        srcs = ["FuzzingWithoutCrashTest.java"],
+        env = {
+            "JAZZER_FUZZ": JAZZER_FUZZ,
+        },
+        test_class = "com.code_intelligence.jazzer.junit.FuzzingWithoutCrashTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "@maven//:com_google_truth_extensions_truth_java8_extension",
+            "@maven//:com_google_truth_truth",
+            "@maven//:junit_junit",
+            "@maven//:org_assertj_assertj_core",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+            "@maven//:org_opentest4j_opentest4j",
+        ],
+    )
+    for JAZZER_FUZZ in [
+        "",
+        "1",
+    ]
+]
+
+[
+    java_test(
+        name = "ValueProfileTest_" + str(JAZZER_VALUE_PROFILE),
+        srcs = ["ValueProfileTest.java"],
+        env = {
+            "JAZZER_FUZZ": "true",
+            "JAZZER_VALUE_PROFILE": str(JAZZER_VALUE_PROFILE),
+        },
+        # The test is both CPU-intensive and sensitive to timing, which causes it to be flaky on
+        # slow runners (particularly macOS on GitHub Actions). Since we need to distinguish the two
+        # test variants by whether they find a finding, we can't just increase the timeout without
+        # the risk to make the other variant flaky.
+        tags = ["exclusive"] if JAZZER_VALUE_PROFILE else [],
+        test_class = "com.code_intelligence.jazzer.junit.ValueProfileTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "//src/main/java/com/code_intelligence/jazzer/junit:common_exceptions",
+            "@maven//:com_google_truth_extensions_truth_java8_extension",
+            "@maven//:com_google_truth_truth",
+            "@maven//:junit_junit",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+        ],
+    )
+    for JAZZER_VALUE_PROFILE in [
+        True,
+        False,
+    ]
+]
+
+[
+    java_test(
+        name = "DirectoryInputsTest" + JAZZER_FUZZ,
+        srcs = ["DirectoryInputsTest.java"],
+        args = [
+            # Add a test resource root containing the seed corpus directory in a Maven layout to
+            # the classpath rather than seeds in a resource directory packaged in a JAR, as
+            # would happen if we added the directory to java_test's resources.
+            "--main_advice_classpath=$(rootpath test_resources_root)",
+        ],
+        data = ["test_resources_root"],
+        env = {
+            "JAZZER_FUZZ": JAZZER_FUZZ,
+        },
+        test_class = "com.code_intelligence.jazzer.junit.DirectoryInputsTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "//src/main/java/com/code_intelligence/jazzer/junit:common_exceptions",
+            "@maven//:com_google_truth_extensions_truth_java8_extension",
+            "@maven//:com_google_truth_truth",
+            "@maven//:junit_junit",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+        ],
+    )
+    for JAZZER_FUZZ in [
+        "",
+        "1",
+    ]
+]
+
+[
+    java_test(
+        name = "CorpusDirectoryTest" + JAZZER_FUZZ,
+        srcs = ["CorpusDirectoryTest.java"],
+        args = [
+            # Add a test resource root containing the seed corpus directory in a Maven layout to
+            # the classpath rather than seeds in a resource directory packaged in a JAR, as
+            # would happen if we added the directory to java_test's resources.
+            "--main_advice_classpath=$(rootpath test_resources_root)",
+        ],
+        data = ["test_resources_root"],
+        env = {
+            "JAZZER_FUZZ": JAZZER_FUZZ,
+        },
+        test_class = "com.code_intelligence.jazzer.junit.CorpusDirectoryTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "//src/main/java/com/code_intelligence/jazzer/junit:common_exceptions",
+            "@maven//:com_google_truth_extensions_truth_java8_extension",
+            "@maven//:com_google_truth_truth",
+            "@maven//:junit_junit",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+        ],
+    )
+    for JAZZER_FUZZ in [
+        "",
+        "1",
+    ]
+]
+
+[
+    java_test(
+        name = "PerExecutionLifecycleTest" + JAZZER_FUZZ,
+        srcs = ["PerExecutionLifecycleTest.java"],
+        env = {
+            "JAZZER_FUZZ": JAZZER_FUZZ,
+        },
+        test_class = "com.code_intelligence.jazzer.junit.PerExecutionLifecycleTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//examples/junit/src/test/java/com/example:test_successful_exception",
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "@maven//:junit_junit",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+        ],
+    )
+    for JAZZER_FUZZ in [
+        "",
+        "1",
+    ]
+]
+
+java_test(
+    name = "PerExecutionLifecycleWithFindingTest_fuzzing",
+    srcs = ["PerExecutionLifecycleWithFindingTest.java"],
+    env = {
+        "JAZZER_FUZZ": "true",
+    },
+    test_class = "com.code_intelligence.jazzer.junit.PerExecutionLifecycleWithFindingTest",
+    runtime_deps = [
+        "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+    ],
+    deps = [
+        "//examples/junit/src/test/java/com/example:test_successful_exception",
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+        "//src/main/java/com/code_intelligence/jazzer/junit:common_exceptions",
+        "@maven//:junit_junit",
+        "@maven//:org_junit_platform_junit_platform_engine",
+        "@maven//:org_junit_platform_junit_platform_testkit",
+    ],
+)
+
+[
+    java_test(
+        name = "PerTestLifecycleTest" + JAZZER_FUZZ,
+        srcs = ["PerTestLifecycleTest.java"],
+        env = {
+            "JAZZER_FUZZ": JAZZER_FUZZ,
+        },
+        test_class = "com.code_intelligence.jazzer.junit.PerTestLifecycleTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//examples/junit/src/test/java/com/example:test_successful_exception",
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "@maven//:junit_junit",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+        ],
+    )
+    for JAZZER_FUZZ in [
+        "",
+        "1",
+    ]
+]
+
+java_test(
+    name = "HermeticInstrumentationTest",
+    srcs = ["HermeticInstrumentationTest.java"],
+    test_class = "com.code_intelligence.jazzer.junit.HermeticInstrumentationTest",
+    runtime_deps = [
+        "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+        "//src/main/java/com/code_intelligence/jazzer/junit:common_exceptions",
+        "@maven//:com_google_truth_truth",
+        "@maven//:junit_junit",
+        "@maven//:org_junit_platform_junit_platform_engine",
+        "@maven//:org_junit_platform_junit_platform_testkit",
+    ],
+)
+
+java_test(
+    name = "FindingsBaseDirTest",
+    srcs = ["FindingsBaseDirTest.java"],
+    env = {
+        "JAZZER_FUZZ": "1",
+    },
+    test_class = "com.code_intelligence.jazzer.junit.FindingsBaseDirTest",
+    runtime_deps = [
+        "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+        "@maven//:com_google_truth_extensions_truth_java8_extension",
+        "@maven//:com_google_truth_truth",
+        "@maven//:junit_junit",
+        "@maven//:org_junit_platform_junit_platform_engine",
+        "@maven//:org_junit_platform_junit_platform_testkit",
+    ],
+)
+
+[
+    java_test(
+        name = "MutatorTest" + JAZZER_FUZZ,
+        srcs = ["MutatorTest.java"],
+        env = {
+            "JAZZER_FUZZ": JAZZER_FUZZ,
+        },
+        test_class = "com.code_intelligence.jazzer.junit.MutatorTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "//src/main/java/com/code_intelligence/jazzer/junit:common_exceptions",
+            "@maven//:junit_junit",
+            "@maven//:org_assertj_assertj_core",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+        ],
+    )
+    for JAZZER_FUZZ in [
+        "",
+        "1",
+    ]
+]
+
+[
+    java_test(
+        name = "InvalidMutatorTest" + JAZZER_FUZZ,
+        srcs = ["InvalidMutatorTest.java"],
+        env = {
+            "JAZZER_FUZZ": JAZZER_FUZZ,
+        },
+        test_class = "com.code_intelligence.jazzer.junit.InvalidMutatorTest",
+        runtime_deps = [
+            "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        ],
+        deps = [
+            "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+            "@maven//:junit_junit",
+            "@maven//:org_assertj_assertj_core",
+            "@maven//:org_junit_platform_junit_platform_engine",
+            "@maven//:org_junit_platform_junit_platform_testkit",
+        ],
+    )
+    for JAZZER_FUZZ in [
+        "",
+        "1",
+    ]
+]
+
+java_test(
+    name = "CoverageTest",
+    srcs = ["CoverageTest.java"],
+    env = {
+        "JAZZER_FUZZ": "0",
+        "JAZZER_COVERAGE": "1",
+    },
+    test_class = "com.code_intelligence.jazzer.junit.CoverageTest",
+    runtime_deps = [
+        "//examples/junit/src/test/java/com/example:ExampleFuzzTests_deploy.jar",
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_junit_platform_junit_platform_engine",
+        "@maven//:org_junit_platform_junit_platform_testkit",
+    ],
+)

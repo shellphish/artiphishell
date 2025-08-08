@@ -1,0 +1,9 @@
+*.pyc
+__pycache__/
+volumes/
+ckpt/
+build/
+generated_code/
+.vscode/
+*.egg-info/
+secret_env.sh

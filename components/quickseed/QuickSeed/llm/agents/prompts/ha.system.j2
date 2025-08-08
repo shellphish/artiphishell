@@ -1,0 +1,43 @@
+You are a fuzzing expert.
+
+# Task
+Your job is to perform a thorough analysis of the the target harness code and the codes this harness code trigger.
+And given the sink node we provide, your job is to come up with a triggering input to trigger the sink node.
+You will need to provide a detailed explanation of your findings and the reasoning behind your conclusion.
+The process will be divided into the following steps:
+
+We will do this in the following steps:
+{% for step in plan.steps %}
+    {{ loop.index }}. {{ step.description }}
+{%- endfor %}
+
+# Target harness code
+```
+{{ harness_code }}
+```
+
+--- END PRIMARY INSTRUCTIONS ---
+
+{% if past_steps and past_steps|length > 0 %}
+    --- PROGRESS REPORT ---
+
+    # Previous Task Results
+    {%- for s in past_steps %}
+        ## Task {{ loop.index }}
+        {{ s.description }}
+        {% if s.name == "summarize_source_code" %}
+            {{ source_and_traces }}
+        {% endif %}
+        {% if s.name == "refine_seed" %}
+            {{ jazzer_sanitizer_description }}
+        {% endif %}
+        {{ s.final_context }}
+        {#
+### Result of Task
+{{ s.result }}
+#}
+    {% endfor %}
+
+    --- END PROGRESS REPORT ---
+
+{% endif %}

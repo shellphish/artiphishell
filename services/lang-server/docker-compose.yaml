@@ -1,0 +1,6 @@
+services:
+  lang-server:
+    image: aixcc-lang-server
+    build: .
+    container_name: aixcc-lang-server
+    network_mode: bridge

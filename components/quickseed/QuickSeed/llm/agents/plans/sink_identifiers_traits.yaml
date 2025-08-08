@@ -1,0 +1,8 @@
+PathTraversal:
+  "Path traversal usually happens when the path is not properly sanitized. Potential sinks can be functions used to do file operation or url operaiont since many web applications parse url and fetch the corresponding file resources.
+  Functions that are used to process filepaths or sanitizer filepaths. Or functions that might
+  open the file path without proper validation. "
+
+CommandInjection:
+  "Command injection usually happens when the user input is not properly sanitized. Potential sinks can be functions that are used to execute commands. Or functions that might
+  execute the command without proper validation. Or functions that set the command to be executed. Command injection can also happen because of failed access control."

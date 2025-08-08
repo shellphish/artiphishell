@@ -1,0 +1,1885 @@
+{
+  "layout": [
+    {
+      "h": 1,
+      "i": "f6241ec1-a708-47a9-9231-fe1a2aedb899",
+      "maxH": 1,
+      "minH": 1,
+      "minW": 12,
+      "moved": false,
+      "static": false,
+      "w": 12,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "h": 3,
+      "i": "b1ceac89-b73c-42aa-bcf3-c5070405d81a",
+      "moved": false,
+      "static": false,
+      "w": 4,
+      "x": 0,
+      "y": 1
+    },
+    {
+      "h": 3,
+      "i": "e893a4eb-c387-4ac1-bc68-075e13c5789c",
+      "moved": false,
+      "static": false,
+      "w": 4,
+      "x": 4,
+      "y": 1
+    },
+    {
+      "h": 3,
+      "i": "16b517f0-1203-45df-bf36-423cd97fd9af",
+      "moved": false,
+      "static": false,
+      "w": 4,
+      "x": 8,
+      "y": 1
+    },
+    {
+      "h": 1,
+      "i": "8fc1a5af-90ed-48eb-883a-5b9c22b3f45d",
+      "maxH": 1,
+      "minH": 1,
+      "minW": 12,
+      "moved": false,
+      "static": false,
+      "w": 12,
+      "x": 0,
+      "y": 4
+    },
+    {
+      "h": 1,
+      "i": "3ef1f510-4b04-4e64-be45-688b961ae284",
+      "maxH": 1,
+      "minH": 1,
+      "minW": 12,
+      "moved": false,
+      "static": false,
+      "w": 12,
+      "x": 0,
+      "y": 5
+    },
+    {
+      "h": 10,
+      "i": "3cd8c035-43e6-447e-b07f-42f601465d2e",
+      "moved": false,
+      "static": false,
+      "w": 6,
+      "x": 0,
+      "y": 6
+    },
+    {
+      "h": 4,
+      "i": "373c3fcd-9aa9-4e99-9007-1065988127a4",
+      "moved": false,
+      "static": false,
+      "w": 6,
+      "x": 6,
+      "y": 6
+    },
+    {
+      "h": 6,
+      "i": "25ada8db-204d-4137-ba69-1bcf6d5a5b59",
+      "moved": false,
+      "static": false,
+      "w": 6,
+      "x": 6,
+      "y": 10
+    },
+    {
+      "h": 1,
+      "i": "fab66e3a-1560-4fe4-8d46-46e839b0723a",
+      "maxH": 1,
+      "minH": 1,
+      "minW": 12,
+      "moved": false,
+      "static": false,
+      "w": 12,
+      "x": 0,
+      "y": 16
+    },
+    {
+      "h": 6,
+      "i": "b3bbaefc-0876-4d81-b6b1-6688aeafdec6",
+      "moved": false,
+      "static": false,
+      "w": 6,
+      "x": 0,
+      "y": 17
+    },
+    {
+      "h": 6,
+      "i": "2bf73eed-c63f-4a94-afb1-dcc816dcc603",
+      "moved": false,
+      "static": false,
+      "w": 6,
+      "x": 6,
+      "y": 17
+    },
+    {
+      "h": 6,
+      "i": "0016abf6-c0a6-432c-8d24-c1ff1fa76520",
+      "moved": false,
+      "static": false,
+      "w": 6,
+      "x": 0,
+      "y": 23
+    }
+  ],
+  "panelMap": {
+    "3ef1f510-4b04-4e64-be45-688b961ae284": {
+      "collapsed": false,
+      "widgets": []
+    },
+    "8fc1a5af-90ed-48eb-883a-5b9c22b3f45d": {
+      "collapsed": true,
+      "widgets": [
+        {
+          "h": 6,
+          "i": "a5bf9942-1f3a-4b6b-8afb-8ce172739acf",
+          "moved": false,
+          "static": false,
+          "w": 12,
+          "x": 0,
+          "y": 5
+        }
+      ]
+    },
+    "f6241ec1-a708-47a9-9231-fe1a2aedb899": {
+      "collapsed": true,
+      "widgets": []
+    },
+    "fab66e3a-1560-4fe4-8d46-46e839b0723a": {
+      "collapsed": false,
+      "widgets": [
+        {
+          "h": 6,
+          "i": "b3bbaefc-0876-4d81-b6b1-6688aeafdec6",
+          "moved": false,
+          "static": false,
+          "w": 6,
+          "x": 0,
+          "y": 25
+        },
+        {
+          "h": 6,
+          "i": "2bf73eed-c63f-4a94-afb1-dcc816dcc603",
+          "moved": false,
+          "static": false,
+          "w": 6,
+          "x": 6,
+          "y": 25
+        },
+        {
+          "h": 6,
+          "i": "0016abf6-c0a6-432c-8d24-c1ff1fa76520",
+          "moved": false,
+          "static": false,
+          "w": 6,
+          "x": 0,
+          "y": 31
+        }
+      ]
+    }
+  },
+  "title": "ARTIPHISHELL",
+  "uploadedGrafana": false,
+  "variables": {
+    "37ff641b-5fe6-410e-94e4-6c17df7e757c": {
+      "allSelected": false,
+      "customValue": "",
+      "description": "",
+      "id": "37ff641b-5fe6-410e-94e4-6c17df7e757c",
+      "key": "37ff641b-5fe6-410e-94e4-6c17df7e757c",
+      "modificationUUID": "30f66d2e-a8a3-457f-93c5-6106b5e0ec66",
+      "multiSelect": false,
+      "name": "run_end",
+      "order": 0,
+      "queryValue": "SELECT max(toUnixTimestamp64Nano(timestamp)) as latest\nFROM signoz_traces.distributed_signoz_index_v3",
+      "showALLOption": false,
+      "sort": "DISABLED",
+      "textboxValue": "",
+      "type": "QUERY"
+    },
+    "d8f396bc-601f-45b0-9544-48ae1f9eb342": {
+      "allSelected": false,
+      "customValue": "",
+      "description": "",
+      "id": "d8f396bc-601f-45b0-9544-48ae1f9eb342",
+      "modificationUUID": "b4cacdf6-49be-4b91-83c5-0328ba5b9dc5",
+      "multiSelect": false,
+      "name": "run_start",
+      "order": 0,
+      "queryValue": "SELECT min(toUnixTimestamp64Nano(timestamp)) as earliest\nFROM signoz_traces.distributed_signoz_index_v3\n",
+      "showALLOption": false,
+      "sort": "DISABLED",
+      "textboxValue": "",
+      "type": "QUERY"
+    }
+  },
+  "version": "v4",
+  "widgets": [
+    {
+      "description": "",
+      "id": "fab66e3a-1560-4fe4-8d46-46e839b0723a",
+      "panelTypes": "row",
+      "title": "Kubernetes Stats"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {},
+      "description": "",
+      "fillSpans": false,
+      "id": "b3bbaefc-0876-4d81-b6b1-6688aeafdec6",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "graph",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "float64",
+                "id": "k8s_node_memory_usage--float64--Gauge--true",
+                "isColumn": true,
+                "isJSON": false,
+                "key": "k8s_node_memory_usage",
+                "type": "Gauge"
+              },
+              "aggregateOperator": "avg",
+              "dataSource": "metrics",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "k8s_node_name--string--tag--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "k8s_node_name",
+                  "type": "tag"
+                }
+              ],
+              "having": [],
+              "legend": "{{k8s_node_name}}",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "avg",
+              "stepInterval": 60,
+              "timeAggregation": "avg"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "ec91208c-79ac-4b5a-9da4-9f536891f9d0",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [
+        {
+          "index": "7c476ecb-259c-45e4-ba9f-0fea225922ef",
+          "isEditEnabled": false,
+          "keyIndex": 1,
+          "selectedGraph": "graph",
+          "thresholdColor": "Orange",
+          "thresholdFormat": "Text",
+          "thresholdLabel": "32 CPU",
+          "thresholdOperator": ">",
+          "thresholdTableOptions": "A",
+          "thresholdUnit": "bytes",
+          "thresholdValue": 137438953472
+        },
+        {
+          "index": "b49c0010-3658-408a-9d97-26361d2faa80",
+          "isEditEnabled": false,
+          "keyIndex": 0,
+          "selectedGraph": "graph",
+          "thresholdColor": "Red",
+          "thresholdFormat": "Text",
+          "thresholdLabel": "64 CPU",
+          "thresholdOperator": ">",
+          "thresholdTableOptions": "A",
+          "thresholdUnit": "bytes",
+          "thresholdValue": 274877906944
+        }
+      ],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Kubernetes Node Memory Usage ",
+      "yAxisUnit": "bytes"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {},
+      "description": "",
+      "fillSpans": false,
+      "id": "2bf73eed-c63f-4a94-afb1-dcc816dcc603",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "graph",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "float64",
+                "id": "k8s_node_cpu_utilization--float64--Gauge--true",
+                "isColumn": true,
+                "isJSON": false,
+                "key": "k8s_node_cpu_utilization",
+                "type": "Gauge"
+              },
+              "aggregateOperator": "avg",
+              "dataSource": "metrics",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "k8s_node_name--string--tag--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "k8s_node_name",
+                  "type": "tag"
+                }
+              ],
+              "having": [],
+              "legend": "{{k8s_node_name}}",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "avg",
+              "stepInterval": 60,
+              "timeAggregation": "avg"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "b8527e13-f4e9-4441-8625-101cb5bc9c5f",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [
+        {
+          "index": "e3a06747-9d18-4f9d-8fcc-ff643d3ade51",
+          "isEditEnabled": false,
+          "keyIndex": 1,
+          "selectedGraph": "graph",
+          "thresholdColor": "Orange",
+          "thresholdFormat": "Text",
+          "thresholdLabel": "Max CPUs Available (32)",
+          "thresholdOperator": ">",
+          "thresholdTableOptions": "A",
+          "thresholdUnit": "none",
+          "thresholdValue": 32
+        },
+        {
+          "index": "0dfb7d76-ca0b-461e-8e3c-d1d20342c36a",
+          "isEditEnabled": false,
+          "keyIndex": 0,
+          "selectedGraph": "graph",
+          "thresholdColor": "Red",
+          "thresholdFormat": "Text",
+          "thresholdLabel": "Max CPUs Available (64)",
+          "thresholdOperator": ">",
+          "thresholdTableOptions": "A",
+          "thresholdUnit": "none",
+          "thresholdValue": 64
+        }
+      ],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Kubernetes Node CPU Usage ",
+      "yAxisUnit": "none"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {},
+      "description": "",
+      "fillSpans": false,
+      "id": "0016abf6-c0a6-432c-8d24-c1ff1fa76520",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "graph",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "float64",
+                "id": "k8s_pod_filesystem_usage--float64--Gauge--true",
+                "isColumn": true,
+                "isJSON": false,
+                "key": "k8s_pod_filesystem_usage",
+                "type": "Gauge"
+              },
+              "aggregateOperator": "sum",
+              "dataSource": "metrics",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "k8s_node_name--string--tag--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "k8s_node_name",
+                  "type": "tag"
+                }
+              ],
+              "having": [],
+              "legend": "{{k8s_node_name}}",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "sum"
+            },
+            {
+              "aggregateAttribute": {
+                "dataType": "float64",
+                "id": "k8s_node_filesystem_capacity--float64--Gauge--true",
+                "isColumn": true,
+                "isJSON": false,
+                "key": "k8s_node_filesystem_capacity",
+                "type": "Gauge"
+              },
+              "aggregateOperator": "max",
+              "dataSource": "metrics",
+              "disabled": false,
+              "expression": "B",
+              "filters": {
+                "items": [],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [],
+              "having": [],
+              "legend": "MAX CAPACITY",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "B",
+              "reduceTo": "avg",
+              "spaceAggregation": "avg",
+              "stepInterval": 60,
+              "timeAggregation": "max"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "582bc590-e73a-4b50-9289-94d14de4d898",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Kubernetes Node Disk Usage ",
+      "yAxisUnit": "bytes"
+    },
+    {
+      "description": "",
+      "id": "3ef1f510-4b04-4e64-be45-688b961ae284",
+      "panelTypes": "row",
+      "title": "LLM Stats"
+    },
+    {
+      "description": "",
+      "id": "8fc1a5af-90ed-48eb-883a-5b9c22b3f45d",
+      "panelTypes": "row",
+      "title": "Errors and Exceptions"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {},
+      "description": "",
+      "fillSpans": false,
+      "id": "a5bf9942-1f3a-4b6b-8afb-8ce172739acf",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "table",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "string",
+                "id": "exception.message--string--tag--false",
+                "isColumn": false,
+                "isJSON": false,
+                "key": "exception.message",
+                "type": "tag"
+              },
+              "aggregateOperator": "count_distinct",
+              "dataSource": "logs",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "3f971a9e",
+                    "key": {
+                      "dataType": "string",
+                      "id": "exception.type--string--tag--false",
+                      "isColumn": false,
+                      "isJSON": false,
+                      "key": "exception.type",
+                      "type": "tag"
+                    },
+                    "op": "exists",
+                    "value": ""
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "service.name--string--resource--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "service.name",
+                  "type": "resource"
+                },
+                {
+                  "dataType": "string",
+                  "id": "severity_text--string----true",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "severity_text",
+                  "type": ""
+                },
+                {
+                  "dataType": "string",
+                  "id": "exception.type--string--tag--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "exception.type",
+                  "type": "tag"
+                },
+                {
+                  "dataType": "string",
+                  "id": "exception.stacktrace--string--tag--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "exception.stacktrace",
+                  "type": "tag"
+                }
+              ],
+              "having": [],
+              "legend": "",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "15e68001-19cb-4cf3-b75d-6c14d424ae1a",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Exceptions",
+      "yAxisUnit": "none"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {},
+      "description": "",
+      "fillSpans": false,
+      "id": "3cd8c035-43e6-447e-b07f-42f601465d2e",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "graph",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "float64",
+                "id": "gen_ai.usage.cost--float64--tag--false",
+                "isColumn": false,
+                "isJSON": false,
+                "key": "gen_ai.usage.cost",
+                "type": "tag"
+              },
+              "aggregateOperator": "sum",
+              "dataSource": "traces",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "35d725d8",
+                    "key": {
+                      "dataType": "float64",
+                      "id": "gen_ai.usage.cost--float64--tag--false",
+                      "isColumn": false,
+                      "isJSON": false,
+                      "key": "gen_ai.usage.cost",
+                      "type": "tag"
+                    },
+                    "op": ">",
+                    "value": "0"
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "service.name--string--resource--true",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "service.name",
+                  "type": "resource"
+                },
+                {
+                  "dataType": "string",
+                  "id": "gen_ai.request.model--string--tag--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "gen_ai.request.model",
+                  "type": "tag"
+                }
+              ],
+              "having": [],
+              "legend": "{{service.name}} {{gen_ai.request.model}}",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "sum"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "7b81a09a-055f-4c10-bf2c-7435c2eeeac1",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "LLM Requests $",
+      "yAxisUnit": "currencyUSD"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {
+        "A": "currencyUSD"
+      },
+      "description": "",
+      "fillSpans": false,
+      "id": "373c3fcd-9aa9-4e99-9007-1065988127a4",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "pie",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "float64",
+                "id": "gen_ai.usage.cost--float64--tag--false",
+                "isColumn": false,
+                "isJSON": false,
+                "key": "gen_ai.usage.cost",
+                "type": "tag"
+              },
+              "aggregateOperator": "sum",
+              "dataSource": "traces",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "9f28a0de",
+                    "key": {
+                      "dataType": "float64",
+                      "id": "gen_ai.usage.cost--float64--tag--false",
+                      "isColumn": false,
+                      "isJSON": false,
+                      "key": "gen_ai.usage.cost",
+                      "type": "tag"
+                    },
+                    "op": ">",
+                    "value": "0"
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "gen_ai.request.model--string--tag--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "gen_ai.request.model",
+                  "type": "tag"
+                }
+              ],
+              "having": [],
+              "legend": "SPEND",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "cd8f383a-8666-4904-893c-e3313c3dc135",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Total Spend By Model",
+      "yAxisUnit": "currencyUSD"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {
+        "A": "currencyUSD"
+      },
+      "description": "",
+      "fillSpans": false,
+      "id": "25ada8db-204d-4137-ba69-1bcf6d5a5b59",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "table",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "float64",
+                "id": "gen_ai.usage.cost--float64--tag--false",
+                "isColumn": false,
+                "isJSON": false,
+                "key": "gen_ai.usage.cost",
+                "type": "tag"
+              },
+              "aggregateOperator": "sum",
+              "dataSource": "traces",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "c82cd4c1",
+                    "key": {
+                      "dataType": "float64",
+                      "id": "gen_ai.usage.cost--float64--tag--false",
+                      "isColumn": false,
+                      "isJSON": false,
+                      "key": "gen_ai.usage.cost",
+                      "type": "tag"
+                    },
+                    "op": ">",
+                    "value": "0"
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "service.name--string--resource--true",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "service.name",
+                  "type": "resource"
+                },
+                {
+                  "dataType": "string",
+                  "id": "gen_ai.request.model--string--tag--false",
+                  "isColumn": false,
+                  "isJSON": false,
+                  "key": "gen_ai.request.model",
+                  "type": "tag"
+                }
+              ],
+              "having": [],
+              "legend": "",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "329de7e9-70bf-4e6e-b18c-cf2d5de0c8c3",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Total Spend By Component/Model",
+      "yAxisUnit": "none"
+    },
+    {
+      "description": "",
+      "id": "f6241ec1-a708-47a9-9231-fe1a2aedb899",
+      "panelTypes": "row",
+      "title": "Submissions"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {},
+      "description": "",
+      "fillSpans": false,
+      "id": "16b517f0-1203-45df-bf36-423cd97fd9af",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "table",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "",
+                "id": "------false",
+                "isColumn": false,
+                "isJSON": false,
+                "key": "",
+                "type": ""
+              },
+              "aggregateOperator": "count",
+              "dataSource": "logs",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "4ea6b040",
+                    "key": {
+                      "dataType": "string",
+                      "id": "service.name--string--resource--false",
+                      "isColumn": false,
+                      "isJSON": false,
+                      "key": "service.name",
+                      "type": "resource"
+                    },
+                    "op": "=",
+                    "value": "submitter"
+                  },
+                  {
+                    "id": "5dc954d6",
+                    "key": {
+                      "dataType": "string",
+                      "id": "body--string----true",
+                      "isColumn": true,
+                      "isJSON": false,
+                      "key": "body",
+                      "type": ""
+                    },
+                    "op": "contains",
+                    "value": "Bundle submission response received"
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "body--string----true",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "body",
+                  "type": ""
+                }
+              ],
+              "having": [],
+              "legend": "#",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "fa9456f9-d5ff-46ca-8a7a-ea437fe35221",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Bundle Submissions",
+      "yAxisUnit": "none"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {},
+      "description": "",
+      "fillSpans": false,
+      "id": "b1ceac89-b73c-42aa-bcf3-c5070405d81a",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "table",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "",
+                "id": "------false",
+                "isColumn": false,
+                "isJSON": false,
+                "key": "",
+                "type": ""
+              },
+              "aggregateOperator": "count",
+              "dataSource": "logs",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "4ea6b040",
+                    "key": {
+                      "dataType": "string",
+                      "id": "service.name--string--resource--false",
+                      "isColumn": false,
+                      "isJSON": false,
+                      "key": "service.name",
+                      "type": "resource"
+                    },
+                    "op": "=",
+                    "value": "submitter"
+                  },
+                  {
+                    "id": "9a423c51",
+                    "key": {
+                      "dataType": "string",
+                      "id": "body--string----true",
+                      "isColumn": true,
+                      "isJSON": false,
+                      "key": "body",
+                      "type": ""
+                    },
+                    "op": "contains",
+                    "value": "Vulnerability submission response received"
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "body--string----true",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "body",
+                  "type": ""
+                }
+              ],
+              "having": [],
+              "legend": "#",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "801dfe62-ca25-4696-b26b-d09a1089dda2",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Vuln Submissions",
+      "yAxisUnit": "none"
+    },
+    {
+      "bucketCount": 30,
+      "bucketWidth": 0,
+      "columnUnits": {},
+      "description": "",
+      "fillSpans": false,
+      "id": "e893a4eb-c387-4ac1-bc68-075e13c5789c",
+      "isStacked": false,
+      "mergeAllActiveQueries": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "panelTypes": "table",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "",
+                "id": "------false",
+                "isColumn": false,
+                "isJSON": false,
+                "key": "",
+                "type": ""
+              },
+              "aggregateOperator": "count",
+              "dataSource": "logs",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "4ea6b040",
+                    "key": {
+                      "dataType": "string",
+                      "id": "service.name--string--resource--false",
+                      "isColumn": false,
+                      "isJSON": false,
+                      "key": "service.name",
+                      "type": "resource"
+                    },
+                    "op": "=",
+                    "value": "submitter"
+                  },
+                  {
+                    "id": "b66a57ac",
+                    "key": {
+                      "dataType": "string",
+                      "id": "body--string----true",
+                      "isColumn": true,
+                      "isJSON": false,
+                      "key": "body",
+                      "type": ""
+                    },
+                    "op": "contains",
+                    "value": "Patch submission response received"
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "body--string----true",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "body",
+                  "type": ""
+                }
+              ],
+              "having": [],
+              "legend": "#",
+              "limit": null,
+              "orderBy": [],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "id": "95407509-536f-47e1-981d-d060e108667c",
+        "promql": [
+          {
+            "disabled": false,
+            "legend": "",
+            "name": "A",
+            "query": ""
+          }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [
+        {
+          "dataType": "string",
+          "name": "body",
+          "type": ""
+        },
+        {
+          "dataType": "string",
+          "name": "timestamp",
+          "type": ""
+        }
+      ],
+      "selectedTracesFields": [
+        {
+          "dataType": "string",
+          "id": "serviceName--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "serviceName",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "name--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "name",
+          "type": "tag"
+        },
+        {
+          "dataType": "float64",
+          "id": "durationNano--float64--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "durationNano",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "httpMethod--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "httpMethod",
+          "type": "tag"
+        },
+        {
+          "dataType": "string",
+          "id": "responseStatusCode--string--tag--true",
+          "isColumn": true,
+          "isJSON": false,
+          "key": "responseStatusCode",
+          "type": "tag"
+        }
+      ],
+      "softMax": 0,
+      "softMin": 0,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "title": "Patch Submissions",
+      "yAxisUnit": "none"
+    }
+  ]
+}

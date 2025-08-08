@@ -1,0 +1,13 @@
+import cpp
+import semmle.code.cpp.dataflow.new.DataFlow
+
+from VariableAccess va,  VariableAccess fa, DataFlow::Node source, DataFlow::Node sink
+where
+va.getLocation().toString() = "{{ location }}" and
+va.getTarget().getName() = "{{ variable_name }}" and
+va.getEnclosingFunction() = fa.getEnclosingFunction() and
+va.getTarget() != fa.getTarget() and
+sink.asExpr() = va and
+source.asExpr() = fa and
+DataFlow::localFlow(source, sink)
+select fa, fa.getType().toString() as type

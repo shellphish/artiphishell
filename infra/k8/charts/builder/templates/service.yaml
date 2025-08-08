@@ -1,0 +1,20 @@
+{{- if .Values.clusterWideEnabled }}
+{{- /* General cluster service - only selects the pod on the designated node */}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "builder.fullname" . }}
+  labels:
+    {{- include "builder.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  internalTrafficPolicy: Local
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: docker
+  selector:
+    app.kubernetes.io/name: docker-builder
+    app.kubernetes.io/instance: artiphishell
+{{- end }}

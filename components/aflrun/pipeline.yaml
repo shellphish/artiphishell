@@ -1,0 +1,295 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  project_metadatas: MetadataRepository
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  aflrun_build_artifacts: {cls: FilesystemRepository, required: false}
+  locs_of_interest: BlobRepository
+
+  ################### OUTPUTS #####################
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  ################# INTERMEDIATES #################
+
+
+tasks:
+  aflrun_build:
+    priority: 2
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      # TODO: Need to figure out how to key this, per harness or per project
+      locs_of_interest:
+        repo: locs_of_interest
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+      # The aflrun_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+
+      # OUTPUTS
+      aflrun_build_artifacts:
+        repo: aflrun_build_artifacts
+        kind: OutputFilepath
+      
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          AFLRUN_TMP_BUILD_DIR=/out
+          # 2025-03-29T17:56:39+0000: silipwn: ^ This is probably risky but let's see
+          # AFLRUN_TMP_BUILD_BB_FILE=/shared/aflrun_bb.txt
+          cp {{ locs_of_interest | shquote }} /tmp/aflrun_bb.txt
+          AFLRUN_TMP_BUILD_BB_FILE=$(base64 -w 0 /tmp/aflrun_bb.txt)
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation aflrun $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+          
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture {{build_configuration.architecture}} \
+            --sanitizer {{build_configuration.sanitizer}} \
+            --instrumentation aflrun \
+            --extra-env AFLRUN_BUILD_BB_FILE="${AFLRUN_TMP_BUILD_BB_FILE}" \
+            --extra-env AFLRUN_TARGET="{{ harness_info.cp_harness_name | shquote }}" \
+            --extra-env AFLRUN_TMP="${AFLRUN_TMP_BUILD_DIR}" \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "$OSS_FUZZ_PROJECT_DIR"/artifacts/ {{aflrun_build_artifacts | shquote}}/
+
+  aflrun_fuzz:
+    long_running: true
+    replicable: true
+    scale_replicas: true
+    # We limit how many total jobs for this task can be running at once
+    # It will scale up the node pool until it reaches this number
+    # TODO this should be templated based on the # of sarif tasks
+    max_concurrent_jobs: 2 # VAR_MAX_SARIF_FUZZERS
+
+    # This will call a function to determine what fuzzing pool to use based crs_task.fuzzing_pool_name
+    node_labels_function: "task_pool_labels"
+
+    # Limit this job to only run on nodes which allow fuzzing
+    # TODO should this be its own pool?
+    node_labels:
+      support.shellphish.net/allow-fuzzing: "true"
+    # It can also run on the fuzzing only nodes
+    node_taints:
+      support.shellphish.net/only-fuzzing: "true"
+    # Prioritize launching on these nodes
+    node_affinity:
+      support.shellphish.net/only-fuzzing: "true"
+
+    priority_addend: 1
+
+    job_quota:
+      cpu: 1
+      mem: "2Gi"
+
+    timeout:
+      minutes: 3000
+
+    links:
+      # The project_id is provided by the run request
+
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+      harness_info:
+        repo: project_harness_infos
+        kind: InputMetadata
+
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+        key: harness_info.build_configuration_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      project_id:
+        repo: project_analysis_sources
+        kind: InputId
+        key: build_configuration.project_id
+      project_sources:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: build_configuration.project_id
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+
+      # The /src/ /work/ and /out/ directories which will be mounted into the container
+      aflrun_build_artifacts_dir:
+        repo: aflrun_build_artifacts
+        kind: InputFilepath
+      # aflpp_fuzz_stdout:
+      #   repo: aflpp_fuzz_stdout_log
+      #   kind: OutputFilepath
+
+      # aflpp_fuzz_stderr:
+      #   repo: aflpp_fuzz_stderr_log
+      #   kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        privileged: true
+        image: "{{ crs_image_prefix | default('') }}shellphish-oss-fuzz-runner-{{crs_task.project_name}}--aflrun"
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export SHELLPHISH_HARNESS_INFO_ID={{ harness_info_id | shquote}}
+          export SHELLPHISH_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export SHELLPHISH_PROJECT_ID={{ project_id }}
+          export SHELLPHISH_BUILD_ARTIFACTS_DIR={{ aflrun_build_artifacts_dir | shquote }}
+
+          export ARTIPHISHELL_PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export ARTIPHISHELL_HARNESS_NAME={{ harness_info.cp_harness_name | shquote }}
+          export ARTIPHISHELL_HARNESS_INFO_ID={{ harness_info_id | shquote }}
+          echo "===== TALKING TO OTHER FUZZERS ====="
+          # TODO: Figure out if we sync with the other fuzzers
+          export ARTIPHISHELL_FUZZER_SYNC_DIR="/shared/fuzzer_sync/${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/"
+          mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_DIR"
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME_FULL="aflrun-{{project_id}}-${JOB_ID}-${REPLICA_ID}"
+          export ARTIPHISHELL_FUZZER_INSTANCE_NAME="secondary-$(echo $ARTIPHISHELL_FUZZER_INSTANCE_NAME_FULL | md5sum | cut -d' ' -f1)"
+          echo "secondary-$ARTIPHISHELL_FUZZER_INSTANCE_NAME_FULL" > "$ARTIPHISHELL_FUZZER_SYNC_DIR/$ARTIPHISHELL_FUZZER_INSTANCE_NAME.fullname"
+
+          export FUZZING_LANGUAGE=$(yq -r '.language' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export SANITIZER=$(yq -r '.sanitizer' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export FUZZING_ENGINE=$(yq -r '.fuzzing_engine' "$SHELLPHISH_BUILD_ARTIFACTS_DIR/out/build_metadata.yaml")
+          export RUN_FUZZER_MODE=interactive
+
+          mkdir -p /src
+          mkdir -p /work
+          mkdir -p /out
+
+          # Overwrite the working directory to be the root of the container
+          WD=$(pwd)
+          cd /
+
+          # The target source gets copied over the source in current directory
+          for dir in src work out; do
+            if [ -d "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir ]; then
+              rm -rf /$dir/
+              rsync -ra "$SHELLPHISH_BUILD_ARTIFACTS_DIR"/$dir/ /$dir/
+            fi
+          done
+
+          ls -al /src/
+          ls -al /work/
+          ls -al /out/
+
+          cd $WD
+
+          touch /out/aflrun_fuzz.stdout.log
+          touch /out/aflrun_fuzz.stderr.log
+
+          # Final bash command to run
+          (
+          set -e
+
+          run_fuzzer {{harness_info.cp_harness_name | shquote}}
+
+          if [ $? -eq 0 ]; then
+            touch /out/.run_success
+          fi
+          ) 2> /out/aflrun_fuzz.stderr.log | tee /out/aflrun_fuzz.stdout.log || true
+
+          echo "===== STDOUT ====="
+          cat /out/aflrun_fuzz.stdout.log
+          echo "===== STDERR ====="
+          cat /out/aflrun_fuzz.stderr.log
+          echo "=================="
+
+          touch /out/aflrun_fuzz_metadata.yaml
+          echo "harness_info_id: {{ harness_info_id }}" >> /out/aflrun_fuzz_metadata.yaml
+          echo "harness_name: {{ harness_info.cp_harness_name }}" >> /out/aflrun_fuzz_metadata.yaml
+          echo "project_id: {{ project_id }}" >> /out/aflrun_fuzz_metadata.yaml
+          # TODO: Add BB targets here?
+          echo AFLRun target compilation setup:
+          env | egrep '^AFL_' | tee "$OUT/aflrun_options.txt"
+
+          if [ -f /out/.run_success ]; then
+            echo "run_success: true" >> /out/aflrun_fuzz_metadata.yaml
+          else
+            echo "run_success: false" >> /out/aflrun_fuzz_metadata.yaml
+          fi
+          echo "FUZZ METADATA: "
+          cat /out/aflrun_fuzz_metadata.yaml

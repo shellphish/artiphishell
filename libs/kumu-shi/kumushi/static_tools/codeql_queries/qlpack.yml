@@ -1,0 +1,6 @@
+---
+library: false
+name: nginx-infra/nginx-codeql-lib
+version: 0.0.1-dev
+dependencies:
+  codeql/cpp-all: 1.0.1

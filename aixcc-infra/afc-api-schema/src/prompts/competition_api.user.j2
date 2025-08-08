@@ -1,0 +1,37 @@
+{% if existing %}
+<existing_api>
+Here is the existing client API which may be outdated from the swagger schema.
+
+```python
+{{ existing }}
+```
+</existing_api>
+{% endif %}
+
+<api_models>
+Here are the pydantic models which describe the types used by the API
+```python
+{{ api_models }}
+```
+</api_models>
+
+<competition_api_schema>
+{{ competition_api_schema }}
+</competition_api_schema>
+
+Please output the Python client API code. You can use the following imports to start out:
+
+```python
+from typing import Optional, Dict, Any
+import requests
+import logging
+from uuid import UUID
+from enum import Enum
+from shellphish_crs_utils.models.aixcc_api import *
+
+logger = logging.getLogger(__name__)
+```
+
+<output_format>
+{{ output_format }}
+</output_format> 

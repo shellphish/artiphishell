@@ -1,0 +1,237 @@
+repo_classes:
+  ################### INPUTS ###################
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  crs_tasks: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+
+  ################### INTERMEDIATES ###################
+  base_clang_index_build_artifact_out: { cls: FilesystemRepository, required: false }
+
+  ################### OUTPUTS ###################
+  full_functions_jsons_dirs: FilesystemRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+  project_compile_commands: BlobRepository
+  project_link_commands: BlobRepository
+
+tasks:
+  clang_index:
+    require_success: true
+    timeout:
+      minutes: 180
+
+    job_quota:
+      cpu: 0.5
+      mem: "2Gi"
+    priority: 10000
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+      # Outputs
+      full_functions_jsons_dirs:
+        repo: full_functions_jsons_dirs
+        kind: OutputFilepath
+      project_compile_commands:
+        repo: project_compile_commands
+        kind: OutputFilepath
+      project_link_commands:
+        repo: project_link_commands
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation clang_indexer $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture x86_64 \
+            --sanitizer {{ meta.get("sanitizers", ["address"])[0] }} \
+            --cpu 10 \
+            --mem 40Gi \
+            --priority 20000 \
+            --instrumentation clang_indexer \
+            --extra-env ALLOW_BUILD_FAIL="1" \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          cp "${OSS_FUZZ_PROJECT_DIR}/artifacts/out/compile_commands.json" {{ project_compile_commands | shquote }}
+          cp "${OSS_FUZZ_PROJECT_DIR}/artifacts/out/link_commands.json" {{ project_link_commands | shquote }}
+          rsync -ra "${OSS_FUZZ_PROJECT_DIR}/artifacts/out/full/" {{ full_functions_jsons_dirs | shquote }}
+
+
+  clang_index_base:
+    require_success: true
+    timeout:
+      minutes: 180
+
+    priority: 10000
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+      # This component only runs in delta mode
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputFilepath
+      # Outputs
+      base_clang_index_build_artifact_out:
+        repo: base_clang_index_build_artifact_out
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-component-base
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation clang_indexer $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture x86_64 \
+            --sanitizer {{ meta.get("sanitizers", ["address"])[0] }} \
+            --instrumentation clang_indexer \
+            --extra-env ALLOW_BUILD_FAIL="1" \
+            --git-ref "HEAD~1" \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "${OSS_FUZZ_PROJECT_DIR}/artifacts/out/" {{ base_clang_index_build_artifact_out | shquote }}
+ 
+
+  clang_index_delta:
+    require_success: true
+    timeout:
+      minutes: 180
+
+    priority: 10000
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+      full_functions_jsons_dirs:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      base_clang_index_build_artifact_out:
+        repo: base_clang_index_build_artifact_out
+        kind: InputFilepath
+      # Outputs
+      commit_functions_jsons_dirs:
+        repo: commit_functions_jsons_dirs
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-clang-indexer
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          python3 /scripts/get_changed_functions.py \
+            --base-compile-commands "{{ base_clang_index_build_artifact_out | shquote }}/compile_commands.json" \
+            --base-dir "{{ base_clang_index_build_artifact_out | shquote }}/full/" \
+            --head-dir {{ full_functions_jsons_dirs | shquote }} \
+            --out-dir {{ commit_functions_jsons_dirs | shquote }} \
+            --commit-hash $(cat "{{ base_clang_index_build_artifact_out | shquote }}/commit_hash.txt")

@@ -1,0 +1,68 @@
+rules:
+  - id: incorrect-sizeof-comparison-with-indexing-suspicious
+    message: |
+      Potentially incorrect comparison using '<=' with sizeof(). Using '<=' with sizeof()
+      can cause buffer overflows because when the value equals the array size, it's out
+      of bounds. Consider using '<' instead of '<=' for sizeof comparisons.
+    severity: WARNING
+    languages:
+      - c
+      - cpp
+    patterns:
+      - pattern: $VAR <= sizeof($ARR)
+      - pattern-not: sizeof(...) <= sizeof($ARR)
+      - metavariable-regex:
+          metavariable: $VAR
+          # they should not end in size, length, or len
+          regex: '^(?!.*[Ss]ize$)(?!.*[Ll]ength$)(?!.*[Ll]en$).*'
+
+    fix: $VAR < sizeof($ARR)
+
+    metadata:
+      category: security
+      subcategory:
+        - vuln
+      cwe: "CWE-787: Out-of-bounds Write"
+      vuln_type: "out-of-bounds-write"
+      impact: HIGH
+      likelihood: HIGH
+      confidence: MEDIUM
+      references:
+        - https://cwe.mitre.org/data/definitions/787.html
+      technology:
+        - c
+        - cpp
+
+  # - id: incorrect-sizeof-comparison-with-indexing-more-likely-benign
+  #   message: |
+  #     Potentially incorrect comparison using '<=' with sizeof(). Using '<=' with sizeof()
+  #     can cause buffer overflows because when the value equals the array size, it's out
+  #     of bounds. Consider using '<' instead of '<=' for sizeof comparisons.
+  #   severity: WARNING
+  #   languages:
+  #     - c
+  #     - cpp
+  #   patterns:
+  #     - pattern: $VAR <= sizeof($ARR)
+  #     - pattern-not: sizeof(...) <= sizeof($ARR)
+  #     - metavariable-regex:
+  #         metavariable: $VAR
+  #         # here we want them to end in size, length, or len
+  #         regex: '^(.*[Ss]ize$|.*[Ll]ength$|.*[Ll]en$)'
+
+  #   fix: $VAR < sizeof($ARR)
+
+  #   metadata:
+  #     category: security
+  #     vuln_type: "out-of-bounds-write-benign"
+  #     subcategory:
+  #       - vuln
+  #     cwe: "CWE-787: Out-of-bounds Write"
+  #     impact: HIGH
+  #     likelihood: MEDIUM
+  #     confidence: MEDIUM
+  #     references:
+  #       - https://cwe.mitre.org/data/definitions/787.html
+  #     technology:
+  #       - c
+  #       - cpp

@@ -1,0 +1,176 @@
+repo_classes:
+  ############## DYVA AGENT INPUTS ###########################
+
+  project_metadatas: MetadataRepository
+  points_of_interest: BlobRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+  dedup_pov_report_representative_crashing_inputs: BlobRepository
+  patch_requests_meta: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+
+  ############## DYVA BUILD INPUTS ###########################
+
+  crs_tasks: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  project_build_configurations: MetadataRepository
+
+  ############## DYVA INTERMEDIATES ##########################
+
+  dyva_build_artifacts: { cls: FilesystemRepository, compress_backend: true, compress_backup: true, required: false }
+
+  ############## DYVA AGENT OUTPUTS ##########################
+  dyva_reports: MetadataRepository
+
+tasks:
+  dyva_agent:
+    failure_ok: true
+    annotations:
+      maturity: inProgress
+      authors:
+        - clasm
+
+    # "harness_queue" causes the pending jobs to be prioritized based on how many are queued for a given point_of_interest.harness_info_id
+    priority_function: "harness_queue"
+
+    links:
+      ################# INPUT ##################
+      patch_request_meta:
+        repo: patch_requests_meta
+        kind: InputMetadata
+
+      crashing_input:
+        repo: dedup_pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: patch_request_meta.poi_report_id
+
+      point_of_interest_meta:
+        repo: dedup_pov_report_representative_metadatas
+        kind: InputMetadata
+        key: patch_request_meta.poi_report_id
+
+      point_of_interest:
+        repo: points_of_interest
+        kind: InputFilepath
+        key: patch_request_meta.poi_report_id
+
+      project_id:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputId
+        key: point_of_interest_meta.project_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: point_of_interest_meta.project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: point_of_interest_meta.project_id
+
+      dyva_build_artifact:
+        repo: dyva_build_artifacts
+        kind: InputFilepath
+        key: point_of_interest_meta.build_configuration_id
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: point_of_interest_meta.project_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: point_of_interest_meta.project_id
+
+      ################# OUTPUT ##################
+
+      dyva_report:
+        repo: dyva_reports
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-dyva
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export CRS_TASK_ID={{ project_id | shquote }}
+          export POI_REPORT={{ point_of_interest | shquote }}
+          export DYVA_BUILD_ARTIFACT={{ dyva_build_artifact | shquote }}
+          export CRASHING_INPUT={{ crashing_input | shquote }}
+          export OSS_FUZZ_PROJECT={{ oss_fuzz_project | shquote }}
+          export PROJECT_METADATA={{ project_metadata | shquote }}
+
+          export LOCAL_VARIABLE_REPORT={{ dyva_report | shquote }}
+
+          /app/run_scripts/run-dyva-agent.sh
+
+  dyva_build:
+    priority: 2
+    require_success: true
+    timeout:
+      minutes: 180
+
+    job_quota:
+      cpu: 0.5
+      mem: "500Mi"
+
+    links:
+      build_configuration:
+        repo: project_build_configurations
+        kind: InputMetadata
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: build_configuration.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: build_configuration.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: build_configuration.project_id
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: build_configuration.project_id
+      
+      # OUTPUTS
+      dyva_build_artifact:
+        repo: dyva_build_artifacts
+        kind: OutputFilepath
+
+    extras:
+      task_id: "{{ project_id }}"
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-dyva
+
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+          export CRS_TASK_ID={{ project_id | shquote }}
+          export BUILD_CONFIGURATION_ARCHITECTURE={{ build_configuration.architecture }}
+          export BUILD_CONFIGURATION_SANITIZER={{ build_configuration.sanitizer }}
+          export DYVA_BUILD_ARTIFACT={{ dyva_build_artifact | shquote }}
+
+          /app/run_scripts/run-dyva-build.sh

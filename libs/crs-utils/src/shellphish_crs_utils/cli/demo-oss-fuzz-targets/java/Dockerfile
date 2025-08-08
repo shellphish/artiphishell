@@ -1,0 +1,1 @@
+FROM ghcr.io/aixcc-finals/base-builder:v1.0.0

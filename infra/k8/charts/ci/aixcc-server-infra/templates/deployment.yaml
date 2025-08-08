@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aixcc-server-infra.fullname" . }}
+  labels:
+    {{- include "aixcc-server-infra.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aixcc-server-infra.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "aixcc-server-infra.labels" . | nindent 8 }}
+        {{- if .Values.podPacking.enabled }}
+        support.shellphish.net/packing-group: {{ .Values.podPacking.group | quote }}
+        {{- end }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.podPacking.enabled }}
+      topologySpreadConstraints:
+      - maxSkew: {{ .Values.podPacking.maxSkew }}
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            support.shellphish.net/packing-group: {{ .Values.podPacking.group | quote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: {{ .Values.podPacking.weight }}
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  support.shellphish.net/packing-group: {{ .Values.podPacking.group | quote }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "aixcc-server-infra.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.global.deployment_registry.value }}/aixcc-competition-server-infra:latest"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: AGENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: agent-secret
+                  key: AGENT_SECRET
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CRS_IMAGE_REGISTRY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aixcc-server-infra.fullname" . }}-acr-creds
+                  key: crs_image_registry
+            - name: ACR_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aixcc-server-infra.fullname" . }}-acr-creds
+                  key: server
+            - name: ACR_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aixcc-server-infra.fullname" . }}-acr-creds
+                  key: username
+            - name: ACR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aixcc-server-infra.fullname" . }}-acr-creds
+                  key: password
+            - name: GITHUB_TOKEN
+              value: {{ .Values.global.github.token | quote }}
+            - name: ARTIPHISHELL_API_USERNAME
+              value: {{ .Values.global.artiphish_api_username.value | quote }}
+            - name: ARTIPHISHELL_API_PASSWORD
+              value: {{ .Values.global.artiphish_api_password.value | quote }}
+            - name: ARTIPHISHELL_API_URL
+              value: {{ .Values.global.artiphish_api_url.value | quote }}
+            - name: COMPETITION_SERVER_API_ID
+              value: {{ .Values.global.competition_server_api_id.value | quote }}
+            - name: COMPETITION_SERVER_API_KEY
+              value: {{ .Values.global.competition_server_api_key.value | quote }}
+            {{- with .Values.env }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: server-otel
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+            - name: server-api
+              containerPort: 1323
+              protocol: TCP
+            - name: server-dash
+              containerPort: 3301
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

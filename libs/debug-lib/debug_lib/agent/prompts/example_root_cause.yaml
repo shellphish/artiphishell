@@ -1,0 +1,44 @@
+description: |                                                                                                                  
+  Description of the root cause of the crash.
+found_root_cause: true
+errored: false
+dataflow: "function_a:var_b -> function_b:var_c"
+
+bug_classes:
+  - buffer overflow
+  - use-after-free
+  - integer overflow
+  - format string bug
+  - null pointer dereference
+  - integer underflow
+  - integer overflow
+  - etc
+
+bug_locations:                                                                                                                  
+  - file: impacted/file.c
+    function: impacted_function
+    start_line: 123
+    end_line: 456
+
+  - file: impacted/file2.c
+    function: impacted_function2
+    start_line: 123
+    end_line: 456
+
+root_cause_locations:
+  - file: impacted/root_file.c
+    function: root_function
+    start_line: 789
+    end_line: 1011
+
+  - file: impacted/root_file2.c
+    function: root_function2
+    start_line: 669
+    end_line: 1011
+    
+patches:
+  - description: |                                                                                                              
+      Description of how to patch the first bug location without code.
+
+  - description: |
+      Description of how to patch the second bug location without code.

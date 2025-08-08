@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AgentViz</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+    <script src="https://pgrabovets.github.io/json-view/jsonview.js"></script>
+    <style>
+      .card {
+        flex-basis: auto;
+        overflow-x: hidden;
+        min-height: 3em;
+        flex-grow: 0;
+        flex-shrink: 0;
+        margin-bottom: 0;
+      }
+      .card:not(:last-child) {
+        margin-bottom: 0;
+      }
+      .record-row {
+        display: flex;
+        align-items: center;
+      }
+      div[data-class-name="SequenceRecord"] > .card-content {
+        padding: 0;
+      }
+
+      .top-level-record-row > div[data-class-name="SequenceRecord"] {
+        max-width: 100% !important;
+      }
+      .top-level-record-row > div[data-class-name="SequenceRecord"][data-has-output="true"] {
+        max-width: calc( 100% - 320px) !important;
+      }
+
+      .top-level-record-row > div[data-class-name="AgentToolRunnerRecord"] {
+        max-width: 100% !important;
+      }
+      .top-level-record-row > div[data-class-name="AgentToolRunnerRecord"][data-has-output="true"] {
+        max-width: calc( 100% - 320px) !important;
+      }
+
+      div[data-class-name="AgentToolRunnerRecord"] {
+        max-width: calc(100vw - 320px);
+        overflow-x: auto;
+      }
+      .json-container {
+        background-color: #15161a !important;
+      }
+      .json-container .json-key {
+        color: #6bd6ff !important;
+      }
+      .json-container .fas::before {
+        content: '';
+      }
+      .is-wide-modal {
+        min-width: calc(100vw - 10em);
+      }
+      .record-card {
+        cursor: pointer;
+        transition: background-color 0.5s;
+      }
+      .record-card:hover {
+        background-color: hsl(217, 74%, 27%);
+      }
+    </style>
+  </head>
+  <body id="app">
+  <script src="/static/app.js" type="module"></script>
+  </body>
+</html>

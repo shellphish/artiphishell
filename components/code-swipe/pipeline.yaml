@@ -1,0 +1,235 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  full_mode_tasks: MetadataRepository
+
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  canonical_build_artifacts: FilesystemRepository
+  project_metadatas: MetadataRepository
+
+  # TODO handle commit mode functions
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_indices: BlobRepository
+
+  commit_functions_jsons_dirs: FilesystemRepository
+  commit_functions_indices: BlobRepository
+
+  diffguy_reports: FilesystemRepository
+  discovery_vuln_reports: BlobRepository
+  semgrep_analysis_report: BlobRepository
+  codeql_cwe_report: BlobRepository
+
+  # Base repositories for delta mode
+  semgrep_analysis_report_base: BlobRepository
+  codeql_cwe_report_base: BlobRepository
+
+  # == OUTPUT ==
+
+  codeswipe_rankings: BlobRepository
+
+
+tasks:
+  code_swipe:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    require_success: true
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      discovery_vuln_reports:
+        repo: discovery_vuln_reports
+        kind: InputFilepath
+
+      # Limit this to only full mode runs
+      full_mode_tasks:
+        repo: full_mode_tasks
+        kind: InputMetadata
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+
+      canonical_build_artifacts_path:
+        repo: canonical_build_artifacts
+        kind: InputFilepath
+
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      semgrep_report_path:
+        repo: semgrep_analysis_report
+        kind: InputFilepath
+
+      codeql_cwe_report_path:
+        repo: codeql_cwe_report
+        kind: InputFilepath
+
+      ################# OUTPUT ##################
+
+      codeswipe_rankings:
+        repo: codeswipe_rankings
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-code-swipe
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export MODE=full
+
+          # TODO(finaldeploy) set this to 2 hours
+          export MAX_CODE_SWIPE_WAIT_TIME=7200
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish_project_name | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export CANONICAL_BUILD_ARTIFACTS_PATH={{ canonical_build_artifacts_path | shquote }}
+          export FUNCTION_JSON_PATH={{ full_functions_jsons_dir | shquote }}
+          export FUNCTION_INDICES_PATH={{ full_functions_indices | shquote }}
+
+          export RANKINGS_PATH={{ codeswipe_rankings | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+          export CODEQL_REPORT_PATH={{ discovery_vuln_reports | shquote }}
+          export SEMGREP_REPORT_PATH={{ semgrep_report_path | shquote }}
+          export CODEQL_CWE_REPORT_PATH={{ codeql_cwe_report_path | shquote }}
+
+          /shellphish/code-swipe/run-code-swipe.sh
+
+  code_swipe_delta:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 4Gi
+    require_success: true
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      # This is only triggered on delta mode runs
+      diffguy_reports_path:
+        repo: diffguy_reports
+        kind: InputFilepath
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+
+      canonical_build_artifacts_path:
+        repo: canonical_build_artifacts
+        kind: InputFilepath
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      # Regular reports
+      semgrep_report_path:
+        repo: semgrep_analysis_report
+        kind: InputFilepath
+
+      codeql_cwe_report_path:
+        repo: codeql_cwe_report
+        kind: InputFilepath
+
+      # Base reports for delta comparison
+      semgrep_report_base_path:
+        repo: semgrep_analysis_report_base
+        kind: InputFilepath
+
+      codeql_cwe_report_base_path:
+        repo: codeql_cwe_report_base
+        kind: InputFilepath
+
+      commit_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+      commit_functions_indices:
+        repo: commit_functions_indices
+        kind: InputFilepath
+
+      ################# OUTPUT ##################
+
+      codeswipe_rankings:
+        repo: codeswipe_rankings
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-code-swipe
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export MODE=delta
+
+          # TODO(finaldeploy) set this to 1 hour
+          export MAX_CODE_SWIPE_WAIT_TIME=3600
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish_project_name | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export CANONICAL_BUILD_ARTIFACTS_PATH={{ canonical_build_artifacts_path | shquote }}
+          export FUNCTION_JSON_PATH={{ full_functions_jsons_dir | shquote }}
+          export FUNCTION_INDICES_PATH={{ full_functions_indices | shquote }}
+          export RANKINGS_PATH={{ codeswipe_rankings | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+
+          export DIFFGUY_REPORT_DIR={{ diffguy_reports_path | shquote }}
+          export SEMGREP_REPORT_PATH={{ semgrep_report_path | shquote }}
+          export CODEQL_CWE_REPORT_PATH={{ codeql_cwe_report_path | shquote }}
+          export SEMGREP_REPORT_BASE_PATH={{ semgrep_report_base_path | shquote }}
+          export CODEQL_CWE_REPORT_BASE_PATH={{ codeql_cwe_report_base_path | shquote }}
+
+          export COMMIT_FUNCTIONS_JSONS_DIR={{ commit_functions_jsons_dir | shquote }}
+          export COMMIT_FUNCTIONS_INDICES={{ commit_functions_indices | shquote }}
+
+          /shellphish/code-swipe/run-code-swipe.sh

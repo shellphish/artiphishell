@@ -1,0 +1,19 @@
++ '[' '!' -v TESTCASE ']'
++ '[' '!' -f /work/pov_input ']'
++ export RUN_FUZZER_MODE=interactive
++ RUN_FUZZER_MODE=interactive
++ export FUZZING_ENGINE=libfuzzer
++ FUZZING_ENGINE=libfuzzer
++ export SKIP_SEED_CORPUS=1
++ SKIP_SEED_CORPUS=1
++ run_fuzzer customfuzz3 /work/pov_input
+vm.mmap_rnd_bits = 28
+/out/customfuzz3 -rss_limit_mb=2560 -timeout=25 /work/pov_input -timeout_exitcode=0 < /dev/null
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1423949940
+INFO: Loaded 1 modules   (74977 inline 8-bit counters): 74977 [0x555555cd4110, 0x555555ce65f1), 
+INFO: Loaded 1 PC tables (74977 PCs): 74977 [0x555555ce65f8,0x555555e0b408), 
+/out/customfuzz3: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+malloc(): corrupted top size
+==20== ERROR: libFuzzer: deadly signal

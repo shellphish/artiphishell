@@ -1,0 +1,150 @@
+load("@bazel_jar_jar//:jar_jar.bzl", "jar_jar")
+load("@rules_jvm_external//:defs.bzl", "javadoc")
+load("//bazel:jar.bzl", "strip_jar")
+load("//sanitizers:sanitizers.bzl", "SANITIZER_CLASSES")
+
+java_binary(
+    name = "jazzer_standalone",
+    create_executable = False,
+    deploy_manifest_lines = [
+        "Main-Class: com.code_intelligence.jazzer.Jazzer",
+    ],
+    visibility = [
+        "//:__pkg__",
+        "//deploy:__pkg__",
+        "//launcher:__pkg__",
+        "//tests:__pkg__",
+    ],
+    runtime_deps = [
+        ":jazzer_import",
+        "//deploy:jazzer-api",
+    ],
+)
+
+strip_jar(
+    name = "jazzer",
+    out = "jazzer.jar",
+    jar = ":jazzer_shaded",
+    paths_to_keep = [
+        "com/code_intelligence/jazzer/**",
+        "jaz/**",
+        "META-INF/MANIFEST.MF",
+        "win32-x86/**",
+        "win32-x86-64/**",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+java_library(
+    name = "constants",
+    srcs = [":constants_java"],
+    visibility = ["//visibility:public"],
+)
+
+java_import(
+    name = "jazzer_import",
+    jars = [":jazzer"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//deploy:jazzer-api-lib"],
+)
+
+jar_jar(
+    name = "jazzer_shaded",
+    input_jar = "jazzer_unshaded_deploy.jar",
+    rules = "jazzer_shade_rules.jarjar",
+)
+
+java_binary(
+    name = "jazzer_unshaded",
+    create_executable = False,
+    # Note: We can't add
+    # //src/main/java/com/code_intelligence/jazzer/runtime:java_bootstrap_unshaded itself as
+    # that would also strip out external dependencies common between Jazzer and its bootstrap jar,
+    # such as e.g. RulesJni, which should be shaded into distinct classes.
+    deploy_env = [
+        "//src/main/java/com/code_intelligence/jazzer/api:api_deploy_env",
+        "//src/main/java/com/code_intelligence/jazzer/runtime:jazzer_bootstrap_env",
+    ],
+    deploy_manifest_lines = [
+        "Main-Class: com.code_intelligence.jazzer.Jazzer",
+    ],
+    runtime_deps = [":jazzer_lib"],
+)
+
+# Docs are only generated for the com.code_intelligence.jazzer package. Everything else is not
+# considered a public interface.
+javadoc(
+    name = "jazzer-docs",
+    doc_deps = ["//deploy:jazzer-api-docs"],
+    doc_url = "https://codeintelligencetesting.github.io/jazzer-docs/jazzer/",
+    javadocopts = [
+        "-link",
+        "https://docs.oracle.com/en/java/javase/17/docs/api/",
+    ],
+    visibility = ["//deploy:__pkg__"],
+    deps = [":jazzer_lib"],
+)
+
+strip_jar(
+    name = "jazzer-sources",
+    jar = ":jazzer_transitive_sources_deploy-src.jar",
+    paths_to_keep = [
+        "com/code_intelligence/jazzer/**",
+        "jaz/**",
+        "META-INF/MANIFEST.MF",
+    ],
+    visibility = ["//deploy:__pkg__"],
+)
+
+# The _deploy-src.jar for this target includes the sources for the jazzer_bootstrap library.
+java_binary(
+    name = "jazzer_transitive_sources",
+    main_class = "com.code_intelligence.jazzer.Jazzer",
+    runtime_deps = [
+        ":jazzer_lib",
+        "//src/main/java/com/code_intelligence/jazzer/runtime:jazzer_bootstrap_lib",
+    ],
+)
+
+java_library(
+    name = "jazzer_lib",
+    srcs = ["Jazzer.java"],
+    visibility = [
+        "//deploy:__pkg__",
+        "//src/test/java/com/code_intelligence/jazzer:__pkg__",
+    ],
+    runtime_deps = select({
+        "@platforms//os:windows": [],
+        "//conditions:default": ["//src/main/native/com/code_intelligence/jazzer:jazzer_preload"],
+    }) + [
+        # Only used by JUnit, but including it here means we don't need to shade ASM in
+        # jazzer-junit.
+        "//src/main/java/com/code_intelligence/jazzer/utils:unsafe_utils",
+    ],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer:constants",
+        "//src/main/java/com/code_intelligence/jazzer/android:android_runtime",
+        "//src/main/java/com/code_intelligence/jazzer/driver",
+        "//src/main/java/com/code_intelligence/jazzer/driver:opt",
+        "//src/main/java/com/code_intelligence/jazzer/driver/junit:fuzz_test_lister",
+        "//src/main/java/com/code_intelligence/jazzer/driver/junit:junit_runner",
+        "//src/main/java/com/code_intelligence/jazzer/runtime:constants",
+        "//src/main/java/com/code_intelligence/jazzer/utils:log",
+        "//src/main/java/com/code_intelligence/jazzer/utils:zip_utils",
+        "@rules_jni//jni/tools/native_loader",
+    ],
+)
+
+genrule(
+    name = "constants_java",
+    outs = ["Constants.java"],
+    cmd = """
+cat > $@ <<'EOF'
+package com.code_intelligence.jazzer;
+public final class Constants {
+  public static final String JAZZER_VERSION = \"$(JAZZER_VERSION)\";
+}
+EOF
+""",
+    toolchains = ["//deploy:jazzer_version"],
+)

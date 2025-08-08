@@ -1,0 +1,13 @@
+
+Your final report looks like this:
+
+```
+<report>
+  <verdict>TP</verdict>
+  <summary>
+  This vulnerability occurs in the file rabbit/walk.java at line 111. 
+  It involves a custom SQL query that does not sanitize the user string before passing it to the database.
+  Thus, the program is vulnerable to an SQLi.
+  </summary>
+</report>
+```

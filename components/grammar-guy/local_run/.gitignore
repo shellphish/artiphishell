@@ -1,0 +1,10 @@
+*.tar.gz
+*/
+!restore_latest_state/
+restore_latest_state/*  
+crash
+.*
+!.gitignore
+!cov_checker/ 
+tmp/*
+docs/

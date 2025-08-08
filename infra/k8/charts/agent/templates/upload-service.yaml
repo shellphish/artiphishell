@@ -1,0 +1,27 @@
+{{- /*
+   Service exposing nginx upload endpoint on 8080 -> container 8040
+*/ -}}
+{{- range $i := until (.Values.global.num_concurrent_tasks.value | int) }}
+{{- $taskid := add $i 1 }}
+{{- with $ }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-{{ include "agent.name" . }}-{{ $taskid }}
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+    app.kubernetes.io/name: nginx-{{ include "agent.name" . }}-{{ $taskid }}
+    support.shellphish.net/component: uploads
+spec:
+  type: {{ .Values.uploadService.type }}
+  ports:
+    - port: {{ .Values.uploadService.port }}
+      targetPort: {{ .Values.uploadService.targetPort }}
+      protocol: TCP
+      name: uploads
+  selector:
+    {{- include "agent.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "agent.name" . }}-{{ $taskid }}
+{{- end }}
+{{- end }} 

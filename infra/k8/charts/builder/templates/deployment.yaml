@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "builder.fullname" . }}
+  labels:
+    {{- include "builder.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "builder.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "builder.selectorLabels" . | nindent 8 }}
+    spec:
+      nodeSelector:
+        kubernetes.azure.com/mode: user
+      priorityClassName: docker-builder
+      tolerations:
+      - operator: Exists
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "builder.serviceAccountName" . }}
+      initContainers:
+        - name: setup-cred-helper
+          image: "{{ .Values.global.deployment_registry.value }}/busybox"
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /cred-helpers/docker-credential-helpers && \
+              cp /etc/docker/credential-acr-env.sh /cred-helpers/docker-credential-helpers/docker-credential-acr-env && \
+              chmod +x /cred-helpers/docker-credential-helpers/docker-credential-acr-env
+              mkdir -p /shared/secret
+              cp /secret/github /shared/secret/github
+              chmod -R 666 /shared/secret/
+              rm -rf /var/run/docker.sock
+              touch /var/run/docker.sock
+              chmod 666 /var/run/docker.sock
+              rm -rf /var/lib/docker/*
+          volumeMounts:
+            - name: docker-daemon-config
+              mountPath: /etc/docker/credential-acr-env.sh
+              subPath: credential-acr-env.sh
+            - name: cred-helpers
+              mountPath: /cred-helper
+            - name: host-shared
+              mountPath: /shared
+            - name: github-secret
+              mountPath: /secret/github
+              subPath: github
+            - name: docker-socket
+              mountPath: /var/run/
+            - name: docker-graph-storage
+              mountPath: /var/lib/docker
+      restartPolicy: Always
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            privileged: true
+          image: "{{ .Values.global.deployment_registry.value }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 2375
+              protocol: TCP
+              name: docker
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+            - name: REGISTRY_AUTH_FILE
+              value: /root/.docker/config.json
+            - name: ACR_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "builder.fullname" . }}-acr-creds
+                  key: server
+            - name: ACR_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "builder.fullname" . }}-acr-creds
+                  key: username
+            - name: ACR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "builder.fullname" . }}-acr-creds
+                  key: password
+            - name: PATH
+              value: "/cred-helpers/docker-credential-helpers:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: artiphishell-global-env
+          volumeMounts:
+            - name: docker-graph-storage
+              mountPath: /var/lib/docker
+            - name: docker-config
+              mountPath: /root/.docker/config.json
+              subPath: config.json
+              readOnly: true
+            - name: docker-daemon-config
+              mountPath: /etc/docker/daemon.json
+              subPath: daemon.json
+            - name: cred-helpers
+              mountPath: /cred-helpers
+              readOnly: true
+            #- name: docker-socket
+            #  mountPath: /var/run/
+            - name: host-shared
+              mountPath: /shared
+            - name: github-secret
+              mountPath: /secret/github
+              subPath: github
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: docker-graph-storage
+          hostPath:
+            path: /var/lib/docker-{{ include "builder.fullname" . }}
+            type: DirectoryOrCreate
+        - name: docker-config
+          secret:
+            secretName: acr-docker-secret
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+        - name: docker-daemon-config
+          configMap:
+            name: {{ include "builder.fullname" . }}-daemon-config
+        - name: cred-helpers
+          emptyDir: {}
+        - name: docker-socket
+          hostPath:
+            path: /var/run/
+        - name: host-shared
+          hostPath:
+            path: /shared
+            type: DirectoryOrCreate
+        - name: github-secret
+          secret:
+            secretName: {{ include "builder.fullname" . }}-github

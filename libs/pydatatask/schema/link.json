@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "repo": {
+      "type": "string"
+    },
+    "kind": { "$ref": "link_kind.json" },
+    "key": {
+      "type": "string"
+    },
+    "cokeyed": {
+      "type": "object"
+    },
+    "auto_meta": {
+      "type": "string"
+    },
+    "auto_values": {
+      "type": "object"
+    },
+    "is_input": {
+      "type": "boolean"
+    },
+    "is_output": {
+      "type": "boolean"
+    },
+    "is_status": {
+      "type": "boolean"
+    },
+    "inhibits_start": {
+      "type": "boolean"
+    },
+    "required_for_start": {
+      "type": "boolean"
+    },
+    "inhibits_output": {
+      "type": "boolean"
+    },
+    "required_for_success": {
+      "type": "boolean"
+    },
+    "force_path": {
+      "type": "boolean"
+    },
+    "DANGEROUS_filename_is_key": {
+      "type": "boolean"
+    },
+    "content_keyed_md5": {
+      "type": "boolean"
+    },
+  },
+  "additionalProperties": false,
+  "required": ["repo", "kind"]
+}

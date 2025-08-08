@@ -1,0 +1,97 @@
+{
+    "$schema": "https://json.schemastore.org/sarif-2.1.0",
+    "version": "2.1.0",
+    "runs": [
+        {
+            "tool": {
+                "driver": {
+                    "name": "Shellphish-Artiphishell",
+                    "version": "1.0.0",
+                    "rules": [
+                        {
+                            "id": "John Doe",
+                            "name": "John Doe",
+                            "fullDescription": {
+                                "text": "John Doe"
+                            },
+                            "properties": {
+                                "tags": [
+                                    "security",
+                                ],
+                                "precision": "high"
+                            }
+                        }
+                    ]
+                }
+            },
+            "results": [
+                {
+                    "ruleId": "John Doe",
+                    "level": "John Doe",
+                    "message": {
+                        "text": "John Doe"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "File3"
+                                },
+                                "region": {
+                                    "startLine": 789,
+                                }
+                            }
+                        }
+                    ],
+                    "codeFlows": [
+                        {
+                            "threadFlows": [
+                                {
+                                    "locations": [
+                                        
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "File1"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 123,
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "File2"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 456,
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "location": {
+                                                "physicalLocation": {
+                                                    "artifactLocation": {
+                                                        "uri": "File3"
+                                                    },
+                                                    "region": {
+                                                        "startLine": 789,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,111 @@
+CommandInjection: 
+  - java.lang.ProcessBuilder.start
+  - java.lang.Runtime.exec
+  - java.lang.ProcessBuilder
+  - java.lang.Runtime
+
+PathTraversal: 
+  - java.nio.file.Files.newBufferedReader
+  - java.nio.file.Files.newByteChannel
+  - java.nio.file.Files.readString
+  - java.nio.file.Files.newBufferedWriter
+  - java.nio.file.Files.readAllBytes
+  - java.nio.file.Files.readAllLines
+  - java.nio.file.Files.readSymbolicLink
+  - java.nio.file.Files.write
+  - java.nio.file.Files.writeString
+  - java.nio.file.Files.newInputStream
+  - java.nio.file.Files.newOutputStream
+  - java.nio.channels.FileChannel.open
+  - java.nio.file.Files.copy
+  - java.nio.file.Files.move
+  - java.io.FileReader.FileReader
+  - java.io.FileWriter.FileWriter
+  - java.io.FileInputStream.FileInputStream
+  - java.io.FileOutputStream.FileOutputStream
+  - java.util.Scanner.Scanner
+  - java.nio.file.Path.resolve
+
+ServerSideRequestForgery:
+  - java.net.Socket
+  - java.net.SocketImpl
+  - java.net.SocksSocketImpl
+  - java.nio.channels.SocketChannel.connect
+  - sun.nio.ch.SocketAdaptor
+  - jdk.internal.net.http.PlainHttpConnection
+  - java.net.http.HttpClient.send
+  - java.net.http.HttpClient.sendAsync
+  - java.net.URL.openConnection
+  - java.net.URL.openStream
+  - java.net.URLConnection.connect
+  - java.net.URLConnection.getInputStream
+  - java.net.HttpURLConnection.getResponseCode
+  - java.net.HttpURLConnection.getInputStream
+  - java.net.HttpURLConnection.getOutputStream
+  - java.net.URLConnection.getContent
+  - java.sql.DriverManager.getConnection
+  - javax.xml.parsers.DocumentBuilder.parse
+
+Deserialization:
+  - java.io.ObjectInputStream
+  - java.io.ObjectInputStream.readObject
+  - java.io.ObjectInputStream.readObjectOverride
+  - java.io.ObjectInputStream.readUnshared
+
+ExpressionLanguage:
+  - javax.el.ExpressionFactory.createValueExpression
+  - javax.el.ExpressionFactory.createMethodExpression
+  - jakarta.el.ExpressionFactory.createValueExpression
+  - jakarta.el.ExpressionFactory.createMethodExpression
+  - javax.validation.ConstraintValidatorContext.buildConstraintViolationWithTemplate
+
+LdapInjection:
+  - javax.naming.directory.DirContext.search
+  - javax.naming.directory.InitialDirContext
+
+NamingContextLookup:
+  - javax.naming.Context.lookup
+  - javax.naming.Context.lookupLink
+
+# This is not in the report parser, add them. And also add to jazzer sanitizer json
+ReflectionCallInjection:
+  - java.lang.Class.forName
+  - java.lang.ClassLoader.loadClass
+  - java.lang.Runtime.load
+  - java.lang.Runtime.loadLibrary
+  - java.lang.System.load
+  - java.lang.System.loadLibrary
+  - java.lang.System.mapLibraryName
+  - java.lang.ClassLoader.findLibrary
+
+RegexInjection:
+  - java.util.regex.Pattern.compile
+  - java.util.regex.Pattern.matches
+  - java.lang.String.matches # This can cause many false positive
+  - java.lang.String.replaceAll
+  - java.lang.String.replaceFirst
+  - java.lang.String.split
+
+ScriptEngineInjection:
+  - javax.script.ScriptEngine.eval
+ 
+SqlInjection:
+  - java.sql.Statement.execute
+  - java.sql.Statement.executeBatch
+  - java.sql.Statement.executeLargeBatch
+  - java.sql.Statement.executeLargeUpdate
+  - java.sql.Statement.executeQuery
+  - java.sql.Statement.executeUpdate
+  - javax.persistence.EntityManager.createNativeQuery
+
+XPathInjection:
+  - javax.xml.xpath.XPath.evaluate
+  - javax.xml.xpath.XPath.compile
+  - javax.xml.xpath.XPath.evaluateExpression
+
+XXEInjection:
+  - javax.xml.parsers.DocumentBuilder.parse
+  - javax.xml.parsers.SAXParser.parse
+  - org.xml.sax.XMLReader.parse
+  - javax.xml.transform.Transformer.transform
+

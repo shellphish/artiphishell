@@ -1,0 +1,10 @@
+services:
+  grafana:
+    image: grafana/grafana-oss
+    network_mode: host
+    container_name: grafana
+    ports:
+      - "3000:3000" # Accessible from the host
+    volumes:
+      - ./provisioning/:/etc/grafana/provisioning/
+      - ./config/custom.ini:/sur/share/grafana/custom.ini:ro

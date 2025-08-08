@@ -1,0 +1,3 @@
+
+DEDUP_TOKEN: dd3e1c1e2d179871
+Failed to add job TestJob to the database. Error: No suitable driver found for jdbc:h2:mem:quartz_jobs;DB_CLOSE_DELAY=-1reproducer_path='.'; Java reproducer written to ./Crash_4b1ad5564e4655075e25bd1e2c186b8a9f5f13f6.java

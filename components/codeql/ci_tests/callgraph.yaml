@@ -1,0 +1,5 @@
+agentlib: true
+test-data:
+  codeql/targets:
+    dest: tests/targets
+    extract_tars: true

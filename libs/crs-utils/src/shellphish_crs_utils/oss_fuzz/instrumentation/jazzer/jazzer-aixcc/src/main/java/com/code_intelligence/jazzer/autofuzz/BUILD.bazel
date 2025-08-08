@@ -1,0 +1,22 @@
+java_library(
+    name = "autofuzz",
+    srcs = [
+        "AccessibleObjectLookup.java",
+        "AutofuzzCodegenVisitor.java",
+        "AutofuzzError.java",
+        "FuzzTarget.java",
+        "Meta.java",
+        "YourAverageJavaClass.java",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api",
+        "//src/main/java/com/code_intelligence/jazzer/runtime:jazzer_bootstrap_compile_only",
+        "//src/main/java/com/code_intelligence/jazzer/utils",
+        "//src/main/java/com/code_intelligence/jazzer/utils:log",
+        "//src/main/java/com/code_intelligence/jazzer/utils:simple_glob_matcher",
+        "@maven//:io_github_classgraph_classgraph",
+        "@maven//:net_jodah_typetools",
+        "@maven//:org_ow2_asm_asm",
+    ],
+)

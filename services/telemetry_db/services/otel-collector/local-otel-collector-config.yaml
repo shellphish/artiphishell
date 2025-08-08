@@ -1,0 +1,51 @@
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+    check_collector_pipeline:
+      enabled: true
+      interval: "5m"
+      exporter_failure_threshold: 5
+
+
+receivers:
+  otlp: # the OTLP receiver the app is sending traces to
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch:
+
+exporters:
+  otlp/telegraf:
+    endpoint: http://telegraf:4317
+    tls:
+      insecure: true
+
+  otlp/signoz:
+    endpoint: "${env:SIGNOZ_OTEL_EXPORTER_OTLP_ENDPOINT}"
+    tls:
+      insecure: ${env:SIGNOZ_TLS_INSECURE:-true}
+    headers: 
+      Authorization: "Basic ${env:SIGNOZ_BASIC_AUTH}" #Env variable should be base64 encoded username:password
+
+  debug: 
+    verbosity: detailed
+
+
+service:
+  extensions: [health_check]
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/telegraf, otlp/signoz]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/telegraf, otlp/signoz]
+    traces/dev:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/telegraf, otlp/signoz]
+  

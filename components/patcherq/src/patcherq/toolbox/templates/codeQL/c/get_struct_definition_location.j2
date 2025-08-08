@@ -1,0 +1,11 @@
+import cpp
+
+from Struct s, TypeDeclarationEntry entry
+where
+  s.getName() = "{{ struct_name }}" and        
+  entry.getType() = s and
+  entry.isDefinition()                          
+select                                       
+  entry.getLocation().getFile() as filename,
+  entry.getLocation().getStartLine() as startline,                   
+  "Definition of struct " + s.getName()

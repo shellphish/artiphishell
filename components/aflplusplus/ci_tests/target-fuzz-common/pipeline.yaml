@@ -1,0 +1,51 @@
+repo_classes: 
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+  crs_tasks_cancelled: MetadataRepository
+  target_metadatas: MetadataRepository
+  target_harness_infos: MetadataRepository
+  cp_image_ready: MetadataRepository
+
+  fuzz_requests: MetadataRepository
+  fuzz_requests_seeds: FilesystemRepository
+
+  info_extraction_results: MetadataRepository
+  reaching_functions_dicts: BlobRepository
+  reaching_files_dicts: BlobRepository
+
+  target_fuzz_configs: MetadataRepository
+
+  benign_harness_inputs: BlobRepository
+  benign_harness_input_metadatas: MetadataRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+
+imports:
+  target_harness_splitter:
+    path: ../../../target-harness-splitter/pipeline.yaml
+    repos:
+      crs_tasks_cancelled: crs_tasks_cancelled
+      targets_with_sources: targets_with_sources
+      target_harness_infos: target_harness_infos
+
+  aflpp:
+    path: ../../pipeline.yaml
+    repos:
+      crs_tasks_cancelled: crs_tasks_cancelled
+      targets_with_sources: targets_with_sources
+      target_harness_infos: target_harness_infos
+      cp_image_ready: cp_image_ready
+
+      fuzz_requests: fuzz_requests
+      fuzz_requests_seeds: fuzz_requests_seeds
+
+      info_extraction_results: info_extraction_results
+      reaching_functions_dicts: reaching_functions_dicts
+      reaching_files_dicts: reaching_files_dicts
+
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metas: benign_harness_input_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas

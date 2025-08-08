@@ -1,0 +1,161 @@
+name: Check that the pipeline correctly locks
+run-name: "🔍🔒 Check that the pipeline correctly locks: ${{ github.event.head_commit.message }} by @${{ github.actor }}"
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  push:
+    paths: ['components/**', 'libs/**', 'pipelines/**', '.github/workflows/generic-component-test.yaml','.github/workflows/launch-component-tests.yaml', '.github/workflows/check-pipeline-locks.yaml']
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  check_for_pipeline_lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if we should skip the workflow
+        uses: shellphish-support-syndicate/ci-crs-actions@v2.0.0
+        continue-on-error: true
+        id: skip-push-if-pr
+        with:
+          github-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          action: 'skip-push-if-pr'
+          cache: '/tmp/cache'
+      # Sets should-skip-workflow output
+
+      - name: Check out the code
+        if: ${{ steps.skip-push-if-pr.outputs.should-skip-workflow != 'true' }}
+        uses: actions/checkout@v2
+
+      # Generic Env Setup
+      - name: Set up Python 3.10
+        if: ${{ steps.skip-push-if-pr.outputs.should-skip-workflow != 'true' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Check that the pipeline correctly locks
+        if: ${{ steps.skip-push-if-pr.outputs.should-skip-workflow != 'true' }}
+        run: |
+          python3 -m pip install libs/crs-telemetry
+          python3 -m pip install libs/pydatatask
+          pdl
+
+          # Check that pdt runtime works
+          if timeout 20 pd viz 2>&1 | grep -i traceback -C 100; then
+            echo "ERROR: Found traceback in pd viz output!"
+            exit 1
+          fi
+
+      - name: Check that each task of the pipeline has the requisite properties
+        if: ${{ steps.skip-push-if-pr.outputs.should-skip-workflow != 'true' }}
+        run: |
+          python3 <<EOF
+          import sys
+          import pydatatask
+          pipeline = pydatatask.get_current_directory_pipeline()
+          ok = True
+          for taskname, task in pipeline.tasks.items():
+            if isinstance(task, pydatatask.ContainerTask):
+              mounts = task.mounts or {}
+              if not '/shared' in mounts:
+                print(f"WARNING: {taskname} does not have a host mount for /shared")
+            if "project_cancel" not in task.links:
+              print(f"PROBLEM: {taskname} does not have a link named project_cancel (to be able to cancel the entire crs task)")
+              ok = False
+            elif task.links["project_cancel"].kind != pydatatask.LinkKind.Cancel:
+              print(f"PROBLEM: {taskname}'s project_cancel is not a Cancel link")
+              ok = False
+            if "project_id" not in task.links:
+              print(f"PROBLEM: {taskname} does not have a link named project_id (to be able to tell the status of each crs task)")
+              ok = False
+            elif task.links["project_id"].kind != pydatatask.LinkKind.InputId:
+              print(f"PROBLEM: {taskname}'s project_id is not an InputId")
+              ok = False
+            if task.node_labels_function == "task_pool_labels":
+              if "crs_task" not in task.links:
+                print(f"PROBLEM: {taskname} does not have a link named crs_task (to be able to tell the task pool of each crs task)")
+                ok = False
+            if task.node_labels and (
+              task.node_labels.get('support.shellphish.net/allow-fuzzing', False)
+              or task.node_labels.get('support.shellphish.net/only-fuzzing', False)
+              or task.node_labels.get('support.shellphish.net/allow-fuzzing-lf', False)
+              or task.node_labels.get('support.shellphish.net/only-fuzzing-lf', False)
+              or task.node_labels.get('support.shellphish.net/pool') == 'critical-task'
+              ):
+              if not task.node_labels_function == 'task_pool_labels':
+                print(f"PROBLEM: {taskname} is a fuzzing task but does not have node_labels_function=task_pool_labels set")
+                ok = False
+            else:
+              if task.node_labels_function:
+                print(f"PROBLEM: {taskname} is not in a pool that can use node_labels_function={task.node_labels_function}")
+                ok = False
+
+            # Check that make sure that no two links with InputFilepath kind have the same template_cache_key
+            all_cache_keys = set()
+            for n,link in task.links.items():
+              if link.kind != pydatatask.LinkKind.InputFilepath:
+                continue
+              if link.template_cache_key:
+                if link.template_cache_key in all_cache_keys:
+                  print(f"PROBLEM: {taskname} has a link named {n} with a template_cache_key {link.template_cache_key} that is already in use")
+                  ok = False
+                all_cache_keys.add(link.template_cache_key)
+
+            for n,link in task.links.items():
+              if not link.key:
+                continue
+              key_link = link.key.split('.',1)[0]
+              if n == key_link:
+                print(f"PROBLEM: {taskname} has a link named {n} with a recursive key {link.key}")
+                ok = False  
+            for n,link in task.links.items():
+              if link.kind == pydatatask.LinkKind.OutputFilepath:
+                # Make sure there is NO key in the link
+                if link.key:
+                  print(f"PROBLEM: {taskname} has a link named {n} with a key {link.key}")
+                  ok = False
+
+            template = task.template if isinstance(task, pydatatask.ContainerTask) else ''
+            
+            # Check that each task has a CRS_TASK_NUM env which is set by a crs_tasks repo link
+            has_crs_task_link = False
+            if template:
+              crs_task_num_line = None
+              if not 'CRS_TASK_NUM' in template:
+                print(f"PROBLEM: {taskname} does not have a CRS_TASK_NUM in its template")
+                ok = False
+              else:
+                crs_task_num_line = next((line for line in template.split('\n') if 'CRS_TASK_NUM' in line), None)
+              
+              # At least one link should be a crs_tasks link with InputMetadata kind
+              crs_task_link_name = None
+              for n,link in task.links.items():
+                if link.kind != pydatatask.LinkKind.InputMetadata:
+                  continue
+                if not 'crs_task' in n:
+                  continue
+                crs_task_link_name = n
+                if crs_task_num_line and n in crs_task_num_line:
+                  break
+              if not crs_task_link_name:
+                print(f"PROBLEM: {taskname} does not have a link for crs_tasks (to be able to set CRS_TASK_NUM)")
+
+              # The crs_task link should have the same key as the project_cancel link
+              project_cancel_link = task.links.get('project_cancel')
+              if crs_task_link_name and project_cancel_link:
+                crs_task_link = task.links[crs_task_link_name]
+                if crs_task_link.key != project_cancel_link.key:
+                  print(f"PROBLEM: {taskname} has a crs_tasks link named {crs_task_link_name} with a key {crs_task_link.key} that does not match the project_cancel link key {project_cancel_link.key}")
+                  ok = False
+
+              # The CRS_TASK_NUM env should use the crs_tasks link to set the value
+              if crs_task_link_name and crs_task_num_line and not crs_task_link_name in crs_task_num_line:
+                print(f"PROBLEM: {taskname} has CRS_TASK_NUM set by some other link other than {crs_task_link_name}")
+                ok = False
+
+          if not ok:
+            print("\nFAILED")
+            sys.exit(1)
+          else:
+            print("\nGREAT")
+          EOF

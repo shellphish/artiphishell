@@ -1,0 +1,22 @@
+repo_classes:
+  ################ INPUTS ################
+  crs_tasks_cancelled: MetadataRepository
+  functions_index_csvs: BlobRepository
+  target_metadatas: MetadataRepository
+  harness_infos: MetadataRepository
+  pov_report_representative_crashing_input_metadatas: MetadataRepository
+
+  ################ OUTPUTS ################
+  points_of_interest: MetadataRepository
+
+imports:
+  poiguy_kasan:
+    path: ../../pipeline_poiguy_kasan.yaml
+    repos:
+      crs_tasks_cancelled: crs_tasks_cancelled
+      functions_index_csvs: functions_index_csvs
+      target_metadatas: target_metadatas
+      harness_infos: harness_infos
+      pov_report_representative_crashing_input_metadatas: pov_report_representative_crashing_input_metadatas
+
+      points_of_interest: points_of_interest

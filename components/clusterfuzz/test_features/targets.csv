@@ -1,0 +1,5 @@
+babel,targets-semis-babel,fuzz_profile
+cbor,targets-semis-cbor-java,FuzzDec
+jenkins,targets-semis-jenkins-cp-oss-fuzz,JenkinsTwo
+mupdf,targets-semis-mupdf,pdf_fuzzer
+zip,zip-cp-ossfuzz,fuzzer

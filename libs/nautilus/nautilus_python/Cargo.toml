@@ -1,0 +1,17 @@
+[package]
+name = "nautilus_python"
+version = "0.1.0"
+authors = ["ruaronicola <ruaronicola@ucsb.edu>"]
+edition = "2018"
+
+[dependencies]
+md5 = "0.7.0"
+pyo3 = { version = "0.21.2", features = ["extension-module"] }
+fuzzer = { path = "../fuzzer" }
+grammartec = { path = "../grammartec" }
+revolver_mutator = { path = "../revolver_mutator" }
+
+[lib]
+name = "nautilus_python"
+path = "./src/lib.rs"
+crate-type = ["cdylib"]

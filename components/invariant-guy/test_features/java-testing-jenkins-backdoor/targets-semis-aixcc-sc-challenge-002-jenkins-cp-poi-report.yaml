@@ -1,0 +1,123 @@
+additional_information: {}
+consistent_sanitizers:
+- id_1
+cp_harness_binary_path: out/harnesses/two/aixcc-harness.jar
+cp_harness_id: id_1
+cp_harness_name: JenkinsTwo
+cp_harness_source_path: src/jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+crash_id: 62d6d32d3b6913fbecb7a6202ac63e78
+crash_reason: Jazzer
+crash_report_id: 62d6d32d3b6913fbecb7a6202ac63e78
+detection_strategy: fuzzing
+fuzzer: jazzer
+harness_id: id_1
+harness_info_id: 18eb7787d8238a31ed55707808a8c064
+inconsistent_sanitizers: []
+pois:
+- reason: ' == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical:
+    OS Command Injection'
+  source_location:
+    function_name: io.jenkins.plugins.UtilPlug.UtilMain.String.createUtils
+    function_signature: io.jenkins.plugins.UtilPlug.UtilMain.String createUtils(Stringcmd)
+    key_index: plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java:182:4::io.jenkins.plugins.UtilPlug.UtilMain.String
+      createUtils(Stringcmd)
+    line_number: 194
+    line_text: '                process = processBuilder.start();'
+    relative_file_path: plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+    symbol_offset: 0
+    symbol_size: 0
+- reason: ' == Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical:
+    OS Command Injection'
+  source_location:
+    function_name: io.jenkins.plugins.UtilPlug.UtilMain.void.doexecCommandUtils
+    function_signature: io.jenkins.plugins.UtilPlug.UtilMain.void doexecCommandUtils(@QueryParameterStringcmdSeq2,StaplerRequestrequest,StaplerResponseresponse)
+    key_index: plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java:142:11::io.jenkins.plugins.UtilPlug.UtilMain.void
+      doexecCommandUtils(@QueryParameterStringcmdSeq2,StaplerRequestrequest,StaplerResponseresponse)
+    line_number: 157
+    line_text: '                String res_match = createUtils(cmdSeq2);'
+    relative_file_path: plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+    symbol_offset: 0
+    symbol_size: 0
+sanitizer_history:
+- - id_1
+- - id_1
+- - id_1
+- - id_1
+- - id_1
+- - id_1
+- - id_1
+- - id_1
+- - id_1
+- - id_1
+scanner: jazzer
+stack_traces:
+- call_locations:
+  - function: ProcessImplStartHook
+    function_name: ProcessImplStartHook
+    key_index: null
+    line_number: 41
+    line_text: null
+    relative_file_path: OsCommandInjection.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: at com.code_intelligence.jazzer.sanitizers.OsCommandInjection.ProcessImplStartHook(OsCommandInjection.java:41)
+  - function: start
+    function_name: start
+    key_index: null
+    line_number: 1110
+    line_text: null
+    relative_file_path: ProcessBuilder.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1110)
+  - function: start
+    function_name: start
+    key_index: null
+    line_number: 1073
+    line_text: null
+    relative_file_path: ProcessBuilder.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1073)
+  - function: io.jenkins.plugins.UtilPlug.UtilMain.String createUtils(Stringcmd)
+    function_name: io.jenkins.plugins.UtilPlug.UtilMain:createUtils
+    key_index: plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java:182:4::io.jenkins.plugins.UtilPlug.UtilMain.String
+      createUtils(Stringcmd)
+    line_number: 194
+    line_text: '                process = processBuilder.start();'
+    relative_file_path: plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: at io.jenkins.plugins.UtilPlug.UtilMain.createUtils(UtilMain.java:194)
+  - function: io.jenkins.plugins.UtilPlug.UtilMain.void doexecCommandUtils(@QueryParameterStringcmdSeq2,StaplerRequestrequest,StaplerResponseresponse)
+    function_name: io.jenkins.plugins.UtilPlug.UtilMain:doexecCommandUtils
+    key_index: plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java:142:11::io.jenkins.plugins.UtilPlug.UtilMain.void
+      doexecCommandUtils(@QueryParameterStringcmdSeq2,StaplerRequestrequest,StaplerResponseresponse)
+    line_number: 157
+    line_text: '                String res_match = createUtils(cmdSeq2);'
+    relative_file_path: plugins/pipeline-util-plugin/src/main/java/io/jenkins/plugins/UtilPlug/UtilMain.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: at io.jenkins.plugins.UtilPlug.UtilMain.doexecCommandUtils(UtilMain.java:157)
+  - function: com.aixcc.jenkins.harnesses.two.JenkinsTwo.void fuzz(byte[]data)
+    function_name: com.aixcc.jenkins.harnesses.two.JenkinsTwo:fuzz
+    key_index: jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java:48:12::com.aixcc.jenkins.harnesses.two.JenkinsTwo.void
+      fuzz(byte[]data)
+    line_number: 80
+    line_text: '                        nw.doexecCommandUtils(parts[2], req, resp);'
+    relative_file_path: jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: at com.aixcc.jenkins.harnesses.two.JenkinsTwo.fuzz(JenkinsTwo.java:80)
+  - function: com.aixcc.jenkins.harnesses.two.JenkinsTwo.void fuzzerTestOneInput(byte[]data)
+    function_name: com.aixcc.jenkins.harnesses.two.JenkinsTwo:fuzzerTestOneInput
+    key_index: jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java:38:18::com.aixcc.jenkins.harnesses.two.JenkinsTwo.void
+      fuzzerTestOneInput(byte[]data)
+    line_number: 39
+    line_text: '        new JenkinsTwo().fuzz(data);'
+    relative_file_path: jenkins-harnesses/jenkins-harness-two/src/main/java/com/aixcc/jenkins/harnesses/two/JenkinsTwo.java
+    symbol_offset: 0
+    symbol_size: 0
+    trace_line: at com.aixcc.jenkins.harnesses.two.JenkinsTwo.fuzzerTestOneInput(JenkinsTwo.java:39)
+  reason: triggered sanitizer match
+project_id: '004'

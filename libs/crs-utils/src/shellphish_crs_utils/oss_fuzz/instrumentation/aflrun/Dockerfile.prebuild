@@ -1,0 +1,32 @@
+ARG OSS_FUZZ_BASE_BUILDER_IMAGE=
+
+FROM ${OSS_FUZZ_BASE_BUILDER_IMAGE}
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y software-properties-common libboost-all-dev \
+    binutils binutils-dev binutils-gold lld && \
+
+    wget -qO - https://apt.llvm.org/llvm.sh | bash -s 15 && \
+    apt-get install -y clang-15 lld-15 llvm-15 llvm-15-dev llvm-15-runtime && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /llvm && wget https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.0/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4.tar.xz \
+    -O /llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4.tar.xz 2>/dev/null
+
+# RUN tar -xf /llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4.tar.xz -C /llvm 
+# RUN rm /llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4.tar.xz
+
+# RUN ln -s /llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4/lib/LLVMgold.so \
+# /usr/lib/x86_64-linux-gnu/LLVMgold.so
+
+# ENV PATH="/llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4/bin:$PATH"
+
+RUN mkdir -p $SRC/shellphish && \
+    git clone https://github.com/Mem2019/AFLRun.git $SRC/shellphish/aflrun && \
+    cd $SRC/shellphish/aflrun && \
+    git submodule update --init robin-hood-hashing/
+
+COPY precompile_aflrun /usr/local/bin/
+RUN precompile_aflrun

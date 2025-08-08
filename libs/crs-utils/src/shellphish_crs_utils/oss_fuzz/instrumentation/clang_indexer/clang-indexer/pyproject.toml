@@ -1,0 +1,11 @@
+[project]
+name = "clang_indexer"
+version = "0.0.1"
+requires-python = ">=3.8"
+dependencies = [
+    "clang==18.1.8",
+    "joblib",
+]
+
+[project.scripts]
+clang-indexer = "clang_indexer.main:main"

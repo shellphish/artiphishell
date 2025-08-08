@@ -1,0 +1,14 @@
+After completing the analysis, you MUST output a feedback report in the specified format.
+
+```
+<feedback_report>
+<analysis>...</analysis>
+<verdict>...</verdict>
+<feedback>...</feedback>
+</feedback_report>
+```
+
+<!-- Guidelines for output generation: -->
+1. For <analysis>...</analysis>, replace the "..." with a detailed analysis of the patch.
+2. For <verdict>...</verdict>, replace the "..." with either "pass" or "fail".
+3. For <feedback>...</feedback>, replace the "..." with the feedback for the developer to improve the patch based on the analysis (only if the verdict is fail, otherwise just add n/a).

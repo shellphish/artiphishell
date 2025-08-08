@@ -1,0 +1,32 @@
+repos:
+  filteredInputs:
+    cls: QueryMetadata
+    args:
+      query: |
+        fn myfilter(data: Data) -> Bool: .invert(.getworks(data));
+        inputs.filter[.myfilter]()
+      getters:
+        works: Data
+      jq:
+        invert: ". | not"
+repo_classes:
+  inputs: MetadataRepository
+tasks:
+  task0:
+    executable:
+      cls: Process
+      args:
+        template: 'false'
+    links:
+      output:
+        repo: inputs
+        kind: OutputFilepath
+  task1:
+    executable:
+      cls: Process
+      args:
+        template: 'false'
+    links:
+      input:
+        repo: filteredInputs
+        kind: InputMetadata

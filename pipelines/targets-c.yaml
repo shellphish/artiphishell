@@ -1,0 +1,156 @@
+repo_classes:
+  all_crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+  project_metadatas: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  aflpp_build_artifacts: FilesystemRepository
+  libfuzzer_build_artifacts: FilesystemRepository
+  fuzzers_started: BlobRepository
+
+  codeql_analysis_ready: MetadataRepository
+  crs_tasks_diffs: BlobRepository
+  locs_of_interest: BlobRepository 
+  funcs_of_interest: BlobRepository
+  codeswipe_rankings: BlobRepository
+
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  commit_functions_jsons_dirs: FilesystemRepository
+  canonical_build_artifacts: FilesystemRepository
+  project_compile_commands: { cls: BlobRepository, required: false }
+  project_link_commands: { cls: BlobRepository, required: false }
+  codechecker_reports: { cls: FilesystemRepository, required: false }
+
+  discovery_guy_output_seeds: BlobRepository
+
+  # targets_with_sources: FilesystemRepository
+  # cp_image_ready: MetadataRepository
+  # target_metadatas: MetadataRepository
+  # target_directed_seeds: FilesystemRepository
+
+  # full_functions_indices: BlobRepository
+  # full_functions_jsons_dirs: FilesystemRepository
+  # harness_infos: MetadataRepository
+
+  # libfuzzer_reaching_functions_dicts: BlobRepository
+  # libfuzzer_reaching_files_dicts: BlobRepository
+
+  # to_triage_harness_inputs: {"cls": BlobRepository, "required": false}
+  # to_triage_harness_inputs_metadatas: {"cls": MetadataRepository, "required": false}
+
+  # parsed_asan_reports: { "cls": MetadataRepository, "required": false }
+  # fuzz_requests: MetadataRepository
+  # info_extraction_requests: MetadataRepository
+  # info_extraction_results: MetadataRepository
+
+imports:
+  aflplusplus:
+    path: ../components/aflplusplus/pipeline.yaml
+    repos:
+      aflpp_build_artifacts: aflpp_build_artifacts
+      target_split_metadatas: target_split_metadatas
+      crs_tasks: all_crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      project_metadatas: project_metadatas
+      project_build_configurations: project_build_configurations
+      project_harness_infos: project_harness_infos
+      project_analysis_sources: project_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      fuzzers_started: fuzzers_started
+
+  clang_indexer:
+    path: ../components/clang-indexer/pipeline.yaml
+    repos:
+      crs_tasks: all_crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      base_project_metadatas: base_project_metadatas
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      project_compile_commands: project_compile_commands
+      project_link_commands: project_link_commands
+      delta_mode_tasks: delta_mode_tasks
+
+#  codechecker:
+#    path: ../components/codechecker/pipeline.yaml
+#    repos:
+#      crs_tasks: all_crs_tasks
+#      crs_tasks_cancelled: crs_tasks_cancelled
+#      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+#      full_functions_jsons_dirs: full_functions_jsons_dirs
+#      base_project_metadatas: base_project_metadatas
+#      locs_of_interest: locs_of_interest
+#      funcs_of_interest: funcs_of_interest
+#      codechecker_reports: codechecker_reports
+  
+  libfuzzer:
+    path: ../components/libfuzzer/pipeline.yaml
+    repos:
+      crs_tasks: all_crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      target_split_metadatas: target_split_metadatas
+      base_project_metadatas: base_project_metadatas
+      project_build_configurations: project_build_configurations
+      project_harness_infos: project_harness_infos
+      project_analysis_sources: project_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      libfuzzer_build_artifacts: libfuzzer_build_artifacts
+
+
+
+#  clang_instrumentation:
+#    path: ../components/clang-instrumentation/pipeline.yaml
+#    repos:
+#      crs_tasks: all_crs_tasks
+#      crs_tasks_cancelled: crs_tasks_cancelled
+#      base_project_metadatas: base_project_metadatas
+#      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+#      canonical_build_artifacts: canonical_build_artifacts
+#      project_harness_infos: project_harness_infos
+#      project_build_configurations: project_build_configurations
+#      project_link_commands: project_link_commands
+
+  # aflrun:
+  #   path: ../components/aflrun/pipeline.yaml
+  #   repos:
+  #     crs_tasks: all_crs_tasks
+  #     crs_tasks_cancelled: crs_tasks_cancelled
+  #     project_metadatas: project_metadatas
+  #     project_build_configurations: project_build_configurations
+  #     project_harness_infos: project_harness_infos
+  #     project_analysis_sources: project_analysis_sources
+  #     crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+  #     benign_harness_inputs: benign_harness_inputs
+  #     benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+  #     crashing_harness_inputs: crashing_harness_inputs
+  #     crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+  #     locs_of_interest: locs_of_interest
+
+  # benzene:
+  #   path: ../components/benzene/pipeline.yaml
+  #   repos:
+  #     project_build_configurations: project_build_configurations
+  #     crs_tasks: all_crs_tasks
+  #     crs_tasks_cancelled: crs_tasks_cancelled
+  #     crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+  #     crashing_harness_inputs: dedup_pov_report_representative_crashing_inputs
+  #     crashing_harness_inputs_metadatas: dedup_pov_report_representative_full_reports
+

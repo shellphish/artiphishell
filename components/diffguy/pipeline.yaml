@@ -1,0 +1,107 @@
+repo_classes:
+
+############## DIFFGUY INPUTS ###########################
+  codeql_db_ready: MetadataRepository
+  codeql_base_db_ready: MetadataRepository
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  project_metadatas: MetadataRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  commit_functions_indices: BlobRepository
+  crs_tasks_diffs: BlobRepository
+
+############## DIFFGUY OUTPUTS ##########################
+  diffguy_reports: FilesystemRepository
+  # diffguy_reports: BlobRepository
+  # diffguy_function_diff_results: BlobRepository
+  # diffguy_boundary_diff_results: BlobRepository
+  # diffguy_file_diff_results: BlobRepository
+
+tasks:
+  diffguy:
+    priority: 100000
+    job_quota:
+      cpu: 15
+      mem: "12Gi"
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      project_diff:
+        repo: crs_tasks_diffs
+        kind: InputFilepath
+
+      meta:
+        repo: project_metadatas
+        kind: InputMetadata
+
+      codeql_db_ready:
+        repo: codeql_db_ready
+        kind: InputMetadata
+
+      codeql_base_db_ready:
+        repo: codeql_base_db_ready
+        kind: InputMetadata
+
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+
+      commit_functions_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+
+      diffguy_reports:
+        repo: diffguy_reports
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-diffguy
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+          set -e
+
+          # Create empty diffguy report at the beginning
+          mkdir -p {{ diffguy_reports | shquote }}/{{ crs_task.project_name | shquote }}
+          cat > {{ diffguy_reports | shquote }}/{{ crs_task.project_name | shquote }}/diffguy_report.json << EOF
+          {
+            "function_diff": [],
+            "boundary_diff": [],
+            "file_diff": [],
+            "overlap": [],
+            "union": [],
+            "heuristic": []
+          }
+          EOF
+
+          # Trap for exit and return 0
+          trap 'exit 0' EXIT
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          export DIFF_FILE={{ project_diff | shquote }}
+          export COMMIT_FUNCTIONS_INDEX={{ commit_functions_index | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+
+          python3 /shellphish/diffguy/main.py --name={{ crs_task.project_name | shquote }} --language={{ meta.language | shquote }} --id-before={{ (project_id ~ "-base") }} --id-after={{ project_id | shquote }} --query-path=/shellphish/diffguy/custom --save-path={{ diffguy_reports | shquote }} --diff-mode=all
+
+          echo "Uploading diffguy reports to analysis graph..."
+          python3 /shellphish/diffguy/upload.py --project_id={{ project_id | shquote }} --project_name={{ crs_task.project_name | shquote }} --project_diff={{ project_diff | shquote }} --diff_data={{ diffguy_reports | shquote }}

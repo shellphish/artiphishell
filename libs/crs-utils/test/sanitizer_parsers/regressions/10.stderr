@@ -1,0 +1,135 @@
++ FUZZER=customfuzz3
++ shift
++ '[' '!' -v TESTCASE ']'
++ '[' '!' -f /work/pov_input ']'
++ export RUN_FUZZER_MODE=interactive
++ RUN_FUZZER_MODE=interactive
++ export FUZZING_ENGINE=libfuzzer
++ FUZZING_ENGINE=libfuzzer
++ export SKIP_SEED_CORPUS=1
++ SKIP_SEED_CORPUS=1
++ run_fuzzer customfuzz3 /work/pov_input
+vm.mmap_rnd_bits = 28
+/out/customfuzz3 -rss_limit_mb=2560 -timeout=25 /work/pov_input -timeout_exitcode=0 < /dev/null
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 211714060
+INFO: Loaded 1 modules   (65601 inline 8-bit counters): 65601 [0x555555efbab0, 0x555555f0baf1), 
+INFO: Loaded 1 PC tables (65601 PCs): 65601 [0x555555f0baf8,0x55555600bf08), 
+/out/customfuzz3: Running 1 inputs 1 time(s) each.
+Running: /work/pov_input
+Usage: ./sqlite [OPTIONS] [FILENAME [SQL]]
+FILENAME is the name of an SQLite database. A new database is created
+if the file does not previously exist. Defaults to :memory:.
+OPTIONS include:
+   --                   treat no subsequent arguments as options
+   -A ARGS...           run ".archive ARGS" and exit
+   -append              append the database to the end of the file
+   -ascii               set output mode to 'ascii'
+   -bail                stop after hitting an error
+   -batch               force batch I/O
+   -box                 set output mode to 'box'
+   -column              set output mode to 'column'
+   -cmd COMMAND         run "COMMAND" before reading stdin
+   -csv                 set output mode to 'csv'
+   -deserialize         open the database using sqlite3_deserialize()
+   -echo                print inputs before execution
+   -init FILENAME       read/process named file
+   -[no]header          turn headers on or off
+   -help                show this message
+   -html                set output mode to HTML
+   -interactive         force interactive I/O
+   -json                set output mode to 'json'
+   -line                set output mode to 'line'
+   -list                set output mode to 'list'
+   -lookaside SIZE N    use N entries of SZ bytes for lookaside memory
+   -markdown            set output mode to 'markdown'
+   -maxsize N           maximum size for a --deserialize database
+   -memtrace            trace all memory allocations and deallocations
+   -mmap N              default mmap size set to N
+   -newline SEP         set output row separator. Default: '\n'
+   -nofollow            refuse to open symbolic links to database files
+   -nonce STRING        set the safe-mode escape nonce
+   -no-rowid-in-view    Disable rowid-in-view using sqlite3_config()
+   -nullvalue TEXT      set text string for NULL values. Default ''
+   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory
+   -pcachetrace         trace all page cache operations
+   -quote               set output mode to 'quote'
+   -readonly            open the database read-only
+   -safe                enable safe-mode
+   -separator SEP       set output column separator. Default: '|'
+   -stats               print memory stats before each finalize
+   -table               set output mode to 'table'
+   -tabs                set output mode to 'tabs'
+   -unsafe-testing      allow unsafe commands and modes for testing
+   -version             show SQLite version
+   -vfs NAME            use NAME as the default VFS
+   -vfstrace            enable tracing of all VFS calls
+   -zip                 open the file as a ZIP Archive
+Caught exit(0) call
+Usage: ./sqlite [OPTIONS] [FILENAME [SQL]]
+FILENAME is the name of an SQLite database. A new database is created
+if the file does not previously exist. Defaults to :memory:.
+OPTIONS include:
+   --                   treat no subsequent arguments as options
+   -A ARGS...           run ".archive ARGS" and exit
+   -append              append the database to the end of the file
+   -ascii               set output mode to 'ascii'
+   -bail                stop after hitting an error
+   -batch               force batch I/O
+   -box                 set output mode to 'box'
+   -column              set output mode to 'column'
+   -cmd COMMAND         run "COMMAND" before reading stdin
+   -csv                 set output mode to 'csv'
+   -deserialize         open the database using sqlite3_deserialize()
+   -echo                print inputs before execution
+   -init FILENAME       read/process named file
+   -[no]header          turn headers on or off
+   -help                show this message
+   -html                set output mode to HTML
+   -interactive         force interactive I/O
+   -json                set output mode to 'json'
+   -line                set output mode to 'line'
+   -list                set output mode to 'list'
+   -lookaside SIZE N    use N entries of SZ bytes for lookaside memory
+   -markdown            set output mode to 'markdown'
+   -maxsize N           maximum size for a --deserialize database
+   -memtrace            trace all memory allocations and deallocations
+   -mmap N              default mmap size set to N
+   -newline SEP         set output row separator. Default: '\n'
+   -nofollow            refuse to open symbolic links to database files
+   -nonce STRING        set the safe-mode escape nonce
+   -no-rowid-in-view    Disable rowid-in-view using sqlite3_config()
+   -nullvalue TEXT      set text string for NULL values. Default ''
+   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory
+   -pcachetrace         trace all page cache operations
+   -quote               set output mode to 'quote'
+   -readonly            open the database read-only
+   -safe                enable safe-mode
+   -separator SEP       set output column separator. Default: '|'
+   -stats               print memory stats before each finalize
+   -table               set output mode to 'table'
+   -tabs                set output mode to 'tabs'
+   -unsafe-testing      allow unsafe commands and modes for testing
+   -version             show SQLite version
+   -vfs NAME            use NAME as the default VFS
+   -vfstrace            enable tracing of all VFS calls
+   -zip                 open the file as a ZIP Archive
+Caught exit(0) call
+Executed /work/pov_input in 2 ms
+***
+*** NOTE: fuzzing was not performed, you have only
+***       executed the target code on a fixed set of inputs.
+***
+Caught exit(0) call
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==20==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000000 (pc 0x000000000000 bp 0x000000000000 sp 0x7fffffffe180 T0)
+==20==Hint: pc points to the zero page.
+==20==The signal is caused by a READ memory access.
+==20==Hint: address points to the zero page.
+SCARINESS: 10 (null-deref)
+    #0 0x0  (<unknown module>)
+
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV (<unknown module>) 
+==20==ABORTING

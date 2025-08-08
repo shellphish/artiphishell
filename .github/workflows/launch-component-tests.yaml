@@ -1,0 +1,86 @@
+name: Launch Component Tests For Components
+run-name: "🩺📦 Run Component Tests For Components: ${{ github.event.head_commit.message }} by @${{ github.actor }}"
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  push:
+    paths: [
+      'components/**',
+      'libs/**',
+      '.github/workflows/generic-component-test.yaml',
+      '.github/workflows/launch-component-tests.yaml'
+    ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      component:
+        description: 'The component to test'
+        required: false
+        type: choice
+        default: 'any-changed'
+        options:
+          - any-changed
+          - agentlib
+          - aflplusplus
+          - aflrun
+          - antlr4-guy
+          - base
+          - benzene
+          - clang-indexer
+          - code-swipe
+          - codeql
+          - configuration-splitter
+          - crs-utils
+          - coverage-guy
+          - coveragelib
+          - crash-tracer
+          - discoveryguy
+          - docker-pushpull
+          - dyva
+          - function-index-generator
+          - grammar-composer
+          - grammar-guy
+          - griller
+          - invariant-guy
+          - jazzer
+          - kumu-shi-runner
+          - knowledge-base
+          - libfuzzer
+          - libfreedom
+          - patchery
+          - patcherq
+          - poiguy
+          - povguy
+          - quickseed
+          - sarifguy
+          - snapchange
+          - submitter
+          - symcts
+          - syzkaller
+          - syzgrammar-gen
+          - timesaver
+          - target-fuzz-requestor
+          - target-identifier
+      message:
+        description: 'The message related to the run'
+        required: false
+        default: 'Run Tests'
+        type: string
+      component_test_timeout:
+        description: 'The time to run each component test for'
+        required: false
+        default: 20
+        type: number
+jobs:
+  run_individual_component_tests:
+    runs-on: ubuntu-latest
+    #runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - uses: shellphish-support-syndicate/ci-crs-actions@v2.0.0
+        with:
+          github-token: ${{ secrets.AMY_CI_DEPLOY_TOKEN }}
+          action: 'launch' # Launch an action for each updated component
+          components-directories: 'components'
+          component: ${{ github.event.inputs.component }}

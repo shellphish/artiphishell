@@ -1,0 +1,116 @@
+name: CI
+on:
+  - push
+  - pull_request
+jobs:
+  test:
+    name: Build and Test
+    if: always()
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - version: '3.8'
+            env: 'py38'
+          - version: '3.9'
+            env: 'py39'
+          - version: '3.10'
+            env: 'py310'
+          - version: '3.11'
+            env: 'py311'
+          - version: '3.12'
+            env: 'py312'
+    runs-on: ubuntu-latest
+    env:
+      PYTHON: ${{ matrix.python.version }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup python
+      uses: actions/setup-python@main
+      with:
+        python-version: ${{ matrix.python.version }}
+    - name: Start minikube
+      uses: medyagh/setup-minikube@master
+    - name: Deps
+      run: 'pip install tox'
+    - name: Tests
+      run: 'tox -e ${{ matrix.python.env }}'
+      env:
+        PYDATATASK_TEST_KUBE_CONTEXT: minikube
+    - name: Upload Coverage
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: false
+        env_vars: PYTHON
+        files: ./coverage.xml
+        flags: unittests
+  analyze:
+    name: Static Analysis
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup python
+      uses: actions/setup-python@main
+      with:
+        python-version: '3.11'
+    - name: Deps
+      run: 'pip install -e .[dev]'
+    - name: Analyze
+      run: 'tox -m analyze-ci'
+  audit:
+    name: Pip Audit
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup python
+      uses: actions/setup-python@main
+      with:
+        python-version: '3.11'
+    - name: Update Build Deps
+      run: pip install -U setuptools pip wheel
+    - name: install
+      run: pip install .
+    - uses: pypa/gh-action-pip-audit@v1.0.6
+      with:
+        ignore-vulns: |
+            GHSA-547x-748v-vp6p
+  docs:
+    name: Build Documentation
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: OS Deps
+      run: 'sudo apt-get install libfuse3-dev'
+    - uses: actions/checkout@v3
+    - name: Setup python
+      uses: actions/setup-python@main
+      with:
+        python-version: '3.11'
+    - name: Deps
+      run: 'pip install tox'
+    - name: Build Docs
+      run: 'tox -e doc'
+  release:
+    name: Release to PyPI
+    needs: ["test", "audit", "analyze", "docs"]
+    if: "github.event_name == 'push' && github.repository == 'rhelmot/pydatatask' && startsWith(github.ref, 'refs/tags/v') && success()"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup python
+      uses: actions/setup-python@main
+      with:
+        python-version: '3.11'
+    - name: Deps
+      run: 'pip install -U build wheel semver'
+    - name: Fix Version
+      run: './release.py finalize'
+    - name: Build
+      run: 'python -m build'
+    - name: Publish
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_TOKEN }}

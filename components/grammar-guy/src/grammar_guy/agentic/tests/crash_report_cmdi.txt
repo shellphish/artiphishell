@@ -1,0 +1,12 @@
+== Java Exception: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical: OS Command Injection
+Executing OS commands with attacker-controlled data can lead to remote code execution.
+        at com.code_intelligence.jazzer.sanitizers.OsCommandInjection.wideCmdCheck(OsCommandInjection.kt:65)
+        at com.code_intelligence.jazzer.sanitizers.OsCommandInjection.processImplStartHook(OsCommandInjection.kt:96)
+        at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1110)
+        at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1073)
+        at java.base/java.lang.Runtime.exec(Runtime.java:594)
+        at java.base/java.lang.Runtime.exec(Runtime.java:418)
+        at java.base/java.lang.Runtime.exec(Runtime.java:315)
+        at net.lingala.zip4j.model.AbstractFileHeader.getZip64ExtendedInfo(AbstractFileHeader.java:147)
+        at Zip4jFuzzer.fuzzerTestOneInput(Zip4jFuzzer.java:125)
+DEDUP_TOKEN: 314d80174d0d8e3d

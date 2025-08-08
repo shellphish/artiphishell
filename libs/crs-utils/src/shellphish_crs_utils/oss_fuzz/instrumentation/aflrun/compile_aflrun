@@ -1,0 +1,48 @@
+#!/bin/bash -eu
+
+set -euo pipefail
+
+echo "Copying precompiled AFLRun"
+pushd $SRC/shellphish/aflrun > /dev/null
+
+cp -f libAFLDriver.a $LIB_FUZZING_ENGINE
+
+# Some important projects include libraries, copy those even when they don't
+# start with "afl-". Use "sort -u" to avoid a warning about duplicates.
+ls afl-* *.txt *.a *.o *.so | sort -u | xargs cp -t $OUT
+export CC="$SRC/shellphish/aflrun/afl-clang-lto"
+export CXX="$SRC/shellphish/aflrun/afl-clang-lto++"
+
+echo  $AFLRUN_BUILD_BB_FILE | base64 --decode > /tmp/aflrun_bb.txt
+export AFLRUN_BB_TARGETS="/tmp/aflrun_bb.txt"
+
+# Set sane AFL++ environment defaults:
+# Be quiet, otherwise this can break some builds.
+export AFL_QUIET=1
+# No leak errors during builds.
+export ASAN_OPTIONS="detect_leaks=0:symbolize=0:detect_odr_violation=0:abort_on_error=1"
+# Do not abort on any problems (because this is during build where it is ok)
+export AFL_IGNORE_PROBLEMS=1
+# No complain on unknown AFL environment variables
+export AFL_IGNORE_UNKNOWN_ENVS=1
+
+export AFL_LLVM_USE_TRACE_PC=1
+export AFL_LLVM_DICT2FILE="$OUT/afl++.dict"
+export AFL_LLVM_DICT2FILE_NO_MAIN=1
+export AFL_MAP_SIZE=2621440
+
+export CFLAGS="-g"
+export CXXFLAGS="-g"
+# DO NOT TRY TO EXPORT LDFLAGS, oss-fuzz targets just ignore it.
+# Instead, you have to do `-Wl` in CFLAGS and CXXFLAGS.
+
+# Provide a way to document the AFL++ options used in this build:
+echo
+echo AFLRun target compilation setup:
+env | egrep '^AFL_' | tee "$OUT/aflrun_options.txt"
+env | egrep '^AFLRUN_' | tee -a "$OUT/aflrun_options.txt"
+echo
+
+popd > /dev/null
+
+echo " done."

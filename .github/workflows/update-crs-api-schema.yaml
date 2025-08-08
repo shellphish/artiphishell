@@ -1,0 +1,121 @@
+name: "Update CRS API Schema"
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force update the API schema"
+        required: false
+        default: false
+        type: boolean
+      instructions:
+        description: "Additional instructions for the AI"
+        required: false
+        default: ""
+        type: string
+  schedule:
+    # Run daily at 02:00 UTC (off-peak hours)
+    - cron: '0 2 * * *'
+
+jobs:
+  update-schema-if-needed:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Cleanup CI Worker
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+        with:
+          runner: "ubuntu-latest"
+          is-artiphishell: false
+          CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check branch and existing PRs
+        id: check_pr
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+        run: |
+          # Install GitHub CLI
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+          && sudo apt update \
+          && sudo apt install gh -y
+
+          # Check for existing PR
+          if gh pr list --search "in:title CRS API Schema Update is:open" --json number | grep -q "number"; then
+            echo "Existing open PR found, skipping update"
+            echo "should_continue=false" >> $GITHUB_OUTPUT
+          else
+            echo "No existing open PR found, proceeding with update"
+            echo "should_continue=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup CI Environment
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/setup-component-test-env@main
+        with:
+          runner: "ubuntu-latest"
+          CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          LITELLM_KEY: ${{ secrets.LITELLM_KEY }}
+
+      - name: Install agentlib
+        shell: "bash"
+        run: |
+          pip install -e ./libs/agentlib
+
+      - name: Run Schema Update
+        id: schema_update
+        if: ${{ github.ref != 'refs/heads/main' || steps.check_pr.outputs.should_continue == 'true' }}
+        env:
+          INSTRUCTIONS: ${{ inputs.instructions }}
+        run: |
+          set -x
+          FORCE=""
+          if [[ "${{ inputs.force }}" == "true" ]]; then
+            FORCE="--force"
+          fi
+
+          python ./aixcc-infra/afc-api-schema/src/generate_schema.py $FORCE --instructions "${INSTRUCTIONS}"
+
+          git diff
+      
+          # Add and commit any changes
+          git config --global user.email "claude@support.shellphish.net"
+          git config --global user.name "Claude"
+
+          git add libs/crs-utils/src/shellphish_crs_utils/models/aixcc_api.py || true
+          git add libs/crs-utils/src/shellphish_crs_utils/models/sarif.py || true
+          git add libs/crs-api/crs_api/crs_api_endpoints.py || true
+          git add libs/crs-api/crs_api/competition_api.py || true
+
+          git add aixcc-infra/aixcc-afc-competition-api/src/server.py || true
+
+          (git commit -m "chore: update CRS API schema" && echo "has_changes=true" >> $GITHUB_OUTPUT) || echo "has_changes=false" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: ${{ steps.schema_update.outputs.has_changes == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+        run: |
+          # Create a new branch
+          BRANCH_NAME="chore/update-crs-api-schema-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b $BRANCH_NAME
+          
+          # Push the branch
+          git push origin $BRANCH_NAME
+          
+          # Create PR
+          gh pr create \
+            --title "CRS API Schema Update" \
+            --body "[chore] Automated PR to update the CRS API schema." \
+            --base ${GITHUB_REF#refs/heads/} \
+            --head $BRANCH_NAME \
+            --reviewer Cl4sm,amyb-asu
+

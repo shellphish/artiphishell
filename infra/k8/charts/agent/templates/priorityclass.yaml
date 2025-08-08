@@ -1,0 +1,9 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: pydatatask-agent-priority
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+value: 1000000000  # Maximum allowed value for user-defined priority classes
+globalDefault: false
+description: "Priority class for pydatatask agent to ensure it gets scheduled before other critical workloads" 

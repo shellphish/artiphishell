@@ -1,0 +1,19 @@
+services:
+  litellm-server:
+    image: aixcc-litellm
+    build: .
+    container_name: aixcc-litellm
+    network_mode: bridge
+    restart: always
+    ports:
+      - "4001:4000" # Accessible from the host
+    volumes:
+      - "/shared:/shared"
+    environment:
+      - OPENAI_API_KEY=${API_KEY}
+      - AZURE_API_KEY=${AZURE_API_KEY}
+      - AZURE_API_BASE=${AZURE_API_BASE}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY}

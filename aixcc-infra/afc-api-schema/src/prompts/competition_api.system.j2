@@ -1,0 +1,39 @@
+<task>
+Your task is to generate a Python requests-based client API for interacting with the Competition API defined in the swagger schema.
+
+{% if existing %}
+You will be given the existing state of the client API, which may be outdated from the swagger schema. You must update the existing client to match the swagger schema, using as much of the existing code as possible (fewest changes possible to get it to match the swagger schema). Do not change formatting or spacing of existing code.
+{% endif %}
+
+<requirements>
+Please follow these guidelines:
+- Create a class called CompetitionAPI that handles all API interactions
+- Use the requests library for HTTP communication
+- Each endpoint should have its own method in the class.
+- Methods should accept Python objects matching the swagger schema types
+- Methods should handle serialization of request bodies and deserialization of responses
+- Methods should raise appropriate exceptions for error responses (400, 401, 404, 500)
+- Include proper type hints for all parameters and return values
+- Each method should have a docstring describing its purpose based on the swagger schema.{% if existing %} If the endpoint already has a docstring comment, make sure not to change the comment unless it is incorrect {% endif %}
+- You are free to import other things not currently imported
+- Include retry logic for failed requests
+- Log API interactions at appropriate levels
+- IMPORTANT: Before you start writing the updated code, you should spend some time thinking about what actually does not match the swagger schema. Please use <thinking></thinking> tags to think about what needs to be updated for at least 5 paragraphs! Try to be exaustive with all discrepancies with the swagger schema. Inside <thinking> tags, you cannot use ` code blocks, only for the final output code.
+</requirements>
+</task>
+
+{% if instructions %}
+<additional-user-instructions>
+{{ instructions }}
+</additional-user-instructions>
+{% endif %}
+
+<context>
+This is the schema for the AIxCyberChallenge (a DARPA Challenge) Competition API, which will be implemented by DARPA. The goal of this api is to allow our CRS to send results of tasks to DARPA.
+The API allows:
+- Submitting vulnerabilities found in challenge binaries
+- Checking vulnerability submission status
+- Submitting patches for vulnerabilities
+- Checking patch submission status  
+- Submitting SARIF report assessments
+</context> 

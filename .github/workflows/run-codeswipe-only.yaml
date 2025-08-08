@@ -1,0 +1,470 @@
+name: Run CodeSwipe Only 
+run-name: "CodeSwipe Run : ${{ github.event_name == 'workflow_dispatch' && format('Running against {0} target', github.event.inputs.target-name) || format('Running on commit - {0}',(github.event.head_commit.message || github.event.workflow_run.head_commit.message )) }}"
+on:
+  # These should be triggered on periodic nightly runs via a dispatched workflow.
+
+  # Do trigger after the apt-cache is successful
+  #workflow_run:
+  #  workflows: [apt-cache-check]
+  #  types:
+  #    - completed
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      target-name:
+        type: choice
+        description: Which target to run
+        default: all
+        options:
+          - all
+          - mock-cp
+          - mock-cp-evil
+          - libxml2
+          - nginx
+          - libpng
+          - sqlite3
+          - cups
+          - wasm3
+          - assimp
+          - selinux
+          - php
+          - krb5
+          - jpegoptim
+          - hiredis
+          - mupdf
+          - libjxl
+          - tor
+          - ghostscript
+          - "---"
+          - mock-cp-java
+          - mock-cp-java-easy
+          - zookeeper
+          - jenkins-email-plugin
+          - jenkins-pipeline-util-plugin
+          - jenkins
+          - tika
+          - zip4j
+          - quartz
+          - pdfbox
+          - zt-zip
+          - cronutils
+          - sqlite-jdbc
+          - "----"
+          - exhibition3-apache-commons-compress-full---01974537-0f16-7093-aa93-f7daf63c1fbe
+          - exhibition3-apache-commons-compress-delta---01974d23-f8ab-7768-aedc-84d65d0d7425
+          - exhibition3-apache-commons-compress-delta---01974d23-fa85-70dd-bfee-dfe6c14ed308
+          - exhibition3-curl-full---01974189-9f82-74b4-8366-71ea0d695cdd
+          - exhibition3-curl-delta---019747e6-188f-7ac5-8bf3-dd468184a881
+          - exhibition3-dropbear-full---01974189-3a80-71b2-8e99-c886e5be1963
+          - exhibition3-freerdp-full---01974189-7c01-7635-892f-06b064dc065c
+          - exhibition3-freerdp-delta---019747e5-ef1b-75df-8e04-4bb98c1b5887
+          - exhibition3-integration-test-delta---019747e5-9698-7d7d-9d34-5115bb2fac82
+          - exhibition3-libexif-delta---019747e5-9d5a-7473-9a49-84092d701d36
+          - exhibition3-libpng-delta---019747e5-e851-7391-af4b-87c6c5222c07
+          - exhibition3-libpostal-full---01974189-8143-7cb8-9968-a380e62736be
+          - exhibition3-libxml2-delta---01974a72-0aee-7025-8547-35267db47f01
+          - exhibition3-libxml2-delta---01974a72-0bff-73ae-873a-d4d5f8876cf6
+          - exhibition3-sqlite3-full---0197418a-d675-7533-9d63-9050f5b0bd7d
+          - exhibition3-sqlite3-delta---01974a73-131e-7600-8284-0c860c35fd10
+          - exhibition3-sqlite3-delta---01974a73-1440-7673-9f56-58721722fb42
+          - exhibition3-sqlite3-delta---01974a73-165c-7814-ab11-178fdd2d45cf
+          - exhibition3-tika-full---01974537-bb05-7bf8-8c79-da70974f4974
+          - exhibition3-tika-delta---01974bc3-f5a1-7b37-a651-7c39fd308d99
+          - exhibition3-tika-delta---01974bc3-f9ed-73a2-9c76-bfe9d5311d3d
+          - exhibition3-tika-delta---01974bc3-fa69-7a10-a4cf-9405a8a4a257
+          - exhibition3-tika-delta---01974bd4-0df0-7d96-aad6-4e3db89d190d
+          - exhibition3-tika-delta---01974bd4-10e9-784a-b6c7-2c5dc5151cf6
+          - exhibition3-zookeeper-full---01974536-d8c1-78d9-86e0-bf1927f0710f
+          - exhibition3-zookeeper-delta---01974d23-c924-7e19-91d0-855f182487e8
+          - exhibition3-zookeeper-delta---01974d31-1a5c-7f33-8877-081c884f2d12
+          - "----"
+          - exhibition2-apache-commons-compress-delta
+          - exhibition2-apache-commons-compress-delta-1
+          - exhibition2-apache-commons-compress-full
+          - exhibition2-dropbear-full
+          - exhibition2-freerdp-delta
+          - exhibition2-freerdp-full
+          - exhibition2-integration-test-delta
+          - exhibition2-libpng-delta
+          - exhibition2-libxml2-delta
+          - exhibition2-libxml2-delta-1
+          - exhibition2-libxml2-full
+          - exhibition2-sqlite3-delta
+          - exhibition2-sqlite3-full
+          - exhibition2-zookeeper-delta
+          - exhibition2-zookeeper-full
+          - "-----"
+          - libxml2_42535569
+          - libxml2_42527008
+          - libical_42536107
+          - harfbuzz_42528604
+          - imagemagick_42529975
+          - ninja_42534950
+          - simdutf_42532259
+          - libxaac_42529482
+          - libxml2_42528951
+          - opensc_42529909
+          - libheif_42527431
+          - miniz_42536108
+          - exiv2_42530135
+          - inchi_42534536
+          - libxml2_42533922
+          - php_42529687
+          - libtpms_42537128
+          - libavc_42530947
+          - unit_42536363
+          - pcapplusplus_42530097
+          - libxml2_42533913
+          - libxml2_42534044
+          - libavc_42530548
+          - inchi_42536250
+          - libultrahdr_42535461
+          - pcre2_42533629
+          - pcapplusplus_42530091
+          - trafficserver_42534923
+          - libavc_42530453
+          - assimp_42528235
+          - libxml2_42531212
+          - radare2_42528938
+          - libxml2_42536963
+          - opensc_42528972
+          - libxaac_42528175
+          - libaom_42533504
+          - simdjson_42534894
+          - leptonica_42532498
+          - speex_42535808
+          - libavc_42530559
+          - pcapplusplus_42530108
+          - pcapplusplus_42530090
+          - ninja_42535056
+          - oniguruma_42534875
+          - libavc_42531145
+          - libxml2_42534845
+          - libultrahdr_42535447
+          - libxml2_42531203
+          - libavc_42530451
+          - libdwarf_42528680
+          - pcapplusplus_42530105
+          - inchi_42535235
+          - inchi_42534760
+          - coturn_42529360
+          - mbedtls_42528740
+          - matio_42530705
+          - libavc_42530568
+          - php_42529524
+          - cpython3_42535828
+          - libxml2_42531126
+          - zstd_42532756
+          - libxml2_42537493
+          - libxml2_42532942
+          - libxaac_42531547
+          - mbedtls_42528891
+          - radare2_42530554
+          - libxslt_42527012
+          - opensc_42531837
+          - libxslt_42527015
+          - matio_42529484
+          - selinux_42530909
+          - lcms_42529915
+          - simdjson_42534891
+          - libssh2_42531314
+          - harfbuzz_42527438
+          - qpdf_42531940
+          - libxaac_42527540
+          - php_42529650
+          - libxml2_42531115
+          - qpdf_42536536
+          - mpv_42535348
+          - cpython3_42527435
+          - libxml2_42528997
+          - pjsip_42535147
+          - libaom_42533540
+          - opensc_42530168
+          - ghostscript_42529061
+          - opensc_42530963
+          - libxml2_42532747
+          - openjpeg_42535258
+          - libavc_42531613
+          - qpdf_42535152
+          - libxml2_42532684
+          - libxaac_42527509
+          - libxml2_42531481
+          - simdjson_42534862
+          - radare2_42530675
+          - glog_42528894
+          - inchi_42534959
+          - hdf5_42529681
+          - libavc_42531269
+          - libavc_42530284
+          - libxml2_42531092
+          - libxaac_42531033
+          - opensc_42529507
+          - mosquitto_42534812
+          - matio_42530618
+          - libxaac_42529112
+          - libxaac_42527636
+          - speex_42534870
+          - simdjson_42534941
+          - libxaac_42528877
+          - libraw_42531108
+          - libavc_42531113
+          - exiv2_42527383
+          - cpython3_42537225
+          - libavc_42530523
+          - lcms_42529931
+          - pcapplusplus_42530439
+          - libavc_42531143
+          - inchi_42536641
+          - ots_42534902
+          - libxml2_42532360
+          - libultrahdr_42535635
+          - simdutf_42538086
+          - pcre2_42530341
+          - libxml2_42529030
+          - hdf5_42530550
+          - ninja_42535166
+          - libxaac_42528035
+          - xz_42534913
+          - lldpd_42528228
+          - libxaac_42528530
+          - libdwarf_42528792
+          - libxaac_42527409
+          - hdf5_42527526
+          - hdf5_42527328
+          - libxml2_42534512
+          - libavc_42531542
+          - wamr_42536271
+          - harfbuzz_42530920
+          - wamr_42536161
+          - jq_42530604
+          - pcapplusplus_42527545
+          - pacemaker_42536001
+          - libavc_42528067
+          - libxml2_42528694
+          - imagemagick_42529327
+          - libavc_42530446
+          - trafficserver_42535524
+          - libaom_42533480
+          - speex_42535969
+          - imagemagick_42532339
+          - geos_42532863
+          - inchi_42536079
+          - php_42527736
+          - mbedtls_42528141
+          - libdwarf_42528352
+          - libxml2_42531532
+          - imagemagick_42529804
+          - libxml2_42528949
+          - ninja_42534851
+          - libultrahdr_42535840
+          - libavc_42530520
+          - matio_42532885
+          - exiv2_42534645
+          - jq_42530823
+          - lcms_42529812
+          - lcms_42530151
+          - ots_42534876
+          - opensc_42527467
+          - opensc_42528426
+          - pcapplusplus_42530195
+          - hdf5_42527895
+          - net-snmp_42528416
+          - libxaac_42528049
+          - php_42529661
+          - libxml2_42533950
+          - libxml2_42528757
+          - libxaac_42527741
+          - libavc_42531141
+          - opensc_42530206
+          - simdutf_42537987
+          - libxaac_42527401
+          - quickjs_42531506
+          - opensc_42529037
+          - libxml2_42528850
+          - pcapplusplus_42530230
+          - miniz_42536112
+          - php_42529542
+          - opensc_42530547
+          - inchi_42536593
+          - libavc_42530723
+          - inchi_42536064
+          - libxaac_42527550
+          - matio_42530069
+          - libavc_42530447
+          - libdwarf_42528883
+          - libxml2_42528698
+          - libxaac_42527948
+          - libavc_42531117
+      run-default-codeql:
+        type: boolean
+        description: Run default CodeQL analysis 
+        default: true
+      run-custom-codeql:
+        type: boolean
+        description: Run custom CodeQL analysis 
+        default: true
+      use-artifacts-from-run:
+        type: string
+        description: Provide the run ID of a previous run to use its artifacts (Has to match the target/mode)
+        default: ""
+      mode:
+        type: choice
+        description: Which mode to run
+        default: full
+        options:
+          - full
+          - delta 
+
+env:
+  # Setting an environment variable with the value of a configuration variable
+  #LITELLM_KEY: ${{ vars.LITELLM_KEY }}
+  RETRIEVAL_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:48751"
+  EMBEDDING_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:49152"
+  OPENAI_API_KEY: "${{ secrets.OPENAI_KEY }}"
+  LITELLM_KEY: "sk-artiphishell-da-best!!!"
+  USE_LLM_API: "1"
+  IS_ACT: "${{ github.actor == 'local/act' }}"
+
+jobs:
+  extract-data:
+    runs-on: ubuntu-latest
+    name: "Picking them targets we need"
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      targets-filtered: ${{ steps.pick-targets.outputs.targets-filtered }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell-lite
+          persist-credentials: true
+          lfs: false
+          submodules: false
+          fetch-depth: 1
+          sparse-checkout: |
+            .github
+      - name: Extract target data
+        id: data
+        working-directory: artiphishell-lite/.github/workflows
+        run: |
+          set -x
+          apt-get update && apt-get install -y jq
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]
+          then
+            # if [ "${{ github.event.inputs.target-name }}"  = "all" ]; then
+            #   echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready")]' < ./combined_targets.json) >> $GITHUB_OUTPUT
+            # elif [ "${{ github.event.inputs.target-name }}"  = "all-supported" ]; then
+            #   echo targets-full-ready=$(jq -c '[ .targets[] | select(."supported-target")]' < ./combined_targets.json) >> $GITHUB_OUTPUT
+            if [ "${{ github.event.inputs.target-name }}"  = "all" ]; then
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready")]' < ./combined_targets.json) >> $GITHUB_OUTPUT
+            else
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."name" == "${{ github.event.inputs.target-name }}")]' < ./combined_targets.json) >> $GITHUB_OUTPUT
+            fi
+          else
+            echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."only-on-manual-run" == false)]' < ./combined_targets.json) >> $GITHUB_OUTPUT
+          fi
+          if [ ! -z "${{ github.event.inputs.additional-targets }}" ]; then
+            # additional-targets is a comma seperated list of "target names"
+            # filter the .targets to only contain the additional targets
+            echo additional-targets=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and (."short-name" | inside("${{ github.event.inputs.additional-targets }}")))]' < ./combined_targets.json) >> $GITHUB_OUTPUT
+          else
+            echo additional-targets=[] >> $GITHUB_OUTPUT
+          fi
+
+  test-full-pipeline:
+    runs-on: [self-hosted, normal]
+    name: Test full pipeline on ${{ matrix.targets.short-name }}
+    needs: extract-data
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        targets: ${{ fromJson(needs.extract-data.outputs.targets-filtered) }}
+    steps:
+      - name: Cleanup CI Worker
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+        with:
+          runner: self-hosted
+          is-artiphishell: false
+          CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+          is-jit-worker: false
+          jit-max-lifetime: 360
+      - name: Checkout Artiphishell
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell
+          persist-credentials: true
+          lfs: false
+          submodules: false
+          fetch-depth: 1
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: artiphishell.azurecr.io
+          username: ARTIPHISHELL-CI-ACR-PUSH-TOKEN
+          password: ${{ secrets.ACR_TOKEN }}
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: artiphishelltiny.azurecr.io
+          username: ARTIPHISHELL-CI-ACR-PUSH-TOKEN
+          password: ${{ secrets.ACR_TOKEN_TINY }}
+      - name: Get previous run
+        id: get-run-id
+        working-directory: artiphisell/.github
+        run: | 
+          set -x 
+          python3 -m pip install bs4
+          python3 pipeline_finder.py "${{ matrix.targets.short-name }}"
+      - name: Get data from previous run
+        id: get-previous-run
+        working-directory: artiphishell/components/code-swipe
+        run: | 
+          set -x
+          ./test-data/get_data.sh "${{ matrix.targets.short-name }}" "${{ github.event.inputs.use-artifacts-from-run }}" "${{ github.event.inputs.mode }}"
+          echo "Using artifacts from run: ${{ github.event.inputs.use-artifacts-from-run }}"
+      - name: Get CodeQL Databases
+        id: get-codeql-database
+        run: | 
+          # get CodeQL database from some location - ${{ matrix.targets.short-name }}
+
+      - name: Run default CodeQL queries
+        id: run-codeql
+        if: ${{ github.event.inputs.run-default-codeql == 'true' }}
+        run: | 
+          echo "Running default CodeQL queries for ${{ matrix.targets.short-name }}"
+          # Run default CodeQL queries here
+      - name: Run custom CodeQL queries
+        id: run-custom-codeql
+        if: ${{ github.event.inputs.run-custom-codeql == 'true' }}
+        run: | 
+          echo "Running custom CodeQL queries for ${{ matrix.targets.short-name }}"
+          # Run custom CodeQL queries here
+      - name: Run CodeSwipe
+        id: run-codeswipe
+        working-directory: artiphishell/components/code-swipe 
+        run: |
+          echo "Running CodeSwipe for ${{ matrix.targets.short-name }}"
+          # Run services here
+          ./test-data/run_services.sh &
+          # Wait for the services to be ready
+          sleep 30
+          # For example, use the CodeQL database or results from previous runs
+          ./run_test.sh "${{ matrix.targets.short-name }}" "${{ github.event.inputs.mode }}"
+      - name: Generate report for the target
+        id: generate-report
+        run: |
+          echo "Generating report for ${{ matrix.targets.short-name }}"
+          # Generate a report based on the results of CodeSwipe and CodeQL analyses
+          # This could include metrics, findings, and any other relevant information
+      - name: Upload results
+        run: |
+          echo "Uploading results for ${{ matrix.targets.short-name }}"
+          # Upload the results to a specific location or artifact store
+          # This could include the report generated in the previous step
+          mkdir -p results/${{ matrix.targets.short-name }}
+          cp report.txt results/${{ matrix.targets.short-name }}/report.txt
+          echo "Results uploaded to results/${{ matrix.targets.short-name }}/report.txt"

@@ -1,0 +1,44 @@
+{% if existing %}
+<existing_api>
+Here is the existing pydantic model which may be outdated from the swagger schema.
+
+```python
+{{ existing }}
+```
+</existing_api>
+{% endif %}
+
+<api_models>
+Here are the pydantic models which describe the types used by the API
+```python
+{{ api_models }}
+```
+</api_models>
+
+<impl_base_class>
+Here is the base class for our implementation of the API, which you should call into to implement the endpoints.
+```python
+{{ impl_base_class }}
+```
+</impl_base_class>
+
+<tasking_api_schema>
+{{ tasking_api_schema }}
+</tasking_api_schema>
+
+Please output the python endpoint code. You can use the following imports to start out:
+
+```python
+from uuid import UUID
+from enum import Enum
+from shellphish_crs_utils.models.aixcc_api import *
+from crs_api import (
+    CRSAPI, # impl_class
+    shellphish_basic_auth,
+    app # flask app
+)
+```
+
+<output_format>
+{{ output_format }}
+</output_format>

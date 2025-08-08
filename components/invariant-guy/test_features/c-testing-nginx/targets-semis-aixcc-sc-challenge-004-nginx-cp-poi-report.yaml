@@ -1,0 +1,667 @@
+additional_information:
+  asan_report_data:
+    crash_action:
+      access: write
+      size: 1
+    crash_id: 1
+    crash_input: /path/to/crash_input_path
+    crash_type: heap-buffer-overflow
+    harness_binary: out/pov_harness
+    harness_id: id_1
+    harness_source: src/harnesses/pov_harness.cc
+    sanitizer: 'AddressSanitizer: heap-buffer-overflow'
+    stack_traces:
+      allocate:
+      - depth: 0
+        func_name: malloc
+        line: 69
+        signature: malloc
+        src_file: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp
+        src_loc: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:69
+        type: source
+      - depth: 1
+        func_name: ngx_alloc
+        line: 22
+        signature: ngx_alloc
+        src_file: ../tmp/src/nginx/src/os/unix/ngx_alloc.c
+        src_loc: ../tmp/src/nginx/src/os/unix/ngx_alloc.c:22
+        type: source
+      - depth: 2
+        func_name: ngx_palloc_large
+        line: 220
+        signature: ngx_palloc_large
+        src_file: ../tmp/src/nginx/src/core/ngx_palloc.c
+        src_loc: ../tmp/src/nginx/src/core/ngx_palloc.c:220
+        type: source
+      - depth: 3
+        func_name: ngx_palloc
+        line: 131
+        signature: ngx_palloc
+        src_file: ../tmp/src/nginx/src/core/ngx_palloc.c
+        src_loc: ../tmp/src/nginx/src/core/ngx_palloc.c:131
+        type: source
+      - depth: 4
+        func_name: ngx_pcalloc
+        line: 302
+        signature: ngx_pcalloc
+        src_file: ../tmp/src/nginx/src/core/ngx_palloc.c
+        src_loc: ../tmp/src/nginx/src/core/ngx_palloc.c:302
+        type: source
+      - depth: 5
+        func_name: ngx_http_userid_get_uid
+        line: 333
+        signature: ngx_http_userid_get_uid
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c:333
+        type: source
+      - depth: 6
+        func_name: ngx_http_userid_filter
+        line: 242
+        signature: ngx_http_userid_filter
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c:242
+        type: source
+      - depth: 7
+        func_name: ngx_http_headers_filter
+        line: 183
+        signature: ngx_http_headers_filter
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_headers_filter_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_headers_filter_module.c:183
+        type: source
+      - depth: 8
+        func_name: ngx_http_not_modified_header_filter
+        line: 108
+        signature: ngx_http_not_modified_header_filter
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_not_modified_filter_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_not_modified_filter_module.c:108
+        type: source
+      - depth: 9
+        func_name: ngx_http_send_header
+        line: 1849
+        signature: ngx_http_send_header
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:1849
+        type: source
+      - depth: 10
+        func_name: ngx_http_static_handler
+        line: 255
+        signature: ngx_http_static_handler
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_static_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_static_module.c:255
+        type: source
+      - depth: 11
+        func_name: ngx_http_core_content_phase
+        line: 1268
+        signature: ngx_http_core_content_phase
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:1268
+        type: source
+      - depth: 12
+        func_name: ngx_http_core_run_phases
+        line: 875
+        signature: ngx_http_core_run_phases
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:875
+        type: source
+      - depth: 13
+        func_name: ngx_http_handler
+        line: 858
+        signature: ngx_http_handler
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:858
+        type: source
+      - depth: 14
+        func_name: ngx_http_internal_redirect
+        line: 2547
+        signature: ngx_http_internal_redirect
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:2547
+        type: source
+      - depth: 15
+        func_name: ngx_http_index_handler
+        line: 277
+        signature: ngx_http_index_handler
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_index_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_index_module.c:277
+        type: source
+      - depth: 16
+        func_name: ngx_http_core_content_phase
+        line: 1268
+        signature: ngx_http_core_content_phase
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:1268
+        type: source
+      - depth: 17
+        func_name: ngx_http_core_run_phases
+        line: 875
+        signature: ngx_http_core_run_phases
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:875
+        type: source
+      - depth: 18
+        func_name: ngx_http_handler
+        line: 858
+        signature: ngx_http_handler
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:858
+        type: source
+      - depth: 19
+        func_name: ngx_http_process_request
+        line: 2140
+        signature: ngx_http_process_request
+        src_file: ../tmp/src/nginx/src/http/ngx_http_request.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_request.c:2140
+        type: source
+      - depth: 20
+        func_name: ngx_http_process_request_headers
+        line: 1529
+        signature: ngx_http_process_request_headers
+        src_file: ../tmp/src/nginx/src/http/ngx_http_request.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_request.c:1529
+        type: source
+      - depth: 21
+        func_name: ngx_event_process_posted
+        line: 34
+        signature: ngx_event_process_posted
+        src_file: ../tmp/src/nginx/src/event/ngx_event_posted.c
+        src_loc: ../tmp/src/nginx/src/event/ngx_event_posted.c:34
+        type: source
+      - depth: 22
+        func_name: ngx_process_events_and_timers
+        line: 263
+        signature: ngx_process_events_and_timers
+        src_file: ../tmp/src/nginx/src/event/ngx_event.c
+        src_loc: ../tmp/src/nginx/src/event/ngx_event.c:263
+        type: source
+      - depth: 23
+        func_name: LLVMFuzzerTestOneInput
+        line: 285
+        signature: LLVMFuzzerTestOneInput
+        src_file: ../tmp/src/nginx/harnesses/pov_harness.cc
+        src_loc: ../tmp/src/nginx/harnesses/pov_harness.cc:285
+        type: source
+      - depth: 24
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 25
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 26
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 27
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../../../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 28
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      main:
+      - depth: 0
+        func_name: ngx_decode_base64_internal
+        line: 1330
+        signature: ngx_decode_base64_internal
+        src_file: ../tmp/src/nginx/src/core/ngx_string.c
+        src_loc: ../tmp/src/nginx/src/core/ngx_string.c:1330
+        type: source
+      - depth: 1
+        func_name: ngx_decode_base64
+        line: 1273
+        signature: ngx_decode_base64
+        src_file: ../tmp/src/nginx/src/core/ngx_string.c
+        src_loc: ../tmp/src/nginx/src/core/ngx_string.c:1273
+        type: source
+      - depth: 2
+        func_name: ngx_http_userid_get_uid
+        line: 361
+        signature: ngx_http_userid_get_uid
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c:361
+        type: source
+      - depth: 3
+        func_name: ngx_http_userid_filter
+        line: 242
+        signature: ngx_http_userid_filter
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_userid_filter_module.c:242
+        type: source
+      - depth: 4
+        func_name: ngx_http_headers_filter
+        line: 183
+        signature: ngx_http_headers_filter
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_headers_filter_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_headers_filter_module.c:183
+        type: source
+      - depth: 5
+        func_name: ngx_http_not_modified_header_filter
+        line: 108
+        signature: ngx_http_not_modified_header_filter
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_not_modified_filter_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_not_modified_filter_module.c:108
+        type: source
+      - depth: 6
+        func_name: ngx_http_send_header
+        line: 1849
+        signature: ngx_http_send_header
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:1849
+        type: source
+      - depth: 7
+        func_name: ngx_http_static_handler
+        line: 255
+        signature: ngx_http_static_handler
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_static_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_static_module.c:255
+        type: source
+      - depth: 8
+        func_name: ngx_http_core_content_phase
+        line: 1268
+        signature: ngx_http_core_content_phase
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:1268
+        type: source
+      - depth: 9
+        func_name: ngx_http_core_run_phases
+        line: 875
+        signature: ngx_http_core_run_phases
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:875
+        type: source
+      - depth: 10
+        func_name: ngx_http_handler
+        line: 858
+        signature: ngx_http_handler
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:858
+        type: source
+      - depth: 11
+        func_name: ngx_http_internal_redirect
+        line: 2547
+        signature: ngx_http_internal_redirect
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:2547
+        type: source
+      - depth: 12
+        func_name: ngx_http_index_handler
+        line: 277
+        signature: ngx_http_index_handler
+        src_file: ../tmp/src/nginx/src/http/modules/ngx_http_index_module.c
+        src_loc: ../tmp/src/nginx/src/http/modules/ngx_http_index_module.c:277
+        type: source
+      - depth: 13
+        func_name: ngx_http_core_content_phase
+        line: 1268
+        signature: ngx_http_core_content_phase
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:1268
+        type: source
+      - depth: 14
+        func_name: ngx_http_core_run_phases
+        line: 875
+        signature: ngx_http_core_run_phases
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:875
+        type: source
+      - depth: 15
+        func_name: ngx_http_handler
+        line: 858
+        signature: ngx_http_handler
+        src_file: ../tmp/src/nginx/src/http/ngx_http_core_module.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_core_module.c:858
+        type: source
+      - depth: 16
+        func_name: ngx_http_process_request
+        line: 2140
+        signature: ngx_http_process_request
+        src_file: ../tmp/src/nginx/src/http/ngx_http_request.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_request.c:2140
+        type: source
+      - depth: 17
+        func_name: ngx_http_process_request_headers
+        line: 1529
+        signature: ngx_http_process_request_headers
+        src_file: ../tmp/src/nginx/src/http/ngx_http_request.c
+        src_loc: ../tmp/src/nginx/src/http/ngx_http_request.c:1529
+        type: source
+      - depth: 18
+        func_name: ngx_event_process_posted
+        line: 34
+        signature: ngx_event_process_posted
+        src_file: ../tmp/src/nginx/src/event/ngx_event_posted.c
+        src_loc: ../tmp/src/nginx/src/event/ngx_event_posted.c:34
+        type: source
+      - depth: 19
+        func_name: ngx_process_events_and_timers
+        line: 263
+        signature: ngx_process_events_and_timers
+        src_file: ../tmp/src/nginx/src/event/ngx_event.c
+        src_loc: ../tmp/src/nginx/src/event/ngx_event.c:263
+        type: source
+      - depth: 20
+        func_name: LLVMFuzzerTestOneInput
+        line: 285
+        signature: LLVMFuzzerTestOneInput
+        src_file: ../tmp/src/nginx/harnesses/pov_harness.cc
+        src_loc: ../tmp/src/nginx/harnesses/pov_harness.cc:285
+        type: source
+      - depth: 21
+        func_name: fuzzer::Fuzzer::ExecuteCallback
+        line: 614
+        signature: fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned
+          long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614
+        type: source
+      - depth: 22
+        func_name: fuzzer::RunOneTest
+        line: 327
+        signature: fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long)
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327
+        type: source
+      - depth: 23
+        func_name: fuzzer::FuzzerDriver
+        line: 862
+        signature: fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*,
+          unsigned long))
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:862
+        type: source
+      - depth: 24
+        func_name: main
+        line: 20
+        signature: main
+        src_file: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+        src_loc: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20
+        type: source
+      - binary: ../../../../../lib/x86_64-linux-gnu/libc.so.6
+        build_id: 0702430aef5fa3dda43986563e9ffcc47efbd75e
+        depth: 25
+        func_name: __libc_start_main
+        offset: 147586
+        signature: __libc_start_main
+        type: binary
+      - binary: ../(/out/pov_harness+0xbea5d)
+        depth: 26
+        func_name: _start
+        signature: _start
+        type: maybe_asan_interceptor
+    target: /path/to/binary_path
+  sanitizer: 'AddressSanitizer: heap-buffer-overflow'
+crash_id: crash_id
+crash_reason: heap-buffer-overflow
+detection_strategy: fuzzing
+harness_id: id_1
+harness_info_id: 911
+pois: []
+scanner: asan
+stack_traces:
+- call_locations:
+  - function: malloc
+    function_name: malloc
+    key_index: null
+    line_number: 69
+    relative_file_path: llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp
+  - function: ngx_alloc
+    function_name: ngx_alloc
+    key_index: blablabla
+    line_number: 22
+    relative_file_path: src/nginx/src/os/unix/ngx_alloc.c
+  - function: ngx_palloc_large
+    function_name: ngx_palloc_large
+    key_index: blablabla
+    line_number: 220
+    relative_file_path: src/nginx/src/core/ngx_palloc.c
+  - function: ngx_palloc
+    function_name: ngx_palloc
+    key_index: blablabla
+    line_number: 131
+    relative_file_path: src/nginx/src/core/ngx_palloc.c
+  - function: ngx_pcalloc
+    function_name: ngx_pcalloc
+    key_index: blablabla
+    line_number: 302
+    relative_file_path: src/nginx/src/core/ngx_palloc.c
+  - function: ngx_http_userid_get_uid
+    function_name: ngx_http_userid_get_uid
+    key_index: blablabla
+    line_number: 333
+    relative_file_path: src/nginx/src/http/modules/ngx_http_userid_filter_module.c
+  - function: ngx_http_userid_filter
+    function_name: ngx_http_userid_filter
+    key_index: blablabla
+    line_number: 242
+    relative_file_path: src/nginx/src/http/modules/ngx_http_userid_filter_module.c
+  - function: ngx_http_headers_filter
+    function_name: ngx_http_headers_filter
+    key_index: blablabla
+    line_number: 183
+    relative_file_path: src/nginx/src/http/modules/ngx_http_headers_filter_module.c
+  - function: ngx_http_not_modified_header_filter
+    function_name: ngx_http_not_modified_header_filter
+    key_index: blablabla
+    line_number: 108
+    relative_file_path: src/nginx/src/http/modules/ngx_http_not_modified_filter_module.c
+  - function: ngx_http_send_header
+    function_name: ngx_http_send_header
+    key_index: blablabla
+    line_number: 1849
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_static_handler
+    function_name: ngx_http_static_handler
+    key_index: blablabla
+    line_number: 255
+    relative_file_path: src/nginx/src/http/modules/ngx_http_static_module.c
+  - function: ngx_http_core_content_phase
+    function_name: ngx_http_core_content_phase
+    key_index: blablabla
+    line_number: 1268
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_core_run_phases
+    function_name: ngx_http_core_run_phases
+    key_index: blablabla
+    line_number: 875
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_handler
+    function_name: ngx_http_handler
+    key_index: blablabla
+    line_number: 858
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_internal_redirect
+    function_name: ngx_http_internal_redirect
+    key_index: blablabla
+    line_number: 2547
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_index_handler
+    function_name: ngx_http_index_handler
+    key_index: blablabla
+    line_number: 277
+    relative_file_path: src/nginx/src/http/modules/ngx_http_index_module.c
+  - function: ngx_http_core_content_phase
+    function_name: ngx_http_core_content_phase
+    key_index: blablabla
+    line_number: 1268
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_core_run_phases
+    function_name: ngx_http_core_run_phases
+    key_index: blablabla
+    line_number: 875
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_handler
+    function_name: ngx_http_handler
+    key_index: blablabla
+    line_number: 858
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_process_request
+    function_name: ngx_http_process_request
+    key_index: blablabla
+    line_number: 2140
+    relative_file_path: src/nginx/src/http/ngx_http_request.c
+  - function: ngx_http_process_request_headers
+    function_name: ngx_http_process_request_headers
+    key_index: blablabla
+    line_number: 1529
+    relative_file_path: src/nginx/src/http/ngx_http_request.c
+  - function: ngx_event_process_posted
+    function_name: ngx_event_process_posted
+    key_index: blablabla
+    line_number: 34
+    relative_file_path: src/nginx/src/event/ngx_event_posted.c
+  - function: ngx_process_events_and_timers
+    function_name: ngx_process_events_and_timers
+    key_index: blablabla
+    line_number: 263
+    relative_file_path: src/nginx/src/event/ngx_event.c
+  - function: LLVMFuzzerTestOneInput
+    function_name: LLVMFuzzerTestOneInput
+    key_index: blablabla
+    line_number: 285
+    relative_file_path: src/nginx/harnesses/pov_harness.cc
+  - function: fuzzer::Fuzzer::ExecuteCallback
+    function_name: fuzzer::Fuzzer::ExecuteCallback
+    key_index: null
+    line_number: 614
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp
+  - function: fuzzer::RunOneTest
+    function_name: fuzzer::RunOneTest
+    key_index: null
+    line_number: 327
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+  - function: fuzzer::FuzzerDriver
+    function_name: fuzzer::FuzzerDriver
+    key_index: null
+    line_number: 862
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp
+  - function: main
+    function_name: main
+    key_index: null
+    line_number: 20
+    relative_file_path: llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp
+  - function: ngx_decode_base64_internal
+    function_name: ngx_decode_base64_internal
+    key_index: blablabla
+    line_number: 1330
+    relative_file_path: src/nginx/src/core/ngx_string.c
+  - function: ngx_decode_base64
+    function_name: ngx_decode_base64
+    key_index: blablabla
+    line_number: 1273
+    relative_file_path: src/nginx/src/core/ngx_string.c
+  - function: ngx_http_userid_get_uid
+    function_name: ngx_http_userid_get_uid
+    key_index: blablabla
+    line_number: 361
+    relative_file_path: src/nginx/src/http/modules/ngx_http_userid_filter_module.c
+  - function: ngx_http_userid_filter
+    function_name: ngx_http_userid_filter
+    key_index: blablabla
+    line_number: 242
+    relative_file_path: src/nginx/src/http/modules/ngx_http_userid_filter_module.c
+  - function: ngx_http_headers_filter
+    function_name: ngx_http_headers_filter
+    key_index: blablabla
+    line_number: 183
+    relative_file_path: src/nginx/src/http/modules/ngx_http_headers_filter_module.c
+  - function: ngx_http_not_modified_header_filter
+    function_name: ngx_http_not_modified_header_filter
+    key_index: blablabla
+    line_number: 108
+    relative_file_path: src/nginx/src/http/modules/ngx_http_not_modified_filter_module.c
+  - function: ngx_http_send_header
+    function_name: ngx_http_send_header
+    key_index: blablabla
+    line_number: 1849
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_static_handler
+    function_name: ngx_http_static_handler
+    key_index: blablabla
+    line_number: 255
+    relative_file_path: src/nginx/src/http/modules/ngx_http_static_module.c
+  - function: ngx_http_core_content_phase
+    function_name: ngx_http_core_content_phase
+    key_index: blablabla
+    line_number: 1268
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_core_run_phases
+    function_name: ngx_http_core_run_phases
+    key_index: blablabla
+    line_number: 875
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_handler
+    function_name: ngx_http_handler
+    key_index: blablabla
+    line_number: 858
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_internal_redirect
+    function_name: ngx_http_internal_redirect
+    key_index: blablabla
+    line_number: 2547
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_index_handler
+    function_name: ngx_http_index_handler
+    key_index: blablabla
+    line_number: 277
+    relative_file_path: src/nginx/src/http/modules/ngx_http_index_module.c
+  - function: ngx_http_core_content_phase
+    function_name: ngx_http_core_content_phase
+    key_index: blablabla
+    line_number: 1268
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_core_run_phases
+    function_name: ngx_http_core_run_phases
+    key_index: blablabla
+    line_number: 875
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_handler
+    function_name: ngx_http_handler
+    key_index: blablabla
+    line_number: 858
+    relative_file_path: src/nginx/src/http/ngx_http_core_module.c
+  - function: ngx_http_process_request
+    function_name: ngx_http_process_request
+    key_index: blablabla
+    line_number: 2140
+    relative_file_path: src/nginx/src/http/ngx_http_request.c
+  - function: ngx_http_process_request_headers
+    function_name: ngx_http_process_request_headers
+    key_index: blablabla
+    line_number: 1529
+    relative_file_path: src/nginx/src/http/ngx_http_request.c
+  - function: ngx_event_process_posted
+    function_name: ngx_event_process_posted
+    key_index: blablabla
+    line_number: 34
+    relative_file_path: src/nginx/src/event/ngx_event_posted.c
+  - function: ngx_process_events_and_timers
+    function_name: ngx_process_events_and_timers
+    key_index: blablabla
+    line_number: 263
+    relative_file_path: src/nginx/src/event/ngx_event.c
+  - function: LLVMFuzzerTestOneInput
+    function_name: LLVMFuzzerTestOneInput
+    key_index: blablabla
+    line_number: 285
+    relative_file_path: src/nginx/harnesses/pov_harness.cc
+  reason: Not specified
+project_id: '004'

@@ -1,0 +1,135 @@
+repo_classes:
+  ################################### INPUTS ##########################################
+  crs_tasks: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  augmented_project_metadatas: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+
+  ################################### OUTPUTS #########################################
+  # 1 - N relationship with targets_with_sources (1 per harness, linked with target_harness_info.project_id
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_harness_only_metadatas: MetadataRepository
+
+  target_split_metadatas: MetadataRepository
+
+  ############################ INTERMEDIATE OUTPUTS ##################################
+  build_configs_split_metadatas: { cls: MetadataRepository, required: false}
+
+tasks:
+  build_configuration_splitter:
+    require_success: true
+    job_quota:
+      cpu: 1
+      mem: 8Gi
+    links:
+      project_id:
+        repo: base_project_metadatas
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      project_metadata_path:
+        repo: base_project_metadatas
+        kind: InputFilepath
+      build_configurations_dir:
+        repo: project_build_configurations
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+      target_split_metadata_path:
+        repo: build_configs_split_metadatas
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-configuration-splitter
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -ex
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          python /split_configurations.py \
+                  --project-id {{project_id | shquote}} \
+                  --metadata-path {{project_metadata_path | shquote}} \
+                  --build-configurations-dir {{build_configurations_dir.main_dir | shquote}} \
+                  --build-configurations-lock-dir {{build_configurations_dir.lock_dir | shquote}} \
+                  --target-split-metadata-path {{target_split_metadata_path | shquote}}
+
+          sleep 10
+
+  harness_info_splitter:
+    require_success: true
+    job_quota:
+      cpu: 1
+      mem: 8Gi
+    links:
+      project_id:
+        repo: augmented_project_metadatas
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      project_metadata_path:
+        repo: augmented_project_metadatas
+        kind: InputFilepath
+      build_configurations_dir:
+        repo: project_build_configurations
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+      project_harness_infos_dir:
+        repo: project_harness_infos
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+      project_harness_only_metadatas_dir:
+        repo: project_harness_only_metadatas
+        kind: StreamingOutputFilepath
+        DANGEROUS_filename_is_key: true
+      target_split_metadata_path:
+        repo: target_split_metadatas
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-configuration-splitter
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -ex
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export PROJECT_ID={{ project_id | shquote }}
+          export METADATA_PATH={{project_metadata_path | shquote}}
+
+          export BUILD_CONFIGURATIONS_DIR={{build_configurations_dir.main_dir | shquote}}
+          export BUILD_CONFIGURATIONS_LOCK_DIR={{build_configurations_dir.lock_dir | shquote}}
+
+          export HARNESS_INFOS_DIR={{project_harness_infos_dir.main_dir | shquote}}
+          export HARNESS_INFOS_LOCK_DIR={{project_harness_infos_dir.lock_dir | shquote}}
+
+          export PROJECT_HARNESS_ONLY_METADATAS_DIR={{project_harness_only_metadatas_dir.main_dir | shquote}}
+          export PROJECT_HARNESS_ONLY_METADATAS_LOCK_DIR={{project_harness_only_metadatas_dir.lock_dir | shquote}}
+
+          export TARGET_SPLIT_METADATA_PATH={{target_split_metadata_path | shquote}}
+
+          python /split_configurations.py \
+                  --include-harness-splitting \
+                  --project-id $PROJECT_ID \
+                  --metadata-path $METADATA_PATH \
+                  --build-configurations-dir $BUILD_CONFIGURATIONS_DIR \
+                  --build-configurations-lock-dir $BUILD_CONFIGURATIONS_LOCK_DIR \
+                  --harness-infos-dir $HARNESS_INFOS_DIR \
+                  --harness-infos-lock-dir $HARNESS_INFOS_LOCK_DIR \
+                  --project-harness-metadatas-dir $PROJECT_HARNESS_ONLY_METADATAS_DIR \
+                  --project-harness-metadatas-lock-dir $PROJECT_HARNESS_ONLY_METADATAS_LOCK_DIR \
+                  --target-split-metadata-path $TARGET_SPLIT_METADATA_PATH
+
+          sleep 10

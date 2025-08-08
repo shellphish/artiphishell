@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-packing-config
+data:
+  # This label will be used to identify pods that should be packed together
+  packing-label: "support.shellphish.net/packing-group"

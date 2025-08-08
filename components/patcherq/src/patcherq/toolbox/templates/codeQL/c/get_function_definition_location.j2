@@ -1,0 +1,11 @@
+import cpp
+
+from Function f, FunctionDeclarationEntry entry
+where
+  f.getName() = "{{ function_name }}" and 
+  entry.getFunction() = f and
+  entry.isDefinition()
+select                                  
+  entry.getLocation().getFile() as filename,
+  entry.getLocation().getStartLine() as startline,
+  "Definition of function " + f.getName()

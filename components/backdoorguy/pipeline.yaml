@@ -1,0 +1,92 @@
+repo_classes:
+
+  ##################### INPUTS #####################
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  project_analysis_sources: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  project_metadatas: MetadataRepository
+  suspicious_functions: BlobRepository
+
+tasks:
+  backdoorguy:
+    priority: 100
+    job_quota:
+      cpu: 2
+      mem: 8Gi
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: crs_task.pdt_task_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+      project_analysis_source:
+        repo: project_analysis_sources
+        kind: InputFilepath
+        key: crs_task.pdt_task_id
+      suspicious_functions:
+        repo: suspicious_functions
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-backdoor-guy
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          export OUT_PATH={{ suspicious_functions | shquote }}
+
+          export TARGET_LANG={{project_metadata.language | shquote }}
+          if [ "$TARGET_LANG" = "jvm" ]; then
+            # We are not supporting JVM projects for now
+            echo "Skipping jvm target, bye"
+            # echo "{'sus_funcs': []}" > $OUT_PATH
+          elif [ "$TARGET_LANG" = "c++" ] || [ "$TARGET_LANG" = "c" ]; then
+
+            export PROJECT_ID={{ project_id | shquote }}
+            export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+            export PROJECT_NAME={{ crs_task.project_name | shquote }}
+
+            export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+            export CRS_TASK_ANALYSIS_SOURCE={{ project_analysis_source | shquote }}
+            
+            export FUNCTIONS_INDEX={{ functions_index | shquote }}
+            export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+
+            
+            export LOCAL_RUN=False
+
+            /src/run_backdoorguy.sh
+
+          fi

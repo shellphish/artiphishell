@@ -1,0 +1,19 @@
+{% if info.data_fix %}
+Fix the format of the current patch report and make sure to add information of all required data fields, in the given format.
+
+# PATCHER WORKFLOW
+"""
+{{ info.chat_history }}
+"""
+{% else %}
+Fix the format of the current patch report according to the format instructions.
+{% endif %}
+# CURRENT PATCH REPORT
+"""
+{{ info.current_patch }}
+"""
+
+# OUTPUT FORMAT
+"""
+{{ info.output_format }}
+"""

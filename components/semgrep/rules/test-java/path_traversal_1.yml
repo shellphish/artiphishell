@@ -1,0 +1,32 @@
+rules:
+  - id: path_traversal_1
+    patterns:
+      - pattern: |
+          $FILE_OBJ = new File(...);
+      # Exclude if checked with startsWith (negated or not) after assignment
+      - pattern-not-inside: |
+          $FILE_OBJ = new File(...);
+          ...
+          if(!$FILE_OBJ.startsWith(...)) {
+            ...
+          }
+      - pattern-not-inside: |
+          $FILE_OBJ = new File(...);
+          ...
+          if($FILE_OBJ.startsWith(...)) {
+            ...
+          }
+    # Updated message reflecting both checks
+    message: >-
+      [PathTraversal]: File object '$FILE_OBJ' is created without startsWith check on '$FILE_OBJ'.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: Path Traversal
+      vuln_type: "path-traversal"
+    metavars:
+      $ARG: # Input variable argument
+        pattern-either:
+          - pattern: $VAR_NAME
+      $FILE_OBJ: # Resulting File object variable
+         pattern: $VAR_NAME

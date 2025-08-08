@@ -1,0 +1,41 @@
+/* Import all component stylesheets */
+@import 'base.css';
+@import 'layout.css';
+@import 'components.css';
+@import 'graph.css';
+@import 'repository.css';
+
+/* Global transitions */
+[class*="status-"], 
+[class*="connection-"],
+.repo-header,
+.repo-files,
+.file-item,
+.modal-content,
+button,
+input {
+    transition: all 0.3s ease;
+}
+
+/* Ensure proper touch targets on mobile */
+@media (max-width: 768px) {
+    button,
+    .connection-item,
+    .file-item,
+    .repo-header {
+        min-height: 44px;
+    }
+
+    input[type="text"] {
+        min-height: 44px;
+    }
+}
+
+/* Prevent text overflow */
+.connection-name,
+.file-name,
+.repo-header strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+} 

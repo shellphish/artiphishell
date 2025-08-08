@@ -1,0 +1,6 @@
+agentlib: true
+test-data:
+  backups/patchery/:
+    dest: tests/aicc_testing
+    extract_tars: false
+#runner: ubuntu-latest

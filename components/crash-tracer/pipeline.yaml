@@ -1,0 +1,44 @@
+repo_classes:
+  target_metadatas: BlobRepository
+  representative_crash_metadatas: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+
+  parsed_asan_reports: MetadataRepository
+
+tasks:
+  asan2report:
+    links:
+      representative_crash_metadata_path:
+        repo: representative_crash_metadatas
+        kind: InputFilepath
+      representative_crash_metadata:
+        repo: representative_crash_metadatas
+        kind: InputMetadata
+
+      target_meta: # this is here to make sure this task only gets scheduled for non-kernel C targets
+        repo: target_metadatas
+        kind: InputId
+        key: representative_crash_metadata.project_id
+      project_id:
+        repo: target_metadatas
+        kind: InputId
+        key: representative_crash_metadata.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: representative_crash_metadata.project_id
+
+      parsed_asan_report:
+        repo: parsed_asan_reports
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-asanguy
+
+        template: |
+          python3 /asan2report/asan2report.py \
+            {{representative_crash_metadata_path | shquote}} \
+            {{parsed_asan_report | shquote}}
+    

@@ -1,0 +1,148 @@
+services:
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: telemetry_db
+    network_mode: bridge
+    restart: always
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=shellphish
+      - DOCKER_INFLUXDB_INIT_PASSWORD=shellphish
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG:-artiphishell}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET:-artiphishell}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN:-shellphish-influxdb-token}
+    volumes:
+      - /shared:/shared
+      - influxdb2:/var/lib/influxdb2
+      - etc_influxdb2:/etc/influxdb2
+
+    ports:
+      - "8086:8086" # Accessible from the host
+
+  telegraf:
+    image: aixcc-telegraf:latest
+    restart: always
+    container_name: telegraf
+    build:
+      context: ./services/telegraf
+      dockerfile: Dockerfile
+    network_mode: bridge
+    environment:
+      - INFLUX_ORG=${INFLUXDB_ORG:-artiphishell}
+      - INFLUX_BUCKET=${INFLUXDB_BUCKET:-artiphishell}
+      - INFLUX_URL=${INFLUXDB_URL:-http://influxdb:8086}
+      - INFLUX_TOKEN=${INFLUXDB_TOKEN:-shellphish-influxdb-token}
+      - HOST_IP=${HOST_IP:-localhost}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: telegraf:${DOCKER_GID:-999}
+    links:
+      - influxdb
+    depends_on:
+      - influxdb
+
+  # jaeger:
+  #   image: aixcc-jaeger:latest
+  #   container_name: jaeger
+  #   build:
+  #     context: ./services/jaeger
+  #     dockerfile: Dockerfile
+  #   network_mode: bridge
+  #   environment:
+  #     - SPAN_STORAGE_TYPE=elasticsearch
+  #     - ES_SERVER_URLS=http://opensearch:9200
+  #     - ES_TAGS_AS_FIELDS_ALL=true
+  #     - ES_VERSION=7
+  #     - no_proxy=localhost
+  #   command: ["--config", "/etc/jaeger/config.yaml"]
+  #   ports:
+  #     - 16686:16686 # Jaeger UI
+  #   restart: always
+  #   depends_on:
+  #     - opensearch
+  #   links:
+  #     - opensearch
+
+  # opensearch:
+  #   image: opensearchproject/opensearch:2.19.1
+  #   container_name: opensearch
+  #   restart: always
+  #   network_mode: bridge
+  #   environment:
+  #     discovery.type: single-node
+  #     bootstrap.memory_lock: true
+  #     OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+  #     DISABLE_SECURITY_PLUGIN: true
+  #     DISABLE_INSTALL_DEMO_CONFIG: true
+  #     OPENSEARCH_INITIAL_ADMIN_USERNAME: admin
+  #     cluster.name: jaeger-cluster
+  #     http.host: 0.0.0.0
+  #     transport.host: 127.0.0.1
+
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65536
+  #       hard: 65536
+  #   volumes:
+  #     - opensearch-data:/usr/share/opensearch/data
+  #   ports:
+  #     - "127.0.0.1:9200:9200" # REST API
+  #     - "127.0.0.1:9300:9300" # Transport
+  #     - "127.0.0.1:9600:9600" # Performance Analyzer
+
+  # opensearch-dashboard:
+  #   image: opensearchproject/opensearch-dashboards:2.19.1 # Make sure the version of opensearch-dashboards matches the version of opensearch installed on other nodes
+  #   container_name: opensearch-dashboard
+  #   network_mode: bridge
+  #   ports:
+  #     - 5601:5601 # Map host port 5601 to container port 5601
+  #   expose:
+  #     - "5601" # Expose port 5601 for web access to OpenSearch Dashboards
+  #   environment:
+  #     OPENSEARCH_HOSTS: '["http://opensearch:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
+  #     DISABLE_SECURITY_DASHBOARDS_PLUGIN: true
+  #     OPENSEARCH_DASHBOARDS_SKIP_CSP_WARNING: true
+  #     OPENSEARCH_SECURITY_ENABLED: false
+  #     OPENSEARCH_DASHBOARDS_ENABLE_CSP_HEADER: false
+  #   depends_on:
+  #     - opensearch
+  #   links:
+  #     - opensearch
+
+  otel-collector:
+    image: aixcc-otel-collector:latest
+    container_name: otel-collector
+    build:
+      context: ./services/otel-collector
+      dockerfile: Dockerfile.local
+    network_mode: bridge
+    environment:
+      SIGNOZ_OTEL_EXPORTER_OTLP_ENDPOINT: ${SIGNOZ_OTEL_EXPORTER_OTLP_ENDPOINT:-http://signoz:4317}
+      SIGNOZ_BASIC_AUTH: ${SIGNOZ_BASIC_AUTH:-shellphish:dashboard}
+      SIGNOZ_TLS_INSECURE: ${SIGNOZ_TLS_INSECURE:-true}
+    depends_on:
+      - telegraf
+    links:
+      - telegraf
+
+
+  # data-prepper:
+  #   restart: unless-stopped
+  #   image: aixcc-data-prepper:latest
+  #   container_name: data-prepper
+  #   build:
+  #     context: ./services/data-prepper
+  #     dockerfile: Dockerfile
+  #   network_mode: bridge
+  #   depends_on:
+  #     - opensearch
+  #   links:
+  #     - opensearch
+
+volumes:
+  influxdb2:
+  etc_influxdb2:
+  # opensearch-data: 

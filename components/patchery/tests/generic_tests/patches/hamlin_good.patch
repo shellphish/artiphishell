@@ -1,0 +1,15 @@
+diff --git a/src/deflate/array_history.cpp b/src/deflate/array_history.cpp
+index 557368c..d4be1cd 100755
+--- a/src/deflate/array_history.cpp
++++ b/src/deflate/array_history.cpp
+@@ -22,9 +22,7 @@ std::vector<byte> ArrayHistory::copy(uint32_t dist, uint16_t count) {
+ 
+   for (std::size_t n = 0; n < count; n++) {
+     std::ptrdiff_t pos = n + start_cur;
+-    if (wrapped) {
+-      pos = pos % buf.size();
+-    }
++    pos = pos % buf.size();
+     byte b = buf[pos];
+     append(b);
+     cpy.push_back(b);

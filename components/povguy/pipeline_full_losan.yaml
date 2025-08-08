@@ -1,0 +1,161 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  full_mode_tasks: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  debug_build_artifacts: FilesystemRepository
+  crs_tasks_base_sources: FilesystemRepository
+  full_functions_indices: BlobRepository
+  project_harness_infos: MetadataRepository
+  
+  jazzer_build_shellphish_dir: FilesystemRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+
+  per_crash_full_pov_reports: BlobRepository
+  dedup_pov_reports: BlobRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+  dedup_pov_report_representative_crashing_inputs: BlobRepository
+  dedup_pov_report_representative_full_reports: BlobRepository
+
+  # Intermediate repos
+  losan_dedup_pov_reports: { cls: MetadataRepository, required: false }
+  losan_dedup_pov_report_representative_metadatas: { cls: MetadataRepository, required: false }
+  losan_dedup_pov_report_representative_crashing_inputs: { cls: BlobRepository, required: false }
+  losan_dedup_pov_report_representative_full_reports: { cls: BlobRepository, required: false }
+  debug_build_base_artifacts: { cls: FilesystemRepository, required: false }
+
+tasks:
+  povguy_losan:
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    max_concurrent_jobs: 40
+    cache_dir: /pdt-per-node-cache
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+    # "harness_queue" causes the pending povguy jobs to be prioritized based on how many are queued for a given crashing_input_metadata.harness_info_id
+    priority_function: "harness_queue"
+    links:
+      crashing_input_id:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputId
+      crashing_input_path:
+        repo: crashing_harness_inputs
+        kind: InputFilepath
+      crashing_input_metadata:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputMetadata
+      crashing_input_metadata_path:
+        repo: crashing_harness_inputs_metadatas
+        kind: InputFilepath
+
+      # needed for the `harness_queue` priority function
+      harness_info_id:
+        repo: project_harness_infos
+        kind: InputId
+        key: crashing_input_metadata.harness_info_id
+
+      functions_index_id:
+        repo: full_functions_indices
+        kind: InputId
+        key: crashing_input_metadata.project_id
+
+      # debug_build_artifacts_path:
+      #   repo: debug_build_artifacts
+      #   kind: InputFilepath
+      #   key: crashing_input_metadata.build_configuration_id
+      #   template_cache_key: "debug_build_artifacts-{{ crashing_input_metadata.build_configuration_id }}"
+      #   use_cache_symlink: true
+
+      ############################ DISABLED WITHOUT LOSAN ############################
+      jazzer_build_shellphish_dir_path:
+        repo: jazzer_build_shellphish_dir
+        kind: InputFilepath
+        key: crashing_input_metadata.build_configuration_id
+        template_cache_key: "jazzer_build_shellphish-{{ crashing_input_metadata.build_configuration_id }}"
+        use_cache_symlink: true
+      ############################ DISABLED WITHOUT LOSAN ############################
+
+      ############################ DISABLED IN FULL MODE #############################
+      # debug_build_base_artifacts_path:
+      #   repo: debug_build_base_artifacts
+      #   kind: InputFilepath
+      #   key: crashing_input_metadata.build_configuration_id
+      #   template_cache_key: "debug_build_base_artifacts-{{ crashing_input_metadata.build_configuration_id }}"
+      #   use_cache_symlink: true
+      ############################ DISABLED IN FULL MODE #############################
+
+      project_id:
+        repo: full_mode_tasks
+        kind: InputId
+        key: crashing_input_metadata.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: crashing_input_metadata.project_id
+      crs_task_metadata:
+        repo: full_mode_tasks
+        kind: InputMetadata
+        key: crashing_input_metadata.project_id
+
+      per_crash_full_pov_report_path:
+        repo: per_crash_full_pov_reports
+        kind: OutputFilepath
+
+      dedup_pov_report_path:
+        repo: dedup_pov_reports
+        kind: OutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          representative_metadata: dedup_pov_report_representative_metadatas
+          representative_crash: dedup_pov_report_representative_crashing_inputs
+          representative_full_report: dedup_pov_report_representative_full_reports
+
+      losan_pov_report_path:
+        repo: losan_dedup_pov_reports
+        kind: OutputFilepath
+        content_keyed_md5: true
+        cokeyed:
+          representative_metadata: losan_dedup_pov_report_representative_metadatas
+          representative_crash: losan_dedup_pov_report_representative_crashing_inputs
+          representative_full_report: losan_dedup_pov_report_representative_full_reports
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-povguy
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -ex
+
+          export CRS_TASK_NUM={{ crs_task_metadata.concurrent_target_num | default('1') }}
+          
+          export PROJECT_ID={{ crashing_input_metadata.project_id | shquote }}
+          export PROJECT_NAME={{ crashing_input_metadata.project_name | shquote }}
+          export CRASHING_INPUT_ID={{ crashing_input_id | shquote }}
+          export DEBUG_BUILD_ARTIFACTS_PATH={{ jazzer_build_shellphish_dir_path | shquote }}
+          export CRASHING_INPUT_METADATA_PATH={{ crashing_input_metadata_path | shquote }}
+          export CRASHING_INPUT_PATH={{ crashing_input_path | shquote }}
+          export CP_HARNESS_NAME={{ crashing_input_metadata.cp_harness_name | shquote }}
+          export CRASH_ID={{ crashing_input_id | shquote }}
+
+          export PER_CRASH_FULL_POV_REPORT_PATH={{ per_crash_full_pov_report_path | shquote }}
+
+          export DEDUP_POV_REPORT_PATH={{ dedup_pov_report_path | shquote }}
+          export DEDUP_POV_REPORT_REPRESENTATIVE_CRASH={{ dedup_pov_report_path.cokeyed.representative_crash | shquote }}
+          export DEDUP_POV_REPORT_REPRESENTATIVE_METADATA={{ dedup_pov_report_path.cokeyed.representative_metadata | shquote }}
+          export DEDUP_POV_REPORT_REPRESENTATIVE_FULL_REPORT={{ dedup_pov_report_path.cokeyed.representative_full_report | shquote }}
+
+          export LOSAN_POV_REPORT_PATH={{ losan_pov_report_path | shquote }}
+          export LOSAN_REPRESENTATIVE_CRASH={{ losan_pov_report_path.cokeyed.representative_crash | shquote }}
+          export LOSAN_REPRESENTATIVE_METADATA={{ losan_pov_report_path.cokeyed.representative_metadata | shquote }}
+          export LOSAN_REPRESENTATIVE_FULL_REPORT={{ losan_pov_report_path.cokeyed.representative_full_report | shquote }}
+
+          export ALLOW_RAW_DOCKER_USAGE=1
+          export TASK_TYPE={{crs_task_metadata.type | shquote}}
+          export BASE_PROJECT_SOURCE_PATH=""
+          /shellphish/povguy/run-povguy.sh

@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "Compiling AFLRun"
+(
+    pushd $SRC/shellphish/aflrun > /dev/null
+    unset CFLAGS CXXFLAGS
+    export LLVM_CONFIG="llvm-config-15"
+    export CC="/usr/bin/clang-15"
+    export CXX="/usr/bin/clang++-15"
+    export CXXFLAGS="-stdlib=libstdc++"
+    make clean all
+    popd > /dev/null
+)
+echo "Done."

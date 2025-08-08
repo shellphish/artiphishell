@@ -1,0 +1,235 @@
+diff --git a/src/main/java/com/code_intelligence/jazzer/agent/Agent.kt b/src/main/java/com/code_intelligence/jazzer/agent/Agent.kt
+index 9bb44268..897f3945 100644
+--- a/src/main/java/com/code_intelligence/jazzer/agent/Agent.kt
++++ b/src/main/java/com/code_intelligence/jazzer/agent/Agent.kt
+@@ -51,6 +51,20 @@ fun installInternal(
+     additionalClassesExcludes: List<String> = Opt.additionalClassesExcludes.get(),
+ ) {
+     println("[Myroco] Syncing with file $idSyncFile")
++    val idSyncFilePath_wew =
++        idSyncFile.takeUnless { it.isEmpty() }?.let {
++            Paths.get(it).also { path ->
++                if (!path.exists()) {
++                    try {
++                        java.nio.file.Files.createFile(path)
++                        println("Created id sync file at ${path.toAbsolutePath()}")
++                    } catch (e: Exception) {
++                        Log.error("Failed to create id sync file at ${path.toAbsolutePath()}", e)
++                    }
++                }
++                println("Synchronizing coverage IDs in ${path.toAbsolutePath()}")
++            }
++        }
+     val allCustomHookNames = (Constants.SANITIZER_HOOK_NAMES + userHookNames).toSet()
+     check(allCustomHookNames.isNotEmpty()) { "No hooks registered; expected at least the built-in hooks" }
+     val customHookNames = allCustomHookNames - disabledHookNames.toSet()
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+index 5a9ab81c..09f13c13 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+@@ -177,11 +177,11 @@ public final class FuzzTargetRunner {
+   }
+ 
+   /** A test-only convenience wrapper around {@link #runOne(long, int)}. */
+-  static int runOne(byte[] data) {
++  static int runOne(byte[] data,int myroco) {
+     long dataPtr = UNSAFE.allocateMemory(data.length);
+     UNSAFE.copyMemory(data, BYTE_ARRAY_OFFSET, null, dataPtr, data.length);
+     try {
+-      return runOne(dataPtr, data.length);
++      return runOne(dataPtr, data.length, myroco);
+     } finally {
+       UNSAFE.freeMemory(dataPtr);
+     }
+@@ -189,7 +189,7 @@ public final class FuzzTargetRunner {
+   static int runOneDir(byte[] data,String inpname) {
+     System.out.println("[PRE-RUN] Initial coverage array lenght : " + CoverageRecorder.getWholeCoverage().length);
+     long startTime = System.nanoTime();
+-    runOne(data);
++    runOne(data,1);
+     System.out.println("[POST-RUN] Coverage array length : " + CoverageRecorder.getWholeCoverage().length);
+     CoverageRecorder.dumpJacocoCoverage(inpname);
+     long endTime = System.nanoTime();
+@@ -199,6 +199,182 @@ public final class FuzzTargetRunner {
+     return 0;
+   }
+ 
++  /**
++   * Executes the user-provided fuzz target once.
++   *
++   * @param dataPtr a native pointer to beginning of the input provided by the fuzzer for this
++   *     execution
++   * @param dataLength length of the fuzzer input
++   * @return the value that the native LLVMFuzzerTestOneInput function should return. The function
++   *     may exit the process instead of returning.
++   */
++  private static int runOne(long dataPtr, int dataLength, int myroco) {
++    Throwable finding = null;
++    byte[] data;
++    Object argument;
++    if (useMutatorFramework) {
++      // TODO: Instead of copying the native data and then reading it in, consider the following
++      //  optimizations if they turn out to be worthwhile in benchmarks:
++      //  1. Let libFuzzer pass in a null pointer if the byte array hasn't changed since the last
++      //     call to our custom mutator and skip the read entirely.
++      //  2. Implement a InputStream backed by Unsafe to avoid the copyToArray overhead.
++      byte[] buf = copyToArray(dataPtr, dataLength);
++      mutator.read(new ByteArrayInputStream(buf));
++      data = null;
++      argument = null;
++    } else if (useFuzzedDataProvider) {
++      fuzzedDataProvider.setNativeData(dataPtr, dataLength);
++      data = null;
++      argument = fuzzedDataProvider;
++    } else {
++      data = copyToArray(dataPtr, dataLength);
++      argument = data;
++    }
++    try {
++      lifecycleMethodsInvoker.beforeEachExecution();
++    } catch (Throwable uncaughtFinding) {
++      finding = uncaughtFinding;
++    }
++    // Do not insert code here. After beforeEachExecution has completed without a finding, we should
++    // always enter the try block that calls afterEachExecution in finally.
++    if (finding == null) {
++      try {
++        Object fuzzTargetInstance = lifecycleMethodsInvoker.getTestClassInstance();
++        System.out.printf("[DEBUG] The value of object is %s\n",fuzzTargetInstance);
++        if (useMutatorFramework) {
++          // No need to detach as we are currently reading in the mutator state from bytes in every
++          // iteration.
++          mutator.invoke(fuzzTargetInstance, false);
++        } else if (fuzzTargetInstance == null) {
++          fuzzTargetMethod.invoke(argument);
++        } else {
++          fuzzTargetMethod.invoke(fuzzTargetInstance, argument);
++        }
++      } catch (Throwable uncaughtFinding) {
++        finding = uncaughtFinding;
++      } finally {
++        if (useMutatorFramework) {
++          mutator.finishFuzzingIteration();
++        }
++        try {
++          lifecycleMethodsInvoker.afterEachExecution();
++        } catch (Throwable t) {
++          if (finding != null) {
++            // We already have a finding and do not know whether the fuzz target is in an expected
++            // state, so report this as a warning rather than an error or finding.
++            Log.warn("Failed to run lifecycle method", t);
++          } else {
++            finding = t;
++          }
++        }
++      }
++    }
++
++    // In myroco we don't care about crash logs or any info
++    if(myroco == 1){
++      return LIBFUZZER_CONTINUE;
++    }
++
++    // When using libFuzzer's -merge flag, only the coverage of the current input is relevant, not
++    // whether it is crashing. Since every crash would cause a restart of the process and thus the
++    // JVM, we can optimize this case by not crashing.
++    //
++    // Incidentally, this makes the behavior of fuzz targets relying on global states more
++    // consistent: Rather than resetting the global state after every crashing input and thus
++    // dependent on the particular ordering of the inputs, we never reset it.
++    if (optimizeMergeInner) {
++      return LIBFUZZER_CONTINUE;
++    }
++
++    // Explicitly reported findings take precedence over uncaught exceptions.
++    if (JazzerInternal.lastFinding != null) {
++      finding = JazzerInternal.lastFinding;
++      JazzerInternal.lastFinding = null;
++    }
++    // Allow skipping invalid inputs in fuzz tests by using e.g. JUnit's assumeTrue.
++    if (finding == null || finding.getClass().getName().equals(OPENTEST4J_TEST_ABORTED_EXCEPTION)) {
++      return LIBFUZZER_CONTINUE;
++    }
++
++    // The user-provided fuzz target method has returned. Any further exits, e.g. due to uncaught
++    // exceptions, are on us and should not result in a "fuzz target exited" warning being printed
++    // by libFuzzer.
++    temporarilyDisableLibfuzzerExitHook();
++
++    if (useHooks) {
++      finding = ExceptionUtils.preprocessThrowable(finding);
++    }
++
++    long dedupToken = emitDedupToken ? ExceptionUtils.computeDedupToken(finding) : 0;
++    if (emitDedupToken && !ignoredTokens.add(dedupToken)) {
++      return LIBFUZZER_CONTINUE;
++    }
++    boolean continueFuzzing =
++        emitDedupToken
++            && (keepGoing == 0 || Long.compareUnsigned(ignoredTokens.size(), keepGoing) < 0);
++    boolean isFuzzingFromCommandLine =
++        fatalFindingHandlerForJUnit == null || Opt.isJUnitAndCommandLine.get();
++    // In case of --keep_going, only the last finding is reported to JUnit as a Java object, all
++    // previous ones are merely printed. When fuzzing from the command line, we always print all
++    // findings.
++    if (isFuzzingFromCommandLine || continueFuzzing) {
++      Log.finding(finding);
++    }
++    if (fatalFindingHandlerForJUnit != null && !continueFuzzing) {
++      fatalFindingHandlerForJUnit.accept(finding);
++    }
++    if (emitDedupToken) {
++      // Has to be printed to stdout as it is parsed by libFuzzer when minimizing a crash. It does
++      // not necessarily have to appear at the beginning of a line.
++      // https://github.com/llvm/llvm-project/blob/4c106c93eb68f8f9f201202677cd31e326c16823/compiler-rt/lib/fuzzer/FuzzerDriver.cpp#L342
++      Log.structuredOutput(String.format(Locale.ROOT, "DEDUP_TOKEN: %016x", dedupToken));
++    }
++    if (isFuzzingFromCommandLine) {
++      // We emit this line for backwards compatibility when fuzzing on the CLI only.
++      Log.println("== libFuzzer crashing input ==");
++    }
++    printAndDumpCrashingInput();
++
++    // dumpReproducer needs to be called after libFuzzer printed its final stats as otherwise it
++    // would report incorrect coverage - the reproducer generation involved rerunning the fuzz
++    // target.
++    // It doesn't support @FuzzTest fuzz targets, but these come with an integrated regression test
++    // that satisfies the same purpose.
++    // It also doesn't support the mutator framework yet as that requires implementing Java code
++    // generation for mutators.
++    if (fatalFindingHandlerForJUnit == null && !useMutatorFramework) {
++      dumpReproducer(data);
++    }
++
++    if (!continueFuzzing) {
++      if (!Opt.autofuzz.get().isEmpty() && emitDedupToken) {
++        Log.println("");
++        Log.info(
++            String.format(
++                "To continue fuzzing past this particular finding, rerun with the following"
++                    + " additional argument:%n%n    --ignore=%s%n%nTo ignore all findings of this"
++                    + " kind, rerun with the following additional argument:%n%n   "
++                    + " --autofuzz_ignore=%s",
++                ignoredTokens.stream()
++                    .map(token -> Long.toUnsignedString(token, 16))
++                    .collect(joining(",")),
++                Stream.concat(
++                        Opt.autofuzzIgnore.get().stream(), Stream.of(finding.getClass().getName()))
++                    .collect(joining(","))));
++      }
++      if (fatalFindingHandlerForJUnit == null) {
++        // When running a legacy fuzzerTestOneInput test, exit now with the correct exit code.
++        // This will trigger the shutdown hook that runs fuzzerTearDown.
++        System.exit(JAZZER_FINDING_EXIT_CODE);
++      } else {
++        // When running within JUnit, pass control back to FuzzTestExecutor, which has received
++        // the finding via the handler.
++        return LIBFUZZER_RETURN_FROM_DRIVER;
++      }
++    }
++    return LIBFUZZER_CONTINUE;
++  }
++
+   /**
+    * Executes the user-provided fuzz target once.
+    *

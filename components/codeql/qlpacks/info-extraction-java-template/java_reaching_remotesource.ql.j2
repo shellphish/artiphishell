@@ -1,0 +1,32 @@
+/**
+ * @id cpp/java_reaching_remotesource
+ * @kind problem
+ * @name Finds remote sources involved with reaching a given set of target functions
+ * @severity information
+ */
+
+import java
+import semmle.code.java.dataflow.FlowSources
+
+
+module RemoteFlowConfig implements DataFlow::ConfigSig {
+  predicate isSource(DataFlow::Node source) { source instanceof RemoteFlowSource }
+
+  predicate isSink(DataFlow::Node sink) { 
+    exists(Call c |
+        c.getAnArgument() = sink.asExpr()
+        and (
+        {% for i, name in enumerate(target_functions) %}
+          {% if i > 0 %}or {% endif %}c.getCallee().getQualifiedName().matches("%.{{ name }}")
+        {% endfor %}
+        )
+    )
+  }
+}
+
+module RemoteFlow = TaintTracking::Global<RemoteFlowConfig>;
+import RemoteFlow::PathGraph
+ 
+ from RemoteFlow::PathNode source, RemoteFlow::PathNode sink
+ where RemoteFlow::flowPath(source, sink)
+ select source.getNode().getLocation(), sink.getNode().getLocation()

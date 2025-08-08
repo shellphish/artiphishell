@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shellphish-crs-utils"
+version = "0.0.1"
+authors = [
+        {name = "Wil Gibbs", email = "wfgibbs@asu.edu"},
+        {name = "Lukas Dresel", email = "friend@you.com"},
+    ]
+description = "A collection of utilities for the ARTIPHISHELL CRS"
+readme="README.md"
+requires-python=">=3.10"
+
+dependencies = [
+    "PyYaml",
+    "watchdog",
+    "influxdb-client[ciso]",
+    "gitpython",
+    "pyproject-toml>=0.1.0",
+    "flask>=3.1.0",
+    "flask-httpauth>=4.8.0",
+    "rich",
+    "jq",
+    "sarif-tools",
+    "async-lru",
+    "filelock"
+]
+
+
+[project.scripts]
+oss-fuzz-analyze-projects = "shellphish_crs_utils.cli.oss_fuzz_analyze_projects:main"
+oss-fuzz-build = "shellphish_crs_utils.cli.oss_fuzz_build:main"
+oss-fuzz-build-image = "shellphish_crs_utils.cli.oss_fuzz_build_image:main"
+oss-fuzz-prebuild-instrumentation-image = "shellphish_crs_utils.cli.oss_fuzz_prebuild_instrumentation_image:main"
+oss-fuzz-fuzz = "shellphish_crs_utils.cli.oss_fuzz_fuzz:main"
+oss-fuzz-coverage = "shellphish_crs_utils.cli.oss_fuzz_coverage:main"
+oss-fuzz-run-custom = "shellphish_crs_utils.cli.oss_fuzz_run_custom:main"
+oss-fuzz-run-pov = "shellphish_crs_utils.cli.oss_fuzz_run_pov:main"
+crs-get-sync-nodes = "shellphish_crs_utils.pydatatask.client:get_nodes_to_sync"
+
+function-resolver-upload = "shellphish_crs_utils.function_resolver:function_resolver_upload"
+function-resolver-upload-backup = "shellphish_crs_utils.function_resolver:function_resolver_upload_backup"
+
+[project.entry-points."pydatatask.priority_functions"]
+harnesses = "shellphish_crs_utils.priorities:harnesses"
+harness_queue = "shellphish_crs_utils.priorities:harness_queue"
+
+[project.entry-points."pydatatask.node_labels_functions"]
+task_pool_labels = "shellphish_crs_utils.priorities:task_pool_labels"

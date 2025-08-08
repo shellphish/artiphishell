@@ -1,0 +1,328 @@
+load("//bazel:fuzz_target.bzl", "java_fuzz_target_test")
+load("//bazel:compat.bzl", "SKIP_ON_MACOS")
+
+java_fuzz_target_test(
+    name = "ObjectInputStreamDeserialization",
+    srcs = [
+        "ObjectInputStreamDeserialization.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh",
+        "java.lang.ExceptionInInitializerError",
+    ],
+    target_class = "com.example.ObjectInputStreamDeserialization",
+)
+
+java_fuzz_target_test(
+    name = "ReflectiveCall",
+    srcs = [
+        "ReflectiveCall.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh",
+        "java.lang.ExceptionInInitializerError",
+    ],
+    target_class = "com.example.ReflectiveCall",
+)
+
+java_fuzz_target_test(
+    name = "LibraryLoad",
+    srcs = [
+        "LibraryLoad.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh",
+    ],
+    target_class = "com.example.LibraryLoad",
+    # loading of native libraries is very slow on macos,
+    # especially using Java 17
+    target_compatible_with = SKIP_ON_MACOS,
+    # The reproducer doesn't contain the sanitizer and thus runs into an ordinary ignored
+    # UnsatisfiedLinkError.
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "ExpressionLanguageInjection",
+    srcs = [
+        "ExpressionLanguageInjection.java",
+    ],
+    allowed_findings = ["com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh"],
+    expected_warning_or_error = "WARN: Some hooks could not be applied to class files built for Java 7 or lower.",
+    target_class = "com.example.ExpressionLanguageInjection",
+    # The reproducer can't find jaz.Zer and thus doesn't crash.
+    verify_crash_reproducer = False,
+    deps = [
+        "//sanitizers/src/test/java/com/example/el:ExpressionLanguageExample",
+        "@maven//:javax_validation_validation_api",
+    ],
+)
+
+java_fuzz_target_test(
+    name = "AbsoluteFilePathTraversal",
+    srcs = [
+        "AbsoluteFilePathTraversal.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical",
+    ],
+    target_class = "com.example.AbsoluteFilePathTraversal",
+    #not clear why reproducer doesn't work TODO -- fix this
+    verify_crash_reproducer = False,
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/mutation/annotation",
+    ],
+)
+
+java_fuzz_target_test(
+    name = "FilePathTraversal",
+    srcs = [
+        "FilePathTraversal.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical",
+    ],
+    target_class = "com.example.FilePathTraversal",
+    #not clear why reproducer doesn't work TODO -- fix this
+    verify_crash_reproducer = False,
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/mutation/annotation",
+    ],
+)
+
+java_fuzz_target_test(
+    name = "OsCommandInjectionProcessBuilder",
+    srcs = [
+        "OsCommandInjectionProcessBuilder.java",
+    ],
+    allowed_findings = ["com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical"],
+    target_class = "com.example.OsCommandInjectionProcessBuilder",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "OsCommandInjectionRuntimeExec",
+    srcs = [
+        "OsCommandInjectionRuntimeExec.java",
+    ],
+    allowed_findings = ["com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical"],
+    target_class = "com.example.OsCommandInjectionRuntimeExec",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "LdapSearchInjection",
+    srcs = [
+        "LdapSearchInjection.java",
+        "ldap/MockLdapContext.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical",
+        # The crashing input encoded by the replayer does not have valid syntax, but no hook.
+        "javax.naming.directory.InvalidSearchFilterException",
+    ],
+    target_class = "com.example.LdapSearchInjection",
+    deps = [
+        "@maven//:com_unboundid_unboundid_ldapsdk",
+    ],
+)
+
+java_fuzz_target_test(
+    name = "LdapDnInjection",
+    srcs = [
+        "LdapDnInjection.java",
+        "ldap/MockLdapContext.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical",
+        # The crashing input encoded by the reproducer does not have valid syntax, but no hook.
+        "javax.naming.NamingException",
+    ],
+    target_class = "com.example.LdapDnInjection",
+    deps = [
+        "@maven//:com_unboundid_unboundid_ldapsdk",
+    ],
+)
+
+java_fuzz_target_test(
+    name = "RegexInsecureQuoteInjection",
+    srcs = ["RegexInsecureQuoteInjection.java"],
+    allowed_findings = ["com.code_intelligence.jazzer.api.FuzzerSecurityIssueLow"],
+    target_class = "com.example.RegexInsecureQuoteInjection",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "RegexCanonEqInjection",
+    srcs = [
+        "RegexCanonEqInjection.java",
+    ],
+    allowed_findings = ["com.code_intelligence.jazzer.api.FuzzerSecurityIssueLow"],
+    target_class = "com.example.RegexCanonEqInjection",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "ClassLoaderLoadClass",
+    srcs = [
+        "ClassLoaderLoadClass.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh",
+        # Reproducer does not find the honeypot library and doesn't have the hook.
+        "java.lang.ExceptionInInitializerError",
+    ],
+    target_class = "com.example.ClassLoaderLoadClass",
+)
+
+java_fuzz_target_test(
+    name = "RegexRoadblocks",
+    srcs = ["RegexRoadblocks.java"],
+    allowed_findings = ["com.code_intelligence.jazzer.api.FuzzerSecurityIssueLow"],
+    fuzzer_args = [
+        # Limit the number of runs to verify that the regex roadblocks are
+        # cleared quickly.
+        "-runs=22000",
+    ],
+    target_class = "com.example.RegexRoadblocks",
+    verify_crash_reproducer = False,
+)
+
+# Catching StackOverflowErrors doesn't work reliably across all systems and JDK versions.
+# It may lead to a native crash before we can handle the exception in Java, therefore the
+# test is set to manual execution.
+java_fuzz_target_test(
+    name = "StackOverflowRegexInjection",
+    srcs = ["StackOverflowRegexInjection.java"],
+    allowed_findings = ["java.util.regex.PatternSyntaxException"],
+    fuzzer_args = [
+        "-runs=1",
+    ],
+    tags = ["manual"],
+    target_class = "com.example.StackOverflowRegexInjection",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "SqlInjection",
+    srcs = [
+        "SqlInjection.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh",
+        "org.h2.jdbc.JdbcSQLSyntaxErrorException",
+    ],
+    target_class = "com.example.SqlInjection",
+    deps = [
+        "@maven//:com_h2database_h2",
+    ],
+)
+
+java_fuzz_target_test(
+    name = "ClojureTests",
+    srcs = [
+        "ClojureTests.java",
+    ],
+    allowed_findings = [
+        "java.lang.ArithmeticException",
+    ],
+    fuzzer_args = [
+        # Makes the runtime of the fuzz test more consistent.
+        "-use_value_profile=1",
+    ],
+    target_class = "com.example.ClojureTests",
+    verify_crash_reproducer = False,
+    deps = [
+        "@clojure_core_specs_alpha_jar//jar",
+        "@clojure_jar//jar",
+        "@clojure_spec_alpha_jar//jar",
+        "@maven//:com_h2database_h2",
+    ],
+)
+
+java_test(
+    name = "DisabledHooksTest",
+    size = "small",
+    srcs = [
+        "DisabledHooksTest.java",
+    ],
+    test_class = "com.example.DisabledHooksTest",
+    deps = [
+        "//src/main/java/com/code_intelligence/jazzer/api",
+        "//src/main/java/com/code_intelligence/jazzer/api:hooks",
+    ],
+)
+
+java_fuzz_target_test(
+    name = "XPathInjection",
+    srcs = [
+        "XPathInjection.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueHigh",
+    ],
+    target_class = "com.example.XPathInjection",
+    # Fuzz target catches the syntax exception triggered by the reproducer without the sanitizer.
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "SsrfSocketConnect",
+    srcs = [
+        "SsrfSocketConnect.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueMedium",
+    ],
+    target_class = "com.example.SsrfSocketConnect",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "SsrfSocketConnectToHost",
+    srcs = [
+        "SsrfSocketConnectToHost.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueMedium",
+    ],
+    target_class = "com.example.SsrfSocketConnectToHost",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "SsrfUrlConnection",
+    srcs = [
+        "SsrfUrlConnection.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueMedium",
+    ],
+    target_class = "com.example.SsrfUrlConnection",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "SsrfHttpClient",
+    srcs = [
+        "SsrfHttpClient.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueMedium",
+    ],
+    tags = ["no-jdk8"],
+    target_class = "com.example.SsrfHttpClient",
+    verify_crash_reproducer = False,
+)
+
+java_fuzz_target_test(
+    name = "ScriptEngineInjection",
+    srcs = [
+        "ScriptEngineInjection.java",
+    ],
+    allowed_findings = [
+        "com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical",
+    ],
+    target_class = "com.example.ScriptEngineInjection",
+    verify_crash_reproducer = False,
+)

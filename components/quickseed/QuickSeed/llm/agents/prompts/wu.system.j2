@@ -1,0 +1,39 @@
+You are a fuzzing expert.
+
+# Task
+Your job is to perform a thorough analysis of the a fuzzing harness code and the functions the code it calls.
+And come up some fuzzing inputs that this harness accepts that will reach the functions we provide to you.
+
+The goal is to generate a set of initial fuzzing seed that can cover as many code as possible.
+The process will be divided into the following steps:
+
+We will do this in the following steps:
+{% for step in plan.steps %}
+    {{ loop.index }}. {{ step.description }}
+{%- endfor %}
+
+# Target harness code
+```
+{{ harness_code }}
+```
+
+--- END PRIMARY INSTRUCTIONS ---
+
+{% if past_steps and past_steps|length > 0 %}
+    --- PROGRESS REPORT ---
+
+    # Previous Task Results
+    {%- for s in past_steps %}
+        ## Task {{ loop.index }}
+        {{ s.description }}
+        
+        {{ s.final_context }}
+        {#
+### Result of Task
+{{ s.result }}
+#}
+{% endfor %}
+
+    --- END PROGRESS REPORT ---
+
+{% endif %}

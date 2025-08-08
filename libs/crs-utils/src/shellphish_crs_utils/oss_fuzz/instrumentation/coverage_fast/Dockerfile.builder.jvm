@@ -1,0 +1,11 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE} AS aflpp-afl-compile-base
+
+# Installing stuff similar to antrl4-guy
+RUN pip install antlr4-tools pydantic antlr4-python3-runtime argparse tqdm GitPython jsonschema pyyaml numpy requests rich
+RUN git config --global --add safe.directory '*'
+
+# Replacing the compile script
+RUN cp /usr/local/bin/compile /usr/local/bin/compile.old
+COPY compile-java /usr/local/bin/compile
+RUN chmod +x /usr/local/bin/compile

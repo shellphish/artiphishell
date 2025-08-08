@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+
+set -e
+set -o pipefail
+
+echo "###################PLEEEEEEP####################\n"
+
+export CP_HARNESS_BUILD_PREFIX=""
+/shellphish/codeql_build.py /usr/local/bin/compile.old
+
+codeql database bundle --output=/work/sss-codeql-database.zip /work/.sss-codeql-database
+if [ -d "/work/.sss-codeql-database-no-build" ]; then
+    codeql database bundle --output=/work/sss-codeql-database-no-build.zip /work/.sss-codeql-database-no-build
+fi

@@ -1,0 +1,4 @@
+
+imports:
+  main:
+    path: ./pipelines/main.yaml

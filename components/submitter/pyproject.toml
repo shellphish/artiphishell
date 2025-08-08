@@ -1,0 +1,30 @@
+[project]
+name = "submitter"
+version = "0.1.0"
+description = "Submitter component for the AIxCC AFC"
+readme = "README.md"
+requires-python = "==3.11.*"
+dependencies = [
+    "crs-api",
+    "ipdb>=0.13.13",
+    "pyyaml>=6.0.2",
+    "requests>=2.32.3",
+    "rich>=13.9.4",
+    "shellphish-crs-utils",
+    "crs-telemetry",
+    "shellphish-analysis-graph",
+]
+
+[tool.uv.sources]
+shellphish-crs-utils = { path = "../../libs/crs-utils", editable = true }
+crs-api = { path = "../../libs/crs-api", editable = true }
+crs-telemetry = { path = "../../libs/crs-telemetry", editable = true }
+shellphish-analysis-graph = { path = "../../libs/analysis-graph", editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+]
+
+[tool.uv]
+package = true

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crs-telemetry"
+version = "0.0.1"
+authors = [
+        {name = "Wil Gibbs", email = "wfgibbs@asu.edu"}, 
+    ]
+description = "A library for telemetry and observability via OpenTelemetry"
+readme="README.md"
+requires-python=">=3.10"
+
+dependencies = [
+    "openlit==1.22.4",
+    "opentelemetry-api==1.24.0",
+    "opentelemetry-sdk==1.24.0",
+    "opentelemetry-distro==0.45b0",
+    "opentelemetry-exporter-otlp-proto-grpc==1.24.0",
+    "opentelemetry-instrumentation-logging==0.45b0",
+    "opentelemetry-instrumentation-flask==0.45b0",
+    "opentelemetry-instrumentation-fastapi==0.45b0",
+    "opentelemetry-instrumentation-requests==0.45b0",
+    "opentelemetry-instrumentation-urllib==0.45b0",
+    "opentelemetry-instrumentation-urllib3==0.45b0",
+    "opentelemetry-instrumentation-aiohttp-server==0.45b0",
+    "opentelemetry-instrumentation-aiohttp-client==0.45b0",
+
+    "agentlib"
+    # "shellphish-crs-utils>=0.0.1", # This is a dependency of PDClient
+]
+
+
+[project.scripts]
+telemetry-cli = "crs_telemetry.cli:telemetry_cli"

@@ -1,0 +1,5 @@
+import java
+
+from Callable c
+where c.getQualifiedName() = "{{ qualified_name }}"
+select c.getLocation().getStartLine(), c.getBody().getLocation().getEndLine()

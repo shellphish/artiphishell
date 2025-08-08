@@ -1,0 +1,223 @@
+diff --git a/accel/kvm/kvm-accel-ops.c b/accel/kvm/kvm-accel-ops.c
+index b3c946dc4b..cf1b614c29 100644
+--- a/accel/kvm/kvm-accel-ops.c
++++ b/accel/kvm/kvm-accel-ops.c
+@@ -73,6 +73,7 @@ static void kvm_start_vcpu_thread(CPUState *cpu)
+              cpu->cpu_index);
+     qemu_thread_create(cpu->thread, thread_name, kvm_vcpu_thread_fn,
+                        cpu, QEMU_THREAD_JOINABLE);
++    kvm_update_guest_debug(cpu, 0);
+ }
+
+ static bool kvm_vcpu_thread_is_idle(CPUState *cpu)
+diff --git a/target/i386/kvm/kvm.c b/target/i386/kvm/kvm.c
+index e68cbe9293..b14c556ce2 100644
+--- a/target/i386/kvm/kvm.c
++++ b/target/i386/kvm/kvm.c
+@@ -62,6 +62,15 @@
+ #include "exec/memattrs.h"
+ #include "trace.h"
+
++#include "qemu/osdep.h"
++#include "monitor/hmp.h"
++#include "monitor/monitor.h"
++#include "qapi/error.h"
++#include "qapi/qapi-builtin-visit.h"
++#include "qapi/qapi-commands-machine.h"
++#include "qapi/qmp/qdict.h"
++#include "qapi/string-output-visitor.h"
++
+ #include CONFIG_DEVICES
+
+ //#define DEBUG_KVM
+@@ -2820,13 +2829,21 @@ static int kvm_getput_regs(X86CPU *cpu, int set)
+     return ret;
+ }
+
+-static int kvm_put_xsave(X86CPU *cpu)
++static int kvm_put_xsave(X86CPU *cpu, FILE *f)
+ {
+     CPUX86State *env = &cpu->env;
+     void *xsave = env->xsave_buf;
+
+     x86_cpu_xsave_all_areas(cpu, xsave, env->xsave_buf_len);
+
++    if (f != NULL) {
++        fprintf(f, "XSAVES=");
++        for (int i = 0; i < env->xsave_buf_len; i += 1) {
++            fprintf(f, "%02x", ((uint8_t *)xsave)[i]);
++        }
++        fprintf(f, "\n");
++    }
++
+     return kvm_vcpu_ioctl(CPU(cpu), KVM_SET_XSAVE, xsave);
+ }
+
+@@ -4609,7 +4626,7 @@ int kvm_arch_put_registers(CPUState *cpu, int level)
+     if (ret < 0) {
+         return ret;
+     }
+-    ret = kvm_put_xsave(x86_cpu);
++    ret = kvm_put_xsave(x86_cpu, NULL);
+     if (ret < 0) {
+         return ret;
+     }
+@@ -5048,14 +5065,145 @@ void kvm_arch_remove_all_hw_breakpoints(void)
+
+ static CPUWatchpoint hw_watchpoint;
+
++static void kvm_x86_get_regs_fp(CPUState *cpu, const char *filename)
++{
++    int ret;
++    struct kvm_fpu fpu;
++
++    ret = kvm_vcpu_ioctl(cpu, KVM_GET_FPU, &fpu);
++    if (ret < 0) {
++        printf("kvm_x86_get_regs_fp failed!");
++        return;
++    }
++
++    FILE* f = fopen(filename, "a");
++    if (!f) {
++        printf("Failed to open file for registers: %s", filename);
++        return;
++    }
++
++    // fprintf(f, "opcode=%lx\n", fpu.last_opcode);
++    // fprintf(f, "ip=%lx\n", fpu.last_ip);
++    // fprintf(f, "dp=%lx\n", fpu.last_dp);
++
++    fclose(f);
++}
++
++/// Write `size` physical memory bytes starting from `addr` into `filename`
++static void dump_physical_memory(uint64_t addr, uint64_t size, const char* filename) {
++    Error *err = NULL;
++    printf("Calling pmemsave.. addr 0x%lx size 0x%lx", addr, size);
++
++    // Call `qmp_pmemsave` to write the physical memory
++    qmp_pmemsave(addr, size, filename, &err);
++
++    printf("Done dumping physical memory in %s\n", filename);
++}
++
++static void dump_regs(CPUState *cpu, const char* filename) {
++    FILE* f = fopen(filename, "w");
++    if (!f) {
++        printf("Failed to open file for registers: %s", filename);
++        return;
++    }
++
++    X86CPU *x86_cpu = X86_CPU(cpu);
++    CPUX86State *state = &x86_cpu->env;
++    struct kvm_clock_data data;
++
++    // get tsc ASAP because we don't won't much time skipping
++    kvm_get_msrs(x86_cpu);
++    unsigned long tsc = state->tsc;
++
++    // Jump past the vmcall
++    state->eip += 4;
++    kvm_getput_regs(x86_cpu, 1);
++
++    printf("Calling dump registers.. ");
++    x86_cpu_dump_state(cpu, f, 0x70000);
++    printf("Done dumping registers in %s\n", filename);
++
++    kvm_get_xcrs(x86_cpu);
++    kvm_get_xsave(x86_cpu);
++
++    fprintf(f, "APIC_BASE=%lx\n", cpu_get_apic_base(env_archcpu(state)->apic_state));
++    fprintf(f, "EFER=%lx\n", state->efer);
++    fprintf(f, "STAR=%lx\n", state->star);
++    fprintf(f, "LSTAR=%lx\n", state->lstar);
++    fprintf(f, "CSTAR=%lx\n", state->cstar);
++    fprintf(f, "SFMASK=%lx\n", state->fmask);
++    fprintf(f, "KERNELGSBASE=%lx\n", state->kernelgsbase);
++    fprintf(f, "TSC=%lx\n", tsc);
++
++    fprintf(f, "TSC_AUX=%lx\n", state->tsc_aux);
++    fprintf(f, "TSC_ADJUST=%lx\n", state->tsc_adjust);
++    fprintf(f, "TSC_DEADLINE=%lx\n", state->tsc_deadline);
++
++    fprintf(f, "KVM_WALL_CLOCK=%lx\n", state->wall_clock_msr);
++    fprintf(f, "KVM_SYSTEM_TIME=%lx\n", state->system_time_msr);
++
++    fprintf(f, "KVM_GET_TSC_KHZ=%lx\n", state->tsc_khz);
++
++    kvm_put_xsave(x86_cpu, f);
++
++    struct kvm_lapic_state kapic;
++    kvm_vcpu_ioctl(CPU(cpu), KVM_GET_LAPIC, &kapic);
++    fprintf(f, "LAPIC=");
++    for (int i = 0; i < sizeof(kapic); i += 1) {
++        fprintf(f, "%02x", (unsigned char)kapic.regs[i]);
++    }
++    fprintf(f, "\n");
++
++    fprintf(f, "LAPIC_SIZE=%lx\n", sizeof(kapic));
++
++    kvm_vm_ioctl(kvm_state, KVM_GET_CLOCK, &data);
++    fprintf(f, "FORKINGCLOCK=%lx\n", data.clock);
++
++    fprintf(f, "XSAVE.XSTATE_BV=%016lx\n", *((uint64_t *)(&state->xsave_buf[512])));
++    fprintf(f, "XSAVES_LEN=%lx\n", state->xsave_buf_len);
++    fprintf(f, "XSS=%lx\n", state->xss);
++    fprintf(f, "XCR0=%lx\n", state->xcr0);
++
++    struct kvm_vcpu_events events;
++    memset(&events, 0, sizeof(events));
++    kvm_vcpu_ioctl(CPU(cpu), KVM_GET_VCPU_EVENTS, &events);
++    fprintf(f, "VCPU_EVENTS=");
++    for (int i = 0; i < sizeof(events); i += 1) {
++        fprintf(f, "%02x", ((unsigned char *)&events)[i]);
++    }
++    fprintf(f, "\n");
++
++    fclose(f);
++}
++
+ static int kvm_handle_debug(X86CPU *cpu,
+                             struct kvm_debug_exit_arch *arch_info)
+ {
+     CPUState *cs = CPU(cpu);
+     CPUX86State *env = &cpu->env;
++    uint64_t physmem_dump_size;
++    uint8_t code[3];
+     int ret = 0;
+     int n;
+
++    if (
++        // `vmcall` is 0f 01 c1
++        cpu_memory_rw_debug(cs, arch_info->pc + 1, &code, 3, 0) == 0
++            && code[0] == 0x0f
++            && code[1] == 0x01
++            && code[2] == 0xc1
++    ) {
++        // Sometimes we had a page table beyond 4GB even in 4GB memory, so dump 5GB
++        // just to be safe
++        physmem_dump_size = (uint64_t)(5 * 1024 * 1024) * 1024;
++        dump_regs(cs, "fuzzvm.qemuregs");
++        dump_physical_memory(0,  physmem_dump_size, "fuzzvm.physmem");
++        kvm_x86_get_regs_fp(cs,  "fuzzvm.qemuregs");
++        env->has_error_code = 0;
++        return 0;
++    }
++
++
+     if (arch_info->exception == EXCP01_DB) {
+         if (arch_info->dr6 & DR6_BS) {
+             if (cs->singlestep_enabled) {
+@@ -5113,9 +5261,9 @@ void kvm_arch_update_guest_debug(CPUState *cpu, struct kvm_guest_debug *dbg)
+     };
+     int n;
+
+-    if (kvm_sw_breakpoints_active(cpu)) {
+-        dbg->control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
+-    }
++    //if (kvm_sw_breakpoints_active(cpu)) {
++    dbg->control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
++    //}
+     if (nb_hw_breakpoint > 0) {
+         dbg->control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_HW_BP;
+         dbg->arch.debugreg[7] = 0x0600;

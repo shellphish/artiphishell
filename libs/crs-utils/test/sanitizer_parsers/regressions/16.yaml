@@ -1,0 +1,9 @@
+focus_repo_path: "/src/sqlite3/"
+language: c
+sanitizer: undefined
+exit_code: 77
+expected_organizer_significance: 212 # RecognizedNonSanitizerNotableCrash
+expected_organizer_crash_description: "LibFuzzer Generic crash and/or Jazzer Sanitizer Crash"
+expected_parser: 'asan'
+expected_sanitizer: libFuzzer
+expected_crash_type: 'deadly signal'

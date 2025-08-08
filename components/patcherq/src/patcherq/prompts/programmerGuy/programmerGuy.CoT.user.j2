@@ -1,0 +1,52 @@
+
+{% if HUMAN_MSG %}
+{{HUMAN_MSG}}
+{% else %}
+
+{% if IS_FEEDBACK %}
+The previous patch did not work.
+In particular: {{FEEDBACK_WHY_PREVIOUS_PATCH_FAILED}}
+
+{{EXTRA_FEEDBACK_INSTRUCTIONS}}
+
+You must try to improve the patch to account for this error and make sure it works this time.
+
+IMPORTANT:
+  - IF YOU NEED, YOU CAN STILL USE THE PROVIDED TOOLS TO ASSIST IN YOUR ANALYSIS AND CHANGE THE PATCH. 
+  - THE NEW GENERATED PATCH CANNOT BE THE SAME AS THE PREVIOUS ONE, YOU MUST CHANGE SOMETING IN IT.
+  - BEFORE EMITTING THE PATCH, DESCRIBE IN A SHORT PARAGRAPH HOW THE FEEDBACK WAS USED TO IMPROVE THE PATCH AND WHY YOU THINK IT WILL WORK THIS TIME.
+
+The output format follows the same structure as before.
+
+{% else %}
+The expert is given the following initial report:
+
+{{ROOT_CAUSE_REPORT}}
+
+IMPORTANT:
+ - EVERY ISSUE MENTIONED IN THE ROOT-CAUSE MUST BE ADDRESSED.
+ - IF YOU SEE THE SAME ISSUE IN ANY OTHER LOCATION IN THE FILE IN SCOPE, YOU MUST FIX IT AS WELL.
+
+{% if WITH_HINTS %}
+An human experts is providing the following suggestions for you to consider while working on the patch:
+
+{{ WITH_HINTS }}
+
+{% endif %}
+
+{% if DELTA_HINTS %}
+
+We are also given some additional data on how the codebase changed since the last stable release
+Here are the functions in the stack trace that were modified:
+
+{{ DELTA_HINTS }}
+
+{% endif %}
+
+{{output_format}}
+
+{% endif %}
+
+
+{% endif %}
+

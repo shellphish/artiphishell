@@ -1,0 +1,10 @@
+./clusterfuzz/src/ ; python_version>='3.11'
+pydantic==2.10.6
+# NOTE: The following are extra requirements that aren't included if you just install
+# clusterfuzz with its setup.py.
+# Then, don't pin these: we'll use whatever versions pip decides is compatible with
+# clusterfuzz during the install process.
+# We don't really need these for our functionality in this little directory, but they do
+# cause import errors if they're not included.
+aiohttp
+google-cloud-secret-manager

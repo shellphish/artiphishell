@@ -1,0 +1,19 @@
+{{- if .Values.global.enable_public_ip.value }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: ci-{{ include "api.fullname" . }}
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+  #annotations:
+  #  service.beta.kubernetes.io/azure-pip-name: {{ .Values.global.api_dns_name.value }}-ip
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.ciservice.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "api.selectorLabels" . | nindent 4 }}
+{{- end }}

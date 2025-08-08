@@ -1,0 +1,420 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  crs_tasks_analysis_sources: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  crs_tasks_cancelled: MetadataRepository
+  project_metadatas: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+  full_mode_tasks: MetadataRepository
+  java_crs_tasks: MetadataRepository
+  coverage_build_artifacts: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  debug_build_artifacts: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+
+  commit_functions_jsons_dirs: FilesystemRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_indices: BlobRepository
+  commit_functions_indices: BlobRepository
+
+  dedup_pov_report_representative_crashing_inputs: BlobRepository
+  dedup_pov_report_representative_full_reports: BlobRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+
+  points_of_interest: BlobRepository
+  diffguy_reports: FilesystemRepository
+  patch_requests_meta: MetadataRepository
+  dyva_reports: MetadataRepository
+
+  # invariant_reports: MetadataRepository
+
+  #  the final target with the patch applied
+  #  patch_diffs: BlobRepository
+  #  any available metadata about the patch: reasoning, verification results, comments, previous attempts? etc.
+  #  patch_metadatas: MetadataRepository
+  kumushi_output: MetadataRepository
+
+# TODO(FINALDEPLOY) Add max concurrent jobs
+
+tasks:
+  kumushi_java:
+    priority: 1000000
+    cache_dir: /pdt-per-node-cache
+    job_quota:
+      cpu: 4
+      mem: "8Gi"
+    # TODO(FINALDEPLOY) Set max concurrent jobs
+    max_concurrent_jobs: 16
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+    # "harness_queue" causes the pending jobs to be prioritized based on how many are queued for a given poi_report.harness_info_id
+    priority_function: "harness_queue"
+    # first, the component interface
+    links:
+      patch_requests_meta:
+        repo: patch_requests_meta
+        kind: InputFilepath
+
+      patch_requests_meta_metadata:
+        repo: patch_requests_meta
+        kind: InputMetadata
+
+      dyva_report:
+        repo: dyva_reports
+        kind: InputFilepath
+
+      poi_report_meta:
+        repo: dedup_pov_report_representative_metadatas
+        kind: InputMetadata
+        key: patch_requests_meta_metadata.poi_report_id
+      poi_report:
+        repo: points_of_interest
+        kind: InputFilepath
+        key: patch_requests_meta_metadata.poi_report_id
+      poi_report_id:
+        repo: points_of_interest
+        kind: InputId
+        key: patch_requests_meta_metadata.poi_report_id
+      crashing_input_path:
+        repo: dedup_pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: patch_requests_meta_metadata.poi_report_id
+      povguy_pov_report_path:
+        repo: dedup_pov_report_representative_full_reports
+        kind: InputFilepath
+        key: patch_requests_meta_metadata.poi_report_id
+
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: poi_report_meta.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: poi_report_meta.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      full_mode_tasks:
+        repo: full_mode_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      java_crs_tasks:
+        repo: java_crs_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "crs_tasks_oss_fuzz_repos-{{ poi_report_meta.project_id }}"
+      debug_build_artifacts:
+        repo: debug_build_artifacts
+        kind: InputFilepath
+        key: poi_report_meta.build_configuration_id
+        template_cache_key: "debug_build_artifacts-{{ poi_report_meta.build_configuration_id }}"
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "coverage_build_artifacts-{{ poi_report_meta.project_id }}"
+        use_cache_symlink: true
+
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "crs_tasks_analysis_sources-{{ poi_report_meta.project_id }}"
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputId
+        key: poi_report_meta.project_id
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputId
+        key: poi_report_meta.project_id
+      kumushi_output:
+        repo: kumushi_output
+        kind: OutputFilepath
+
+#      out_patch:
+#        repo: patch_diffs
+#        kind: StreamingOutputFilepath
+#        content_keyed_md5: true
+#        cokeyed:
+#          meta: patch_metadatas
+#        auto_meta: meta
+#        auto_values:
+#          vulnerability_submission_id: '{{ vulnerability_submission_id }}'
+#          pdt_project_id: '{{ poi_report_meta.project_id }}'
+#          pdt_project_name: '{{ poi_report_meta.project_name }}'
+#          pdt_harness_info_id: '{{ poi_report_meta.harness_info_id }}'
+#          cpv_uuid: '{{ vulnerability_submission.vuln_id }}'
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-kumu-shi-runner
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export CRASHING_INPUT_PATH={{ crashing_input_path | shquote }}
+          export SANITIZER_STRING={{ poi_report_meta.consistent_sanitizers[-1] | shquote }}
+          export POI_REPORT={{ poi_report | shquote }}
+          export OSS_FUZZ_REPO={{ oss_fuzz_repo | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export RAW_POVGUY_REPORT={{ povguy_pov_report_path | shquote }}
+          export FULL_MODE_TASKS={{ full_mode_tasks | shquote }}
+          export COVERAGE_BUILD_ARTIFACTS={{ coverage_build_artifacts | shquote }}
+          export DEBUG_BUILD_ARTIFACTS={{ debug_build_artifacts | shquote }}
+          export PATCH_REQUEST_META={{ patch_requests_meta | shquote }}
+          export DYVA_REPORT={{ dyva_report | shquote }}
+
+          
+          export ALLOW_RAW_DOCKER_USAGE=1
+          export HYBRID_MODE=""
+          export DELTA=""
+          export JAVA=1
+          export KUMUSHI_OUTPUT={{ kumushi_output | shquote }}
+
+          /kumushi/run_kumushi.sh
+
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+          set +e
+          if [ -f /tmp/.pdt_upload_lock ]; then
+              echo "Upload lock file exists, waiting for it to be removed..."
+              for i in $(seq 1 60); do
+                  if [ ! -f /tmp/.pdt_upload_lock ]; then
+                      echo "Upload lock file removed after $i seconds"
+                      break
+                  fi
+                  sleep 5
+              done
+              if [ -f /tmp/.pdt_upload_lock ]; then
+                  echo "Upload lock file still exists after 5 minutes, proceeding anyway"
+              fi
+          fi
+
+  kumushi_delta_java:
+    priority: 1000000
+    cache_dir: /pdt-per-node-cache
+    job_quota:
+      cpu: 4
+      mem: "8Gi"
+    # TODO(FINALDEPLOY) Set max concurrent jobs
+    max_concurrent_jobs: 16
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+    # "harness_queue" causes the pending jobs to be prioritized based on how many are queued for a given poi_report.harness_info_id
+    priority_function: "harness_queue"
+    # first, the component interface
+    links:
+      patch_requests_meta:
+        repo: patch_requests_meta
+        kind: InputFilepath
+
+      patch_requests_meta_metadata:
+        repo: patch_requests_meta
+        kind: InputMetadata
+      dyva_report:
+        repo: dyva_reports
+        kind: InputFilepath
+
+      poi_report_meta:
+        repo: dedup_pov_report_representative_metadatas
+        kind: InputMetadata
+        key: patch_requests_meta_metadata.poi_report_id
+      poi_report:
+        repo: points_of_interest
+        kind: InputFilepath
+        key: patch_requests_meta_metadata.poi_report_id
+      poi_report_id:
+        repo: points_of_interest
+        kind: InputId
+        key: patch_requests_meta_metadata.poi_report_id
+      crashing_input_path:
+        repo: dedup_pov_report_representative_crashing_inputs
+        kind: InputFilepath
+        key: patch_requests_meta_metadata.poi_report_id
+      povguy_pov_report_path:
+        repo: dedup_pov_report_representative_full_reports
+        kind: InputFilepath
+        key: patch_requests_meta_metadata.poi_report_id
+
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: poi_report_meta.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: poi_report_meta.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      delta_mode_tasks:
+        repo: delta_mode_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      java_crs_tasks:
+        repo: java_crs_tasks
+        kind: InputMetadata
+        key: poi_report_meta.project_id
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "crs_tasks_oss_fuzz_repos-{{ poi_report_meta.project_id }}"
+      debug_build_artifacts:
+        repo: debug_build_artifacts
+        kind: InputFilepath
+        key: poi_report_meta.build_configuration_id
+        template_cache_key: "debug_build_artifacts-{{ poi_report_meta.build_configuration_id }}"
+      coverage_build_artifacts:
+        repo: coverage_build_artifacts
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "coverage_build_artifacts-{{ poi_report_meta.project_id }}"
+        use_cache_symlink: true
+
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "crs_tasks_analysis_sources-{{ poi_report_meta.project_id }}"
+      commit_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "commit_functions_jsons_dirs-{{ poi_report_meta.project_id }}"
+      commit_functions_index:
+        repo: commit_functions_indices
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+        template_cache_key: "commit_functions_indices-{{ poi_report_meta.project_id }}"
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputId
+        key: poi_report_meta.project_id
+      full_functions_index:
+        repo: full_functions_indices
+        kind: InputId
+        key: poi_report_meta.project_id
+      diffguy_reports:
+        repo: diffguy_reports
+        kind: InputFilepath
+        key: poi_report_meta.project_id
+      kumushi_output:
+        repo: kumushi_output
+        kind: OutputFilepath
+
+#      out_patch:
+#        repo: patch_diffs
+#        kind: StreamingOutputFilepath
+#        content_keyed_md5: true
+#        cokeyed:
+#          meta: patch_metadatas
+#        auto_meta: meta
+#        auto_values:
+#          vulnerability_submission_id: '{{ vulnerability_submission_id }}'
+#          pdt_project_id: '{{ poi_report_meta.project_id }}'
+#          pdt_project_name: '{{ poi_report_meta.project_name }}'
+#          pdt_harness_info_id: '{{ poi_report_meta.harness_info_id }}'
+#          cpv_uuid: '{{ vulnerability_submission.vuln_id }}'
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-kumu-shi-runner
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export CRS_TASK_ANALYSIS_SOURCE={{ crs_tasks_analysis_source | shquote }}
+          export CRASHING_INPUT_PATH={{ crashing_input_path | shquote }}
+          export SANITIZER_STRING={{ poi_report_meta.consistent_sanitizers[-1] | shquote }}
+          export POI_REPORT={{ poi_report | shquote }}
+          export OSS_FUZZ_REPO={{ oss_fuzz_repo | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_METADATA={{ project_metadata_path | shquote }}
+          export COMMIT_FUNCTIONS_JSONS_DIR={{ commit_functions_jsons_dir | shquote }}
+          export COMMIT_FUNCTIONS_INDEX={{ commit_functions_index | shquote }}
+          export FULL_FUNCTIONS_JSONS_DIR={{ full_functions_jsons_dir | shquote }}
+          export FULL_FUNCTIONS_INDEX={{ full_functions_index | shquote }}
+          export RAW_POVGUY_REPORT={{ povguy_pov_report_path | shquote }}
+          export DELTA_MODE_TASKS={{ delta_mode_tasks | shquote }}
+          export COVERAGE_BUILD_ARTIFACTS={{ coverage_build_artifacts | shquote }}
+          export DEBUG_BUILD_ARTIFACTS={{ debug_build_artifacts | shquote }}
+          export DIFFGUY_REPORTS={{ diffguy_reports | shquote }}
+          export PATCH_REQUEST_META={{ patch_requests_meta | shquote }}
+          export DYVA_REPORT={{ dyva_report | shquote }}
+
+          export ALLOW_RAW_DOCKER_USAGE=1
+          export HYBRID_MODE=""
+          export DELTA="1"
+          export JAVA=1
+          export KUMUSHI_OUTPUT={{ kumushi_output | shquote }}
+
+          /kumushi/run_kumushi.sh
+
+          # DO NOT REMOVE THIS SLEEP
+          #   It's here to make sure the streaming output filepaths have
+          #   enough time to upload their results before shutting down
+          sleep 10
+
+          set +e
+          if [ -f /tmp/.pdt_upload_lock ]; then
+              echo "Upload lock file exists, waiting for it to be removed..."
+              for i in $(seq 1 60); do
+                  if [ ! -f /tmp/.pdt_upload_lock ]; then
+                      echo "Upload lock file removed after $i seconds"
+                      break
+                  fi
+                  sleep 5
+              done
+              if [ -f /tmp/.pdt_upload_lock ]; then
+                  echo "Upload lock file still exists after 5 minutes, proceeding anyway"
+              fi
+          fi

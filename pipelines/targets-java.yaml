@@ -1,0 +1,90 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  target_split_metadatas: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+  full_mode_tasks: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  project_metadatas: MetadataRepository
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_analysis_sources: FilesystemRepository
+  fuzzers_started: BlobRepository
+
+  crs_tasks_analysis_sources: FilesystemRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+
+  commit_functions_jsons_dirs: FilesystemRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  crashing_harness_inputs: BlobRepository
+  crashing_harness_inputs_metadatas: MetadataRepository
+  losan_crashing_harness_inputs: BlobRepository
+  losan_crashing_harness_inputs_metadatas: MetadataRepository
+  benign_harness_inputs: BlobRepository
+  benign_harness_inputs_metadatas: MetadataRepository
+  
+  codeql_db_ready: MetadataRepository
+  ############################## INTERMEDIATES ##############################
+  # benign_coverages_full_report: { cls: BlobRepository, required: false }
+  jazzer_crash_reports: { "cls": "BlobRepository", "required": false }
+  jazzer_crash_reports_metadatas: { "cls": "MetadataRepository", "required": false }
+
+  jazzer_build_artifacts: { "cls": "FilesystemRepository", "required": false  }
+  jazzer_build_shellphish_dir: "FilesystemRepository"
+
+
+  canonical_build_artifacts: { cls: "FilesystemRepository", "required": false }
+  canonical_build_delta_artifacts: FilesystemRepository
+  canonical_build_delta_failures: MetadataRepository
+
+  # to_be_triaged_harness_inputs:
+  #   cls: BlobRepository
+  #   required: false
+  # to_be_triaged_harness_inputs_metadatas:
+  #   cls: MetadataRepository
+  #   required: false
+  
+
+imports:
+  antlr4_guy:
+    path: ../components/antlr4-guy/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      java_crs_tasks_analysis_sources: crs_tasks_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      delta_mode_tasks: delta_mode_tasks
+
+      canonical_build_artifacts: canonical_build_artifacts
+      canonical_build_delta_artifacts: canonical_build_delta_artifacts
+
+      commit_functions_jsons_dirs: commit_functions_jsons_dirs
+      full_functions_jsons_dirs: full_functions_jsons_dirs
+      canonical_build_delta_failures: canonical_build_delta_failures
+
+
+  jazzer:
+    path: ../components/jazzer/pipeline.yaml
+    repos:
+      crs_tasks: crs_tasks
+      crs_tasks_cancelled: crs_tasks_cancelled
+      target_split_metadatas: target_split_metadatas
+      project_metadatas: project_metadatas
+      project_build_configurations: project_build_configurations
+      project_harness_infos: project_harness_infos
+      project_analysis_sources: project_analysis_sources
+      crs_tasks_oss_fuzz_repos: crs_tasks_oss_fuzz_repos
+      benign_harness_inputs: benign_harness_inputs
+      benign_harness_inputs_metadatas: benign_harness_inputs_metadatas
+      crashing_harness_inputs: crashing_harness_inputs
+      crashing_harness_inputs_metadatas: crashing_harness_inputs_metadatas
+      losan_crashing_harness_inputs: losan_crashing_harness_inputs
+      losan_crashing_harness_inputs_metadatas: losan_crashing_harness_inputs_metadatas
+      full_functions_indices: full_functions_indices
+      codeql_db_ready: codeql_db_ready
+      jazzer_build_artifacts: jazzer_build_artifacts
+      jazzer_build_shellphish_dir: jazzer_build_shellphish_dir
+      fuzzers_started: fuzzers_started
+        

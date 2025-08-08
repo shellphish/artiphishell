@@ -1,0 +1,39 @@
+focus_repo_path: "/src/assimp/"
+language: c
+sanitizer: address
+exit_code: 77
+expected_organizer_significance: 212 # RecognizedNonSanitizerNotableCrash
+expected_organizer_crash_description: "LibFuzzer Generic crash and/or Jazzer Sanitizer Crash"
+expected_parser: 'asan'
+expected_summary: 'SUMMARY: libFuzzer: out-of-memory'
+expected_sanitizer: libFuzzer
+expected_crash_type: 'out-of-memory'
+# expected_stack_trace_file_names:
+#   main:
+#     - source: ubsan_diag_standalone.cpp
+#     - source: FuzzerUtil.cpp
+#     - source: FuzzerLoop.cpp
+#     - binary: libpthread.so.0
+#     - binary: libc.so.6
+#     - binary: libc.so.6
+#     - source: AssertHandler.cpp
+#     - source: DefaultIOSystem.cpp
+#     - binary: assimp_fuzzer
+#     - source: unzip.c
+#     - source: unzip.c
+#     - binary: assimp_fuzzer
+#     - binary: assimp_fuzzer
+#     - source: ZipArchiveIOSystem.cpp
+#     - source: ZipArchiveIOSystem.cpp
+#     - source: ZipArchiveIOSystem.cpp
+#     - source: D3MFOpcPackage.cpp
+#     - source: D3MFImporter.cpp
+#     - source: Importer.cpp
+#     - source: Importer.cpp
+#     - source: assimp_fuzzer.cc
+#     - source: FuzzerLoop.cpp
+#     - source: FuzzerDriver.cpp
+#     - source: FuzzerDriver.cpp
+#     - source: FuzzerMain.cpp
+#     - binary: libc.so.6
+#     - binary: assimp_fuzzer

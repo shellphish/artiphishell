@@ -1,0 +1,371 @@
+#!/bin/bash -eu
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+################################################################################
+
+# Fuzzer runner. Appends .options arguments and seed corpus to users args.
+# Usage: $0 <fuzzer_name> <fuzzer_args>
+
+set -x
+
+echo "===== Fuzzer Disk Space Usage ====="
+set +e
+# space usage
+df -h /tmp /dev/shm
+# inode usage (many small files can exhaust this before bytes do)
+df -i  /tmp /dev/shm
+set -e
+
+sysctl -w vm.mmap_rnd_bits=28
+
+export PATH=$OUT:$PATH
+cd $OUT
+
+DEBUGGER=${DEBUGGER:-}
+CRASH_EXPLORATION_MODE=${CRASH_EXPLORATION_MODE:-}
+
+FUZZER=$1
+shift
+
+# This env var is set by CIFuzz. CIFuzz fills this directory with the corpus
+# from ClusterFuzz.
+CORPUS_DIR=${CORPUS_DIR:-}
+if [ -z "$CORPUS_DIR" ]
+then
+  CORPUS_DIR="/tmp/${FUZZER}_corpus"
+  rm -rf $CORPUS_DIR && mkdir -p $CORPUS_DIR
+fi
+
+SANITIZER=${SANITIZER:-}
+if [ -z $SANITIZER ]; then
+  # If $SANITIZER is not specified (e.g. calling from `reproduce` command), it
+  # is not important and can be set to any value.
+  SANITIZER="default"
+fi
+
+# Setup output/sync dir
+if [[ "$RUN_FUZZER_MODE" = interactive ]]; then
+  FUZZER_OUT="$OUT/${FUZZER}_${FUZZING_ENGINE}_${SANITIZER}_out"
+else
+  FUZZER_OUT="/tmp/${FUZZER}_${FUZZING_ENGINE}_${SANITIZER}_out"
+fi
+
+# FUZZER_OUT="/shared/fuzzer_sync/${ARTIPHISHELL_PROJECT_NAME}-${ARTIPHISHELL_HARNESS_NAME}-${ARTIPHISHELL_HARNESS_INFO_ID}/"
+FUZZER_OUT="$ARTIPHISHELL_FUZZER_SYNC_DIR"
+FOREIGN_FUZZER_DIR=${ARTIPHISHELL_INTER_HARNESS_SYNC_DIR:-"/tmp/foreign_fuzzer"}
+mkdir -p "$FOREIGN_FUZZER_DIR"
+
+function get_dictionary() {
+  # first, check SKIP_DICTIONARY
+  set -x
+  [[ "x${SKIP_DICTIONARY:-}" = "x1" ]] && return
+  set +x
+  local options_file="$FUZZER.options"
+  local dict_file="$FUZZER.dict"
+  local dict=""
+  if [[ -f "$options_file" ]]; then
+    dict=$(sed -n 's/^\s*dict\s*=\s*\(.*\)/\1/p' "$options_file" | tail -1)
+  fi
+  if [[ -z "$dict" && -f "$dict_file" ]]; then
+    dict="$dict_file"
+  fi
+  [[ -z "$dict" ]] && return
+  if [[ "x$FUZZING_ENGINE" = "xshellphish_aflpp" ]]; then
+     printf -- "-x %s" "$dict"
+  else
+     printf "Unexpected FUZZING_ENGINE: $FUZZING_ENGINE, ignoring\n" >&2
+  fi
+}
+
+function get_rand_num_between() {
+  # Gets a random number between min and max (inclusive on both ends).
+  local min=$1
+  local max=$2
+  local rand_num=$(( min + ( $(od -An -N2 -tu2 /dev/urandom) % (max - min + 1) ) ))
+  echo $rand_num
+}
+
+rm -rf "$FUZZER_OUT/${ARTIPHISHELL_FUZZER_INSTANCE_NAME}" && mkdir -p "$FUZZER_OUT"
+
+SEED_CORPUS="${FUZZER}_seed_corpus.zip"
+
+# TODO: Investigate why this code block is skipped
+# by all default fuzzers in bad_build_check.
+# They all set SKIP_SEED_CORPUS=1.
+if [ -f $SEED_CORPUS ] && [ -z ${SKIP_SEED_CORPUS:-} ]; then
+  echo "Using seed corpus: $SEED_CORPUS"
+  unzip -o -d ${CORPUS_DIR}/ $SEED_CORPUS > /dev/null
+else
+  echo "No seed corpus used."
+fi
+
+OPTIONS_FILE="${FUZZER}.options"
+CUSTOM_LIBFUZZER_OPTIONS=""
+
+if [ -f $OPTIONS_FILE ]; then
+  custom_asan_options=$(parse_options.py $OPTIONS_FILE asan)
+  if [ ! -z $custom_asan_options ]; then
+    export ASAN_OPTIONS="$ASAN_OPTIONS:$custom_asan_options"
+  fi
+
+  custom_msan_options=$(parse_options.py $OPTIONS_FILE msan)
+  if [ ! -z $custom_msan_options ]; then
+    export MSAN_OPTIONS="$MSAN_OPTIONS:$custom_msan_options"
+  fi
+
+  custom_ubsan_options=$(parse_options.py $OPTIONS_FILE ubsan)
+  if [ ! -z $custom_ubsan_options ]; then
+    export UBSAN_OPTIONS="$UBSAN_OPTIONS:$custom_ubsan_options"
+  fi
+
+  CUSTOM_LIBFUZZER_OPTIONS=$(parse_options.py $OPTIONS_FILE libfuzzer)
+fi
+
+# choose random dictionary from corpusguy
+mkdir -p "$ARTIPHISHELL_FUZZER_SYNC_DIR/sync-dicts"
+export CORPUSGUY_DICT=$(find "$ARTIPHISHELL_FUZZER_SYNC_DIR/sync-dicts" -type f -not -name ".*" | shuf -n1)
+
+export ARTIPHISHELL_AFL_EXTRA_ARGS="${ARTIPHISHELL_AFL_EXTRA_ARGS:-}"
+export ARTIPHISHELL_AFL_TIMEOUT="${ARTIPHISHELL_AFL_TIMEOUT:-}"
+export ARTIPHISHELL_DO_NOT_CREATE_INPUT="{ARTIPHISHELL_DO_NOT_CREATE_INPUT:-}"
+
+function get_feature_flag() {
+  local feature_flag=$1
+  local feature_min=$2
+  local feature_max=$3
+
+  local env_var_forced_name="FORCED_${feature_flag}"
+  local env_var_name="${feature_flag}"
+  # first, check if a forced value is set
+  if [ "x${!env_var_forced_name:-}" != "x" ]; then
+    echo ${!env_var_forced_name}
+  else
+    # if not, pick a random value in the range
+    local rand_num=$(get_rand_num_between $feature_min $feature_max)
+    echo $rand_num
+  fi
+}
+
+if [[ "x$FUZZING_ENGINE" = "xshellphish_aflpp" ]]; then
+
+  # Set common afl++ environment options.
+  export ASAN_OPTIONS="$ASAN_OPTIONS:abort_on_error=1:symbolize=0:detect_odr_violation=0:"
+  export MSAN_OPTIONS="$MSAN_OPTIONS:exit_code=86:symbolize=0"
+  export UBSAN_OPTIONS="$UBSAN_OPTIONS:symbolize=0"
+  export AFL_NO_AFFINITY=1
+  export AFL_FAST_CAL=1
+  export AFL_FORKSRV_INIT_TMOUT=30000
+
+  # 66% chance to use the old queue selection mechanism (the new one is prioritizing, but in a distributed environment we want exploration over exploitation)
+  if [ "x$(get_feature_flag "BOOL_SHUFFLE_QUEUE" 0 2)" != "x0" ]; then
+    export QUEUE_STRATEGY_ARGS="-Z"   # use old queue selection mechanism
+    export AFL_SHUFFLE_QUEUE=1        # and shuffle the queue to allow different instances to pick up different inputs first
+  else
+    export QUEUE_STRATEGY_ARGS=""     # use new queue selection mechanism
+  fi
+
+
+  TIMEOUTS=(
+    "1000"
+    "1000"
+    "2000"
+    "2000"
+    "5000"
+    "5000+"
+    "5000+"
+    "5000+"
+    "5000+"
+  )
+  TIMEOUT_IDX=$(get_feature_flag "FUZZER_TIMEOUT" 0 7)
+  # if it is the main instance, set the timeout to 5000
+  export TIMEOUT=${TIMEOUTS[$TIMEOUT_IDX]}
+
+  # 33% chance to use cmplog as it's kind of expensive computationally
+  if [ "x$(get_feature_flag "DO_CMPLOG" 0 2)" = "x0" ] && [ -d "$OUT/shellphish_cmplog" ]; then
+    export CMPLOG_ARG="-c $OUT/shellphish_cmplog/$FUZZER"
+  else
+    export CMPLOG_ARG=""
+  fi
+
+  # 33% chance to create initial input to be safe if at least 3 files in corpus
+  if [ "x$(get_feature_flag "CREATE_INITIAL_INPUT" 0 2)" = "x0" ] || [ $(ls -1 $CORPUS_DIR | wc -l) -lt 3 ]; then
+    export ARTIPHISHELL_DO_NOT_CREATE_INPUT=0
+  else
+    export ARTIPHISHELL_DO_NOT_CREATE_INPUT=1
+  fi
+
+  if [ "x$(get_feature_flag "USE_CUSTOM_MUTATOR" 0 2)" = "x0" ]; then # 33% chance to use custom mutator
+    export USE_CUSTOM_MUTATOR=1
+  else
+    export USE_CUSTOM_MUTATOR=0
+  fi
+
+  # 25% chance to use corpus-guy dictionary
+  if [ "x$(get_feature_flag "USE_CORPUSGUY_DICT" 0 3)" = "x0" ] && [ -e "$CORPUSGUY_DICT" ]; then
+    # if $CORPUSGUY_DICT we load it as a dictionary for afl-fuzz.
+    export CORPUS_GUY_DICT_ARG="-x $CORPUSGUY_DICT"
+  else
+    export CORPUS_GUY_DICT_ARG=""
+  fi
+  # 25% chance to use afl++ auto-generated dictionary
+  if [ "x$(get_feature_flag "USE_AFLPP_DICT" 0 3)" = "x0" ]; then
+    # If $OUT/afl++.dict we load it as a dictionary for afl-fuzz.
+    test -e "$OUT/afl++.dict" && export AFL_DICT_ARG="$AFL_FUZZER_ARGS -x $OUT/afl++.dict"
+  else
+    export AFL_DICT_ARG=""
+  fi
+
+
+  if [ "x${ARTIPHISHELL_FUZZER_INSTANCE_NAME}" = "xmain" ]; then
+    export TIMEOUT=5000             # main instance has to have the longest timeout guaranteed, otherwise it won't be able to even merge inputs that take longer.
+    export CMPLOG_ARG=""            # main instance doesn't use cmplog
+    export QUEUE_STRATEGY_ARGS=""   # main instance uses new queue selection mechanism to focus on newly picked up inputs
+    export USE_CUSTOM_MUTATOR=0     # main instance doesn't use custom mutator
+    export CORPUS_GUY_DICT_ARG=""   # main instance doesn't use corpus-guy dictionary
+    export AFL_DICT_ARG=""          # main instance doesn't use afl++ auto-generated dictionary
+    export ARTIPHISHELL_DO_NOT_CREATE_INPUT="0" # main instance should always create the input to focus on fast inputs while syncing
+  fi
+
+  echo "################ FUZZER CONFIGURATION #################"
+  echo "FUZZER: $FUZZER"
+  echo "FUZZER_OUT: $FUZZER_OUT"
+  echo "CORPUS_DIR: $CORPUS_DIR"
+  echo "TIMEOUT: $TIMEOUT"
+  echo "QUEUE_STRATEGY_ARGS: $QUEUE_STRATEGY_ARGS"
+  echo "CMPLOG_ARG: $CMPLOG_ARG"
+  echo "CORPUS_GUY_DICT_ARG: $CORPUS_GUY_DICT_ARG"
+  echo "AFL_DICT_ARG: $AFL_DICT_ARG"
+  echo "USE_CUSTOM_MUTATOR: $USE_CUSTOM_MUTATOR"
+  echo "############## FUZZER CONFIGURATION END ###############"
+
+  export AFL_FUZZER_ARGS="${AFL_FUZZER_ARGS:-} -t $TIMEOUT $QUEUE_STRATEGY_ARGS $CMPLOG_ARG $CORPUS_GUY_DICT_ARG $AFL_DICT_ARG"
+
+  if [ "x${USE_CUSTOM_MUTATOR:-}" = "x1" ]; then
+    set -x
+
+    GRAMMAR_DIR="$ARTIPHISHELL_FUZZER_SYNC_DIR/sync-grammars/nautilus-python"
+    mkdir -p $GRAMMAR_DIR
+
+
+    echo Revolution!!!
+    FUZZER_OUT="${ARTIPHISHELL_FUZZER_SYNC_DIR}/nautilus/instances"
+    mkdir -p "$FUZZER_OUT"
+
+    # mock the main instance if it doesn't exist
+    # TODO: THIS ONLY WORKS WHILE THE REPLICA STAYS UP
+    mkdir "$FUZZER_OUT/main" && export ARTIPHISHELL_FUZZER_INSTANCE_NAME="main"
+
+    tmpfile="$(mktemp /tmp/output.XXXXXX)"
+    echo -e "ctx.rule(\"START\", b\"{BYTES}\")\nctx.bytes(\"BYTES\", 65536)" > $tmpfile
+    mv $tmpfile $GRAMMAR_DIR/bytes_grammar.py
+
+    tmpfile="$(mktemp /tmp/output.XXXXXX)"
+    echo -ne "ctx.rule(\"START\", b\"{BYTES}\")\nctx.bytes(\"BYTES\", 65536)\n# ARTIPHISHELL TOKEN TOKEN TOKEN " > $tmpfile
+    mv $tmpfile $GRAMMAR_DIR/token_grammar_bytes.py
+
+    if [ "$ARTIPHISHELL_FUZZER_INSTANCE_NAME" = "main" ]; then
+      export NAUTILUS_TOKEN_FUZZ="BOTH"
+    else
+      num=$(get_rand_num_between 0 4)
+      if [ "$num" -eq 0 ]; then
+        export NAUTILUS_TOKEN_FUZZ="NEVER"
+      elif [ "$num" -eq 1 ]; then
+        export NAUTILUS_TOKEN_FUZZ="ALWAYS"
+      else
+        export NAUTILUS_TOKEN_FUZZ="BOTH"
+      fi
+    fi
+
+    echo "Fuzzing with NAUTILUS_TOKEN_FUZZ=$NAUTILUS_TOKEN_FUZZ"
+
+    export AFL_CUSTOM_MUTATOR_LIBRARY="${OUT}/nautilus/librevolver_mutator.so"
+    export AFL_CUSTOM_MUTATOR_ONLY=1
+    export AFL_DISABLE_TRIM=1
+    export AFL_POST_PROCESS_KEEP_ORIGINAL=1
+    # reset corpus (we can't use regular corpus inputs from other fuzzers)
+    rm -rf "$CORPUS_DIR" && mkdir -p "$CORPUS_DIR"
+    export ARTIPHISHELL_DO_NOT_CREATE_INPUT=1
+    # generate 1 input
+    FIRST_GRAMMAR="${GRAMMAR_DIR}/$(ls -AU $GRAMMAR_DIR | head -1)"
+    $OUT/nautilus/generator -g "$FIRST_GRAMMAR" -r "$CORPUS_DIR" -n 1 -t 200 -s
+
+    # start nautilus grammar watchtower
+    MAIN_QUEUE=$ARTIPHISHELL_FUZZER_SYNC_DIR/watchtower/queue/
+    MAIN_CRASHES=$ARTIPHISHELL_FUZZER_SYNC_DIR/watchtower/crashes/
+    MAIN_CRASHSYNC=$ARTIPHISHELL_FUZZER_SYNC_DIR/main_crashsync/queue/
+
+    mkdir -p $MAIN_QUEUE $MAIN_CRASHES $MAIN_CRASHSYNC
+
+    WATCHTOWER_QUEUE_DIR="${FUZZER_OUT}/${ARTIPHISHELL_FUZZER_INSTANCE_NAME}-watchtower/queue"
+    INSTANCE_QUEUE_DIR="${FUZZER_OUT}/${ARTIPHISHELL_FUZZER_INSTANCE_NAME}/queue"
+    INSTANCE_CRASHES_DIR="${FUZZER_OUT}/${ARTIPHISHELL_FUZZER_INSTANCE_NAME}/crashes"
+
+    $OUT/nautilus/watchtower sync-grammars -i "$GRAMMAR_DIR" -o "$WATCHTOWER_QUEUE_DIR" -n 10 &
+    $OUT/nautilus/watchtower sync-outputs -i "$INSTANCE_QUEUE_DIR" -o "$MAIN_QUEUE" &
+    $OUT/nautilus/watchtower sync-outputs -i "$INSTANCE_CRASHES_DIR" -o "$MAIN_CRASHSYNC" &
+    set +x
+  fi
+
+  # AFL expects at least 1 file in the input dir.
+  if [ "x${ARTIPHISHELL_DO_NOT_CREATE_INPUT:-}" != "x1" ]; then
+    echo input > "${CORPUS_DIR}/input"
+  else
+    echo "Not creating input"
+  fi
+
+  # Setup AFL master/slave name arg
+  if [ "x${ARTIPHISHELL_FUZZER_INSTANCE_NAME}" = "xmain" ]; then
+    if [ "x${USE_CUSTOM_MUTATOR:-}" = "x1" ]; then
+      # Disable Inter Harness Sync if we are using custom mutator
+      AFL_FUZZER_ARGS="${AFL_FUZZER_ARGS:-} -M main"
+    else
+      AFL_FUZZER_ARGS="${AFL_FUZZER_ARGS:-} -M main -F $FOREIGN_FUZZER_DIR"
+    fi
+  else
+    AFL_FUZZER_ARGS="${AFL_FUZZER_ARGS:-} -S ${ARTIPHISHELL_FUZZER_INSTANCE_NAME}"
+  fi
+
+  # construct afl-fuzz cmd
+  CMD_LINE="$OUT/afl-fuzz $AFL_FUZZER_ARGS $ARTIPHISHELL_AFL_EXTRA_ARGS -i $CORPUS_DIR -o $FUZZER_OUT $(get_dictionary) $* -- $OUT/$FUZZER"
+
+  # logging
+  echo afl++ run cmd:
+  echo $CMD_LINE
+  echo afl++ run env:
+  env|grep AFL_
+  echo afl++ build env:
+  cat "$OUT/shellphish_aflpp_options.txt"
+
+else
+  exit 1
+fi
+
+
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:${OUT}"
+
+# Unset OUT so the fuzz target can't rely on it.
+unset OUT
+
+if [ ! -z "$DEBUGGER" ]; then
+  CMD_LINE="$DEBUGGER $CMD_LINE"
+fi
+
+if [ "x$ARTIPHISHELL_AFL_TIMEOUT" != "x" ]; then
+  HARD_TIMEOUT=$((ARTIPHISHELL_AFL_TIMEOUT + 5))
+  CMD_LINE="timeout --preserve-status -k $HARD_TIMEOUT -s INT $ARTIPHISHELL_AFL_TIMEOUT $CMD_LINE"
+fi
+
+# Fuzz!
+bash -c "$CMD_LINE"

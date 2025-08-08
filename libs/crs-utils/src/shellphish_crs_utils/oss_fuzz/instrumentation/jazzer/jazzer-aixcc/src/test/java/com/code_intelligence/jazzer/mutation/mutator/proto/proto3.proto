@@ -1,0 +1,146 @@
+//
+// Copyright 2024 Code Intelligence GmbH
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+option java_package = "com.code_intelligence.jazzer.protobuf";
+
+message PrimitiveField3 {
+  bool some_field = 1;
+}
+
+message OptionalPrimitiveField3 {
+  optional bool some_field = 1;
+}
+
+message RepeatedPrimitiveField3 {
+  repeated bool some_field = 1;
+}
+
+message MessageField3 {
+  PrimitiveField3 message_field = 1;
+}
+
+message RepeatedMessageField3 {
+  repeated PrimitiveField3 message_field = 1;
+}
+
+message RecursiveMessageField3 {
+  bool some_field = 1;
+  RecursiveMessageField3 message_field = 2;
+}
+
+message RepeatedRecursiveMessageField3 {
+  bool some_field = 1;
+  repeated RepeatedRecursiveMessageField3 message_field = 2;
+}
+
+message OneOfField3 {
+  bool other_field = 4;
+  oneof oneof_field {
+    bool bool_field = 7;
+    PrimitiveField3 message_field = 2;
+  }
+  bool yet_another_field = 1;
+}
+
+message IntegralField3 {
+  uint32 some_field = 1;
+}
+
+message RepeatedIntegralField3 {
+  repeated uint32 some_field = 1;
+}
+
+message BytesField3 {
+  bytes some_field = 1;
+}
+
+message StringField3 {
+  string some_field = 1;
+}
+
+message EnumField3 {
+  enum TestEnum {
+    VAL1 = 0;
+    VAL2 = 1;
+  }
+  TestEnum some_field = 1;
+}
+
+enum TestEnumOutside3 {
+  VAL1 = 0;
+  VAL2 = 1;
+  VAL3 = 3;
+}
+
+message EnumFieldOutside3 {
+  TestEnumOutside3 some_field = 1;
+}
+
+message EnumFieldOne3 {
+  enum TestEnumOne {
+    ONE = 0;
+  }
+  TestEnumOne some_field = 1;
+}
+
+message EnumFieldRepeated3 {
+  enum TestEnumRepeated {
+    UNASSIGNED = 0;
+    VAL1 = 1;
+    VAL2 = 2;
+  }
+  repeated TestEnumRepeated some_field = 1;
+}
+
+message MapField3 {
+  map<int32, string> some_field = 1;
+}
+
+message MessageMapField3 {
+  map<string, MapField3> some_field = 1;
+}
+
+message FloatField3 {
+  float some_field = 1;
+}
+
+message RepeatedFloatField3 {
+  repeated float some_field = 1;
+}
+
+message DoubleField3 {
+  double some_field = 1;
+}
+
+message RepeatedDoubleField3 {
+  repeated double some_field = 1;
+}
+
+message EmptyMessage3 {}
+
+message AnyField3 {
+  google.protobuf.Any some_field = 1;
+}
+
+message SingleOptionOneOfField3 {
+  oneof oneof_field {
+    bool bool_field = 1;
+  }
+}

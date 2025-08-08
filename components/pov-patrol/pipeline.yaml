@@ -1,0 +1,170 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backup: True, compress_backend: True }
+  project_metadatas: MetadataRepository
+
+  dedup_pov_reports: BlobRepository
+  dedup_pov_report_representative_metadatas: MetadataRepository
+  dedup_pov_report_representative_crashing_inputs: BlobRepository
+
+  patch_metadatas: MetadataRepository
+
+tasks:
+  pov_patrol:
+    priority: 1000000
+    job_quota:
+      cpu: 1
+      mem: "4Gi"
+    cache_dir: /pdt-per-node-cache
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+    # TODO(FINALDEPLOY) Set max concurrent jobs
+    max_concurrent_jobs: 40
+
+    # "harness_queue" causes the pending jobs to be prioritized based on how many are queued for a given poi_report.harness_info_id
+    priority_function: "harness_queue"
+    # first, the component interface
+    links:
+      pov_report_id:
+        repo: dedup_pov_reports
+        kind: InputId
+      pov_report_meta:
+        repo: dedup_pov_report_representative_metadatas
+        kind: InputMetadata
+      crashing_input_path:
+        repo: dedup_pov_report_representative_crashing_inputs
+        kind: InputFilepath
+
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: pov_report_meta.project_id
+        template_cache_key: "crs_tasks_oss_fuzz_repos-{{ pov_report_meta.project_id }}"
+        use_cache_symlink: true
+
+      crs_task_meta:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: pov_report_meta.project_id
+
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: pov_report_meta.project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: pov_report_meta.project_id
+      
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: pov_report_meta.project_id
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-pov-patrol
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task_meta.concurrent_target_num | default('1') }}
+
+          export CRASHING_INPUT_PATH={{ crashing_input_path | shquote }}
+          export POV_REPORT_ID={{ pov_report_id | shquote }}
+          export OSS_FUZZ_REPO={{ oss_fuzz_repo | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+
+          python3 /pov-patrol/pov_patch_check.py \
+                    --project-id $PROJECT_ID \
+                    --oss-fuzz-project-folder $OSS_FUZZ_REPO/projects/$PROJECT_NAME \
+                    --mode pov \
+                    --pov-report-id $POV_REPORT_ID \
+                    --crashing-input $CRASHING_INPUT_PATH
+
+  patch_patrol:
+    priority: 1000000
+    job_quota:
+      cpu: 4
+      mem: "8Gi"
+    cache_dir: /pdt-per-node-cache
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+    # TODO(FINALDEPLOY) Set max concurrent jobs
+    max_concurrent_jobs: 35
+
+    # "harness_queue" causes the pending jobs to be prioritized based on how many are queued for a given poi_report.harness_info_id
+    priority_function: "harness_queue"
+    # first, the component interface
+    links:
+      patch_id:
+        repo: patch_metadatas
+        kind: InputId
+
+      patch_metadata:
+        repo: patch_metadatas
+        kind: InputMetadata
+
+      oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: patch_metadata.pdt_project_id
+        template_cache_key: "crs_tasks_oss_fuzz_repos-{{ patch_metadata.pdt_project_id }}"
+        use_cache_symlink: true
+      
+      crs_task_meta:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: patch_metadata.pdt_project_id
+
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+        key: patch_metadata.pdt_project_id
+
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: patch_metadata.pdt_project_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: patch_metadata.pdt_project_id
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-pov-patrol
+
+        privileged: true
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared": "/shared"
+          "/pdt-per-node-cache": "/tmp/pdt-per-node-cache"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task_meta.concurrent_target_num | default('1') }}
+
+          export OSS_FUZZ_REPO={{ oss_fuzz_repo | shquote }}
+          export PROJECT_NAME={{ project_metadata.shellphish.project_name | shquote }}
+          export PROJECT_ID={{ project_id | shquote }}
+          export PATCH_ID={{ patch_id | shquote }}
+
+          python3 /pov-patrol/pov_patch_check.py \
+                    --project-id $PROJECT_ID \
+                    --oss-fuzz-project-folder $OSS_FUZZ_REPO/projects/$PROJECT_NAME \
+                    --mode patch \
+                    --patch-id $PATCH_ID

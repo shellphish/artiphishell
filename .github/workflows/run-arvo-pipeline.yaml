@@ -1,0 +1,1233 @@
+name: Run Arvo targets on Artiphishell
+run-name: "ARVO WORKFLOW RUN : ${{ github.event_name == 'workflow_dispatch' && format('Running against {0} target', github.event.inputs.target-name) || format('Running on commit - {0}',(github.event.head_commit.message || github.event.workflow_run.head_commit.message )) }}"
+on:
+  # These should be triggered on periodic nightly runs via a dispatched workflow.
+
+  # Do trigger after the apt-cache is successful
+  #workflow_run:
+  #  workflows: [apt-cache-check]
+  #  types:
+  #    - completed
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      target-name:
+        type: choice
+        description: Which target to run
+        default: all
+        options:
+          - libxml2_42535569
+          - all
+          - libxml2_42527008
+          - libical_42536107
+          - harfbuzz_42528604
+          - imagemagick_42529975
+          - ninja_42534950
+          - simdutf_42532259
+          - libxaac_42529482
+          - libxml2_42528951
+          - opensc_42529909
+          - libheif_42527431
+          - miniz_42536108
+          - exiv2_42530135
+          - inchi_42534536
+          - libxml2_42533922
+          - php_42529687
+          - libtpms_42537128
+          - libavc_42530947
+          - unit_42536363
+          - pcapplusplus_42530097
+          - libxml2_42533913
+          - libxml2_42534044
+          - libavc_42530548
+          - inchi_42536250
+          - libultrahdr_42535461
+          - pcre2_42533629
+          - pcapplusplus_42530091
+          - trafficserver_42534923
+          - libavc_42530453
+          - assimp_42528235
+          - libxml2_42531212
+          - radare2_42528938
+          - libxml2_42536963
+          - opensc_42528972
+          - libxaac_42528175
+          - libaom_42533504
+          - simdjson_42534894
+          - leptonica_42532498
+          - speex_42535808
+          - libavc_42530559
+          - pcapplusplus_42530108
+          - pcapplusplus_42530090
+          - ninja_42535056
+          - oniguruma_42534875
+          - libavc_42531145
+          - libxml2_42534845
+          - libultrahdr_42535447
+          - libxml2_42531203
+          - libavc_42530451
+          - libdwarf_42528680
+          - pcapplusplus_42530105
+          - inchi_42535235
+          - inchi_42534760
+          - coturn_42529360
+          - mbedtls_42528740
+          - matio_42530705
+          - libavc_42530568
+          - php_42529524
+          - cpython3_42535828
+          - libxml2_42531126
+          - zstd_42532756
+          - libxml2_42537493
+          - libxml2_42532942
+          - libxaac_42531547
+          - mbedtls_42528891
+          - radare2_42530554
+          - libxslt_42527012
+          - opensc_42531837
+          - libxslt_42527015
+          - matio_42529484
+          - selinux_42530909
+          - lcms_42529915
+          - simdjson_42534891
+          - libssh2_42531314
+          - harfbuzz_42527438
+          - qpdf_42531940
+          - libxaac_42527540
+          - php_42529650
+          - libxml2_42531115
+          - qpdf_42536536
+          - mpv_42535348
+          - cpython3_42527435
+          - libxml2_42528997
+          - pjsip_42535147
+          - libaom_42533540
+          - opensc_42530168
+          - ghostscript_42529061
+          - opensc_42530963
+          - libxml2_42532747
+          - openjpeg_42535258
+          - libavc_42531613
+          - qpdf_42535152
+          - libxml2_42532684
+          - libxaac_42527509
+          - libxml2_42531481
+          - simdjson_42534862
+          - radare2_42530675
+          - glog_42528894
+          - inchi_42534959
+          - hdf5_42529681
+          - libavc_42531269
+          - libavc_42530284
+          - libxml2_42531092
+          - libxaac_42531033
+          - opensc_42529507
+          - mosquitto_42534812
+          - matio_42530618
+          - libxaac_42529112
+          - libxaac_42527636
+          - speex_42534870
+          - simdjson_42534941
+          - libxaac_42528877
+          - libraw_42531108
+          - libavc_42531113
+          - exiv2_42527383
+          - cpython3_42537225
+          - libavc_42530523
+          - lcms_42529931
+          - pcapplusplus_42530439
+          - libavc_42531143
+          - inchi_42536641
+          - ots_42534902
+          - libxml2_42532360
+          - libultrahdr_42535635
+          - simdutf_42538086
+          - pcre2_42530341
+          - libxml2_42529030
+          - hdf5_42530550
+          - ninja_42535166
+          - libxaac_42528035
+          - xz_42534913
+          - lldpd_42528228
+          - libxaac_42528530
+          - libdwarf_42528792
+          - libxaac_42527409
+          - hdf5_42527526
+          - hdf5_42527328
+          - libxml2_42534512
+          - libavc_42531542
+          - wamr_42536271
+          - harfbuzz_42530920
+          - wamr_42536161
+          - jq_42530604
+          - pcapplusplus_42527545
+          - pacemaker_42536001
+          - libavc_42528067
+          - libxml2_42528694
+          - imagemagick_42529327
+          - libavc_42530446
+          - trafficserver_42535524
+          - libaom_42533480
+          - speex_42535969
+          - imagemagick_42532339
+          - geos_42532863
+          - inchi_42536079
+          - php_42527736
+          - mbedtls_42528141
+          - libdwarf_42528352
+          - libxml2_42531532
+          - imagemagick_42529804
+          - libxml2_42528949
+          - ninja_42534851
+          - libultrahdr_42535840
+          - libavc_42530520
+          - matio_42532885
+          - exiv2_42534645
+          - jq_42530823
+          - lcms_42529812
+          - lcms_42530151
+          - ots_42534876
+          - opensc_42527467
+          - opensc_42528426
+          - pcapplusplus_42530195
+          - hdf5_42527895
+          - net-snmp_42528416
+          - libxaac_42528049
+          - php_42529661
+          - libxml2_42533950
+          - libxml2_42528757
+          - libxaac_42527741
+          - libavc_42531141
+          - opensc_42530206
+          - simdutf_42537987
+          - libxaac_42527401
+          - quickjs_42531506
+          - opensc_42529037
+          - libxml2_42528850
+          - pcapplusplus_42530230
+          - miniz_42536112
+          - php_42529542
+          - opensc_42530547
+          - inchi_42536593
+          - libavc_42530723
+          - inchi_42536064
+          - libxaac_42527550
+          - matio_42530069
+          - libavc_42530447
+          - libdwarf_42528883
+          - libxml2_42528698
+          - libxaac_42527948
+          - libavc_42531117
+      num-targets:
+        type: string
+        description: How many targets to run (Randomly selected). Specifc name above overrides this.
+        default: 201
+      inject-crash:
+        type: boolean
+        description: Inject a crash into the target
+        default: true
+      disable-llm-components:
+        type: boolean
+        description: Disable LLM components.
+        default: false
+      run-duration:
+        type: choice
+        description: How long to run Fuzzing tasks (in mins, 0 means disable)
+        default: 0
+        options:
+          - 0
+          - 10
+          - 30
+          - 60
+          - 240
+      enable-list:
+        type: string
+        description: Comma separated list of components to enable without spaces (e.g. 'aflrun_fuzz,aflrun_build,jazzer_fuzz_shellphish')
+        default: ''
+      runner-type:
+        type: choice
+        description: What type of runner to use (huge = 72 cores, colossal = 192 cores)
+        required: false
+        default: huge
+        options:
+          - huge
+          - colossal
+      # llm-model-override:
+      #   type: choice
+      #   description: Override the LLM model used by many components
+      #   default: 'none'
+      #   options:
+      #     - 'none'
+      #     - 'gpt-4o'
+      #     - 'o1-preview'
+      #     - 'claude-3.5-sonnet'
+      #     - 'gemini-1.5-pro'
+      specific-runner:
+        type: string
+        description: You can also run on an arbitrary runner (aws id or other label, overrides runner-type)
+        required: false
+        default: ''
+      extra-config-json:
+        type: string
+        description: Extra config options for this pipeline run
+        default: '{"launch_worker": true, "extra_pd_run_args": "", "extra_pdl_args": ""}'
+      llm-budget:
+        type: string
+        description: 'The MAX LLM budget for this run (in dollars)'
+        default: 30
+  #schedule:
+  #  - cron: '0 9 * * *'
+
+
+env:
+  # Setting an environment variable with the value of a configuration variable
+  #LITELLM_KEY: ${{ vars.LITELLM_KEY }}
+  RETRIEVAL_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:48751"
+  EMBEDDING_API: "http://beatty.unfiltered.seclab.cs.ucsb.edu:49152"
+  OPENAI_API_KEY: "${{ secrets.OPENAI_KEY }}"
+  LITELLM_KEY: "sk-artiphishell-da-best!!!"
+  USE_LLM_API: "1"
+  IS_ACT: "${{ github.actor == 'local/act' }}"
+
+jobs:
+  extract-data:
+    runs-on: ubuntu-latest
+    name: "Fetch target data and pick targets"
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      targets: ${{ steps.data.outputs.targets }}
+      targets-full-ready: ${{ steps.data.outputs.targets-full-ready }}
+      targets-filtered: ${{ steps.pick-targets.outputs.targets-filtered }}
+      additional-targets: ${{ steps.data.outputs.additional-targets }}
+      labels_json: ${{ steps.launch_worker.outputs.labels_json || steps.dispatched_short_labels.outputs.labels_json || '["self-hosted","huge"]' }}
+      is-jit-worker: ${{ steps.launch_worker.outputs.is-jit-worker }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell-lite
+          persist-credentials: true
+          lfs: false
+          submodules: false
+          fetch-depth: 1
+          sparse-checkout: |
+            .github
+      - name: Extract target data
+        id: data
+        working-directory: artiphishell-lite/.github/workflows
+        run: |
+          set -x
+          apt-get update && apt-get install -y jq
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]
+          then
+            # if [ "${{ github.event.inputs.target-name }}"  = "all" ]; then
+            #   echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready")]' < ./arvo-targets.json) >> $GITHUB_OUTPUT
+            # elif [ "${{ github.event.inputs.target-name }}"  = "all-supported" ]; then
+            #   echo targets-full-ready=$(jq -c '[ .targets[] | select(."supported-target")]' < ./arvo-targets.json) >> $GITHUB_OUTPUT
+            if [ "${{ github.event.inputs.target-name }}"  = "all" ]; then
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready")]' < ./arvo-targets.json) >> $GITHUB_OUTPUT
+            else
+              echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."name" == "${{ github.event.inputs.target-name }}")]' < ./arvo-targets.json) >> $GITHUB_OUTPUT
+            fi
+          else
+            echo targets-full-ready=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and ."only-on-manual-run" == false)]' < ./arvo-targets.json) >> $GITHUB_OUTPUT
+          fi
+          if [ ! -z "${{ github.event.inputs.additional-targets }}" ]; then
+            # additional-targets is a comma seperated list of "target names"
+            # filter the .targets to only contain the additional targets
+            echo additional-targets=$(jq -c '[ .targets[] | select(."full-pipeline-ready" and (."short-name" | inside("${{ github.event.inputs.additional-targets }}")))]' < ./arvo-targets.json) >> $GITHUB_OUTPUT
+          else
+            echo additional-targets=[] >> $GITHUB_OUTPUT
+          fi
+
+      - name: ${{ inputs.target-name == 'all' && format('Pick {0} random targets', inputs.num-targets) || format('Pick {0} as target', inputs.target-name) }}
+        id: pick-targets
+        run: |
+          set -x
+          targets=$(printf '%s\n' '${{ steps.data.outputs.targets-full-ready }}')
+          echo $targets > temp_targets.json
+          count=${{ github.event.inputs.num-targets }}
+          mode=${{ github.event.inputs.target-name }}
+
+          if [ "$mode" = "all" ] && [ -n "$count" ] && [ "$count" -gt 0 ]; then
+            echo "Selecting $count random targets from full list..."
+            trimmed=$(jq -c '.[]' temp_targets.json | shuf | head -n "$count" | jq -s -c '.')
+            echo "targets-filtered=$trimmed" >> $GITHUB_OUTPUT
+          else
+            echo "targets-filtered=$targets" >> $GITHUB_OUTPUT
+          fi
+      - name: "Case: Dispatched Run Short"
+        id: dispatched_short_labels
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          set -x
+          EXTRA_LABELS=""
+
+          # Check if 'needs-kvm' is true for the selected target(s)
+          if [ "${{ inputs.target-name }}" = "all-supported" ]; then
+            if jq -e '.targets[] | select(."supported-target" == true) | select(."needs-kvm" == true)' < ./artiphishell-lite/.github/workflows/arvo-targets.json; then
+              EXTRA_LABELS+=',"metal"'
+            fi
+          else
+            if jq -e '.targets[] | select(."short-name" == "${{ inputs.target-name }}") | select(."needs-kvm" == true)' < ./artiphishell-lite/.github/workflows/arvo-targets.json > /dev/null; then
+              EXTRA_LABELS+=',"metal"'
+            fi
+          fi
+
+          echo 'labels_json=["self-hosted","${{ inputs.specific-runner || inputs.runner-type }}"'$EXTRA_LABELS']' >> $GITHUB_OUTPUT
+      # - name: "Case: Dispatched Run Long"
+      #   id: dispatched_long_labels
+      #   if: ${{ github.event_name == 'workflow_dispatch' && fromJson(inputs.run-duration) > 60 }}
+      #   shell: bash
+      #   run: |
+      #     set -x
+      #     echo 'labels_json=["self-hosted","${{ inputs.specific-runner || inputs.runner-type }}"]' >> $GITHUB_OUTPUT
+      #     echo 'labels_json=["self-hosted","${{ inputs.specific-runner || inputs.runner-type }}"]' >> $GITHUB_OUTPUT
+      # - name: "Launch worker if needed"
+      #   id: launch_worker
+      #   if: ${{ github.event_name == 'workflow_dispatch' && (inputs.runner-type == 'colossal') && inputs.specific-runner == '' }}
+      #   shell: bash
+      #   run: |
+      #     set -x
+      #     #if [ "${{ github.event.inputs.launch-worker }}" = "true" ]; then
+      #     if [ "true" = "true" ]; then
+      #       curl -v 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/github/worker/launch/azure?token=${{ secrets.WORKER_TOKEN }}&job_id=${{ github.run_id }}&size=${{ inputs.runner-type }}' > /tmp/instance.json
+      #       export INSTANCE_ID=$(jq -r '.instance_id' < /tmp/instance.json)
+      #       echo "INSTANCE_ID=${INSTANCE_ID}" >> $GITHUB_OUTPUT
+      #       echo 'labels_json=["self-hosted","'$INSTANCE_ID'"]' >> $GITHUB_OUTPUT
+      #       echo 'is-jit-worker=true' >> $GITHUB_OUTPUT
+      #     fi
+
+  # test:
+  #   runs-on: ubuntu-latest
+  #   name: Test some things
+  #   needs: extract-data
+  #   steps:
+  #     - name: print the json
+  #       run: |
+  #         echo "${{ needs.extract-data.outputs.targets-filtered }}"
+
+  #debug-labels:
+  #  runs-on: ubuntu-latest
+  #  needs: extract-data
+  #  steps:
+  #    - name: Debug the labels
+  #      run: |
+  #        echo "${{ needs.extract-data.outputs.labels_json }}"
+
+
+  # build-local-pipeline:
+  #   needs: extract-data
+  #   runs-on: ${{ fromJson(needs.extract-data.outputs.labels_json) }}
+  #   name: Build Pipeline Docker Images and Test Full Pipeline PDT Connections
+  #   if: ${{ (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
+  #   steps:
+  #     - name: Cleanup CI Worker
+  #       uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+  #       with:
+  #         runner: self-hosted
+  #         is-artiphishell: false
+  #         CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+  #         is-jit-worker: ${{ needs.extract-data.outputs.is-jit-worker }}
+  #         jit-max-lifetime: 360
+  #     - uses: shellphish-support-syndicate/action-setup-pipeline@main
+  #       id: build-pipeline
+  #       #if: ${{ github.event_name != 'workflow_dispatch' }}
+  #       with:
+  #         ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+  #         ghcr-username: ${{ secrets.GHCR_USERNAME }}
+  #         ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         github-user: ${{ github.actor }}
+  #         build-parallel: 'true'
+  #         rebuild-mode: ${{ github.ref == 'refs/heads/main' && 'pull' || 'build-all-for-pipeline' }}
+  #         retries: 3
+  #     - name: Test full pipeline pdt connections
+  #       id: test-pipeline
+  #       #i f: ${{ github.event_name != 'workflow_dispatch' }}
+  #       working-directory: ./artiphishell/
+  #       run: |
+  #         pdl --no-lockstep --no-launch-agent
+  #         pdl --unlock || rm -rf pipeline.lock || true
+
+      #- name: Big ping cause we can't build
+      #  env:
+      #    DISCORD_WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+      #  uses: Ilshidur/action-discord@master
+      #  with:
+      #    args: |
+      #      🤡 @everyone in 🎪 because the pipeline can't build!
+
+      #      ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      #  if: failure() && steps.build-pipeline.conclusion == 'failure'  && github.ref == 'refs/heads/main'
+
+      #- name: Big ping cause pdt can't load pipeline
+      #  env:
+      #    DISCORD_WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+      #  uses: Ilshidur/action-discord@master
+      #  with:
+      #    args: |
+      #      🤡 @everyone in 🎪 because pdt can't load the pipeline with `pdl #--no-lockstep --no-launch-agent`
+
+      #      This might mean that pdt is broken or that the pipeline isn't hooked up correctly
+
+      #      🤡🚗: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      #  if: failure() && steps.test-pipeline.conclusion == 'failure'  && github.ref == 'refs/heads/main'
+
+
+  test-full-pipeline:
+    runs-on: ${{ fromJson(needs.extract-data.outputs.labels_json) }}
+    name: Test full pipeline on ${{ matrix.targets.short-name }}
+    # needs: [build-local-pipeline, extract-data]
+    needs: extract-data
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        targets: ${{ fromJson(needs.extract-data.outputs.targets-filtered) }}
+    steps:
+      - name: Cleanup CI Worker
+        uses: shellphish-support-syndicate/ci-crs-actions/workflows/cleanup-worker-before-run@main
+        with:
+          runner: self-hosted
+          is-artiphishell: false
+          CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+          is-jit-worker: ${{ needs.extract-data.outputs.is-jit-worker }}
+          jit-max-lifetime: 360
+      - name: Start as clean as possible
+        if: ${{ env.IS_ACT != 'true' }}
+        run: |
+          set -x
+          sudo systemctl restart docker
+          docker rm -f $(docker ps -aq) || true
+          sudo rm -rf /crs_scratch/*
+          sudo rm -rf /shared/*
+          rm -rf /tmp/container_plots/*
+          rm -rf /tmp/task_durations.html
+          touch /tmp/STOP_THE_PYTHON_LOGGER
+          sudo rm -rf /tmp/pydatatask-*
+          sudo kill -9 $(ps aux | grep python | grep pydatatask  | grep agent-http | awk '{print $2}') || true
+          sudo kill -9 $(ps aux | grep ipython | awk '{print $2}') || true
+          sudo kill -9 $(ps aux | grep ingest.sh | grep bash | awk '{print $2}') || true
+          sudo kill -9 $(ps aux | grep upterm | grep server | awk '{print $2}') || true
+          sudo umount /mnt/tmpfs || true
+          sudo rm -rf /tmp/ci/long-running
+          if [ -f /tmp/STOP_THE_PYTHON_LOGGER ]
+          then
+            rm /tmp/STOP_THE_PYTHON_LOGGER
+          fi
+
+          echo "Killing any processes on port 8050"
+          PIDS=$(lsof -t -i :8050 || true)
+          if [ -n "$PIDS" ]; then
+            kill -9 $PIDS
+            echo "Killed processes: $PIDS"
+          else
+            echo "No process found on port 8050"
+          fi
+
+          cat /proc/sys/kernel/core_pattern
+          echo core | tee /proc/sys/kernel/core_pattern || true
+          cat /proc/sys/kernel/core_pattern
+
+          cat /proc/sys/kernel/randomize_va_space
+          echo 0 | tee /proc/sys/kernel/randomize_va_space || true
+          cat /proc/sys/kernel/randomize_va_space
+
+          cat /proc/sys/fs/inotify/max_user_watches
+          echo 524288 | tee /proc/sys/fs/inotify/max_user_watches || true
+          cat /proc/sys/fs/inotify/max_user_watches
+      #- name: Setup upterm session
+      #  if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug-workflow && env.IS_ACT != 'true' }}
+      #  uses: lhotari/action-upterm@v1
+      - name: DEBUG - current running stuff on the runner
+        run: | 
+          top -E g -o %CPU -b -n 10000 | head -n 20
+      - name: Set running timeout to 4 hours
+        run: |
+          echo "PIPELINE_RUN_TIMEOUT_MINUTES=240" >> "$GITHUB_ENV"
+          echo "PIPELINE_RUN_TYPE=long" >> "$GITHUB_ENV"
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: artiphishell.azurecr.io
+          username: ARTIPHISHELL-CI-ACR-PUSH-TOKEN
+          password: ${{ secrets.ACR_TOKEN }}
+      - uses: shellphish-support-syndicate/action-setup-pipeline@main
+        id: build-pipeline
+        with:
+          ci-deploy-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-password: ${{ secrets.GHCR_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          rebuild-mode: 'build-all'
+          build-parallel: 'true'
+          worker-token: ${{ secrets.WORKER_TOKEN }}
+          use-docker-cache: 'true'
+      - name: Pull necessary docker images
+        run: | 
+          set -x 
+          docker pull ghcr.io/aixcc-finals/base-runner:v1.3.0
+          docker pull ghcr.io/aixcc-finals/base-builder:v1.3.0
+          docker pull ghcr.io/aixcc-finals/base-clang:v1.3.0
+          docker pull ghcr.io/aixcc-finals/base-builder-jvm:v1.3.0
+      - name: Update the timeouts
+        id: update-timeouts
+        working-directory: ./artiphishell/
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.run-duration }}" = "0" ]
+          then
+            python3 local_run/scripts/set_timeouts.py 1
+          else
+            python3 local_run/scripts/set_timeouts.py ${{ github.event.inputs.run-duration }}
+          fi
+      
+      - shell: bash
+        if: ${{ env.IS_ACT != 'true' }}
+        run: |
+          sudo rm -rf ./artiphishell-real/local_run/targets
+      - name: Cache Target ${{ matrix.targets.short-name }}
+        id: cache-target
+        uses: actions/cache@v4
+        if: ${{ env.IS_ACT != 'true' }}
+        with:
+          path: ./artiphishell-real/local_run/targets
+          key: build-${{ matrix.targets.name }}-${{ matrix.targets.version }}
+      - name: Set up the github path
+        run: |
+          # Need the right docker-compose
+          echo "$GITHUB_WORKSPACE/artiphishell/.github/bin" >> $GITHUB_PATH
+          ls -la "$GITHUB_WORKSPACE/artiphishell/.github/bin"
+      - name: Get runner IP and add PD VIZ link to summary
+        id: get-runner-ip
+        run: |
+          IP=$(curl -s https://api.ipify.org)
+          echo "PD_VIZ_LINK=http://$IP:8050" >> $GITHUB_ENV
+          echo "::warning::🌐 PD VIZ available at http://$IP:8050"
+          echo "- [Link to PD VIZ](http://$IP:8050)" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Set up PRE_RUN_EXEC
+        run: |
+          cat << EOF > $GITHUB_WORKSPACE/pre-run-exec
+          ${{ matrix.targets.pre-run-exec }}
+          EOF
+
+          cat $GITHUB_WORKSPACE/pre-run-exec
+      - name: Clone oss fuzz targets
+        uses: actions/checkout@v4
+        with:
+          repository: shellphish-support-syndicate/artiphishell-ossfuzz-meta
+          token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          path: artiphishell/arvo-targets
+          persist-credentials: true
+          lfs: false
+          submodules: false
+          fetch-depth: 1
+      # - name: Setup upterm session
+      #   uses: lhotari/action-upterm@v1
+      #   env:
+      #     HOME: ${{ github.workspace }}
+      - name: Setup seeds dir
+        if: ${{ github.event.inputs.inject-crash == 'true' }}
+        working-directory: ./artiphishell/
+        run: |
+          set -x
+          target_name=${{ matrix.targets.short-name }}
+          mkdir -p local_run/injectables/${target_name}/seeds
+          arvo_path=arvo-targets/ARVO/${target_name}/cpv_info
+
+          for dir in ${arvo_path}/*/; do
+            echo "Processing: $dir"
+            if [ -d "$dir" ]; then
+              echo "Processing directory: $dir"
+            else
+              echo "Skipping non-directory: $dir"
+              continue
+            fi
+
+            if compgen -G "${dir}/crashing_inp*" > /dev/null; then
+              echo "Copying crashing inputs from $dir to local_run/injectables/${target_name}/seeds/"
+              cp "${dir}/crashing_inp"* "local_run/injectables/${target_name}/seeds/"
+            fi
+          done
+
+          cp local_run/inject.sh local_run/injectables/${target_name}/
+      - name: Create memfs
+        id: create-memfs
+        run: |
+          sudo mkdir -p /mnt/tmpfs
+          sudo mount -o size=64G -t tmpfs none /mnt/tmpfs
+
+      - name: start litellm server
+        working-directory: ./artiphishell/.github/workflows/litellm
+        if: ${{ github.event.inputs.disable-llm-components != 'true' }}
+        run: |
+          set -x
+          python3 update_config.py "${{ github.event.inputs.llm-budget }}"
+          docker build . -t=litellm
+          docker run -d --rm --name litellm -p 4001:4000 litellm
+
+      #- name: get previous run if not fresh
+      #  if: ${{ github.event.inputs.build-run-id && github.event.inputs.build-run-id != 'fresh' }}
+      #  run: |
+      #    set -
+      #    wget -q "https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.event.inputs.build-run-id }}/backup-${{ matrix.targets.short-name }}-${{ github.event.inputs.build-run-id }}.tar.gz" -O ./prior-backup.tar.gz
+      #    wget -q "https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.event.inputs.build-run-id }}/shared.tar.gz" -O ./prior-shared.tar.gz
+
+      #    tar -xzf ./prior-backup.tar.gz
+      #    mv ./backup-* ./prior-backup
+      - name: Full pipeline run for ${{ matrix.targets.name }} ${{ github.event.inputs.additional-targets }}
+        id: full-test
+        timeout-minutes: ${{ fromJSON(env.PIPELINE_RUN_TIMEOUT_MINUTES) }}
+        working-directory: ./artiphishell/local_run
+        continue-on-error: true
+        run: |
+          set -x
+          raw_list="${{ github.event.inputs.enable-list }}"
+          IFS=',' read -r -a ENABLED_TASKS <<< "$raw_list"
+          echo "Enabled tasks:"
+          for task in "${ENABLED_TASKS[@]}"; do
+            echo "- $task"
+          done
+          export ENABLED_TASKS_LIST="${ENABLED_TASKS[*]}"
+          function run-check() {
+            if ps -p $RUN_PID > /dev/null
+            then
+              :
+            else
+              echo "🤡 run.sh stopped for ${{ matrix.targets.name }}"
+              exit 1
+            fi
+          }
+          function wait-for-success() {
+            local SUCCESS_CHECK_STRING="${1}"
+            local COMPONENT_NAME="${2}"
+            local SUCCESS_EMOJI="${3}"
+
+            while true
+            do
+              if eval "$SUCCESS_CHECK_STRING"
+              then
+                echo "$SUCCESS_EMOJI $COMPONENT_NAME worked"
+                break
+              else
+                run-check
+                echo "😴 waiting for $COMPONENT_NAME"
+                sleep 30s
+              fi
+            done
+            return 0
+          }
+
+          (
+            sleep $((400 + RANDOM % 60))
+            echo "Starting pd viz after delay..."
+            pd viz
+          ) &
+
+          if [ ! -f $GITHUB_WORKSPACE/ci_ssh ]
+          then
+          cat << EOF > $GITHUB_WORKSPACE/ci_ssh
+          ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          EOF
+          fi
+          chmod 600 $GITHUB_WORKSPACE/ci_ssh
+
+          echo "CRASH_INJECTION_SUCCESS=no" >> "$GITHUB_ENV"
+
+          # clear up anything old so we know if the pipeline actually started correctly
+          pdl --unlock || rm -rf pipeline.lock
+
+          if [ "${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }}" = "10" ]
+          then
+            export DISABLE_VDS_TIMEOUT=1
+            export DISABLE_GP_TIMEOUT=1
+          else
+            export DISABLE_VDS_TIMEOUT=0
+            export DISABLE_GP_TIMEOUT=0
+          fi
+
+          export ROUND_TIME_SECONDS=$(( ${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }} * 60 ))
+          export TEMP=/mnt/tmpfs
+
+          echo "testtest ${{ inputs.extra-config-json }}"
+          echo "launch_worker ${{ fromJson(inputs.extra-config-json).launch_worker }}"
+          echo "extra_pd_run_args ${{ fromJson(inputs.extra-config-json).extra_pd_run_args }}"
+          echo "extra_pdl_args ${{ fromJson(inputs.extra-config-json).extra_pdl_args }}"
+
+          export EXTRA_ENV=" --global-script-env ON_CI=yes --global-script-env API_COMPONENTS_USE_DUMMY_DATA=1 --global-script-env PYTHONUNBUFFERED=yes ${{ fromJson(inputs.extra-config-json).extra_pd_run_args }}"
+          export PDL_ARGS="${{ matrix.targets.pdl-args }}"
+          export PRE_RUN_EXEC=$(cat $GITHUB_WORKSPACE/pre-run-exec)
+          export GIT_SSH_COMMAND="ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh"
+
+          export TARGET_DIR_NAME=${{ matrix.targets.short-name }}
+          export SHOULD_INJECT="${{ github.event.inputs.inject-crash }}"
+          export FORCE_GIT_SSH=false
+          export ARVO_TEST="true"
+          export ARVO_NO_FUZZ=${{ github.event.inputs.run_duration == '0' }}
+          if [ "${{ inputs.disable-llm-components }}" = "true" ]; then
+            export AIXCC_LITELLM_HOSTNAME=random
+          else
+            LITELLM_IP=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')
+            export AIXCC_LITELLM_HOSTNAME="http://${LITELLM_IP}:4001"
+          fi
+
+          export CUSTOM_OSS_FUZZ_TARGETS_REPO=${{ matrix.targets.targets-repo }}
+
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+
+          if [ "${{ matrix.targets.target-type }}" = "afc" ]; then
+            # Replace git@github.com: with https://github.com/ in repo URL
+            sed -i 's|git@github.com:|https://github.com/|g' run_local.sh
+            ./run_local.sh ${{ matrix.targets.repo }} ${{ matrix.targets.short-name }} &
+            export RUN_PID=$!
+          elif [ "${{ matrix.targets.target-type }}" = "oss-fuzz-git" ]; then
+            ./run_oss_fuzz.sh ${{ matrix.targets.repo }} &
+            export RUN_PID=$!
+          elif [ "${{ matrix.targets.target-type }}" = "oss-fuzz" ]; then
+            ./run_oss_fuzz.sh ${{ matrix.targets.short_name }} &
+            export RUN_PID=$!
+          elif [ "${{ matrix.targets.target-type }}" = "semis" ]; then
+            ./run_git_target.sh ${{ matrix.targets.repo }} &
+            export RUN_PID=$!
+          else
+            echo "Unknown target type: ${{ matrix.targets.target-type }}"
+            exit 1
+          fi
+
+          echo "RUN_PID=$RUN_PID" >> "$GITHUB_ENV"
+
+          if [ "${{ github.event.inputs.monitor-docker }}" = "true" ]
+          then
+            echo "Monitoring docker"
+            ./docker_mon.py --plot --dump /tmp/dump &
+            export DOCKER_MON_PID=$!
+            echo "DOCKER_MON_PID=$DOCKER_MON_PID" >> "$GITHUB_ENV"
+          fi
+
+          cd ../
+
+          # Wait for pdt to start the pipeline
+          start_time=$(date +%s)
+          while [ ! -f ./pipeline.lock ]
+          do
+            run-check
+            echo "😴 waiting for pipeline to start"
+            current_time=$(date +%s)
+            elapsed_time=$((current_time - start_time))
+            if [ $elapsed_time -ge 900 ]; then
+              echo "🙃 Pipeline did not start within 15 minutes"
+              exit 1
+            fi
+            sleep 60s
+          done
+
+          echo "PIPELINE_RUN_SUCCESS=yes" >> "$GITHUB_ENV"
+          echo "Pipeline can run (it's not much but it's a start)"
+
+          # now just run until the timeout
+          wait $RUN_PID
+
+          # kill the docker_mon.py nicely
+          echo "ASDASD" > /tmp/STOP_THE_PYTHON_LOGGER
+
+      - name: Stop run.sh
+        if: ${{ always() && env.RUN_PID }}
+        run: |
+          set -x
+
+          if [ -f /tmp/pdt-run-id ]
+          then
+            kill -9 $(cat /tmp/pdt-run-id) || true
+          fi
+
+          pkill -P -$RUN_PID || true
+
+          sudo kill -s INT $(ps aux | grep python | grep pydatatask  | grep agent-http | awk '{print $2}') || true
+          if [ "${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }}" -gt "10" ]; then
+            sleep 60
+          else
+            sleep 60
+          fi
+
+          # clean up any forking agents that are running
+          sudo kill -9 $(ps aux | grep python | grep pydatatask  | grep agent-http | awk '{print $2}') || true
+          # clean up any forking ipython that are running
+          sudo kill -9 $(ps aux | grep ipython | awk '{print $2}') || true
+          # clean up any INGESTS that are running
+          sudo kill -9 $(ps aux | grep ingest.sh | grep bash | awk '{print $2}') || true
+          # clean up any docker murderers that are running
+          sudo kill -9 $(ps aux | grep ci_fix_docker_created | grep bash | awk '{print $2}') || true
+
+      - name: pause all docker containers
+        if: ${{ always() }}
+        run: |
+          docker pause $(docker ps -aq) || true
+
+      - name: create pd backup
+        id: create-pd-backup
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        working-directory: ./artiphishell
+        run: |
+          export USER=$(id -u)
+          sudo mkdir -p /shared/fuzzer_sync/
+          sudo mkdir -p /crs_scratch/
+          sudo chown -R $USER:$USER /shared/fuzzer_sync/
+          sudo chown -R $USER:$USER /crs_scratch/
+          tar cfz ../crs_scratch-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz /crs_scratch || true
+          #tar cfz ../pydatatask-runner-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz /mnt/tmpfs/pydatatask-runner || true
+          tar cfz ../shared_fuzzer_sync-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz /shared/fuzzer_sync || true
+          # pd backup --all ../backup
+          ./infra/agent/scripts/smart_pd_backup.py ../backup --skip-artifacts
+          # Save all services logs as well
+          mkdir -p ../backup/services.logs
+          docker logs aixcc-functionresolver-server > ../backup/services.logs/aixcc-functionresolver-server.log 2>&1 || true
+          docker logs aixcc-lang-server > ../backup/services.logs/aixcc-lang-server.log 2>&1 || true
+          docker logs otel-collector > ../backup/services.logs/otel-collector.log 2>&1 || true
+          docker logs telemetry_db > ../backup/services.logs/telemetry_db.log 2>&1 || true
+          docker logs litellm > ../backup/services.logs/litellm.log 2>&1 || true
+          docker logs telegraf > ../backup/services.logs/telegraf.log 2>&1 || true
+          docker logs aixcc-codeql-server > ../backup/services.logs/aixcc-codeql-server.log 2>&1 || true
+          docker logs permanence-permanence-service-1 > ../backup/services.logs/permanence-permanence-service-1.log 2>&1 || true
+          docker logs aixcc-analysis-graph > ../backup/services.logs/aixcc-analysis-graph.log 2>&1 || true
+          pd graph --out-dir ../backup || true
+          ./local_run/plot_run.py ../backup
+
+
+      - name: store backups of long-running processes
+        id: store-backups-long-running
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        run: |
+          set -x
+          for NAME in $(docker ps --format '{{.Names}}' | grep CRS | sort)
+          do
+            TASK=$(echo $NAME | awk -F'___' '{print $2}')
+            JOB=$(echo $NAME | awk -F'___' '{print $3}')
+            REPLICANT=$(echo $NAME | awk -F'___' '{print $4}')
+            mkdir -p ./backup/$TASK.logs
+            docker logs $NAME &> ./backup/$TASK.logs/$REPLICANT-$JOB
+            mkdir -p /tmp/ci/long-running
+            echo "$REPLICANT-$JOB" >> /tmp/ci/long-running/$TASK
+          done
+      - name: store telemetry db backup
+        id: store-telemetry-db-backup
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        run: |
+          set -x
+          docker unpause telemetry_db
+          docker exec telemetry_db influx backup /shared/telemetry_db -t shellphish-influxdb-token
+          docker pause telemetry_db
+          sudo mkdir -p /shared/telemetry_db
+          sudo chown -R $USER:$USER /shared/telemetry_db
+          cp -r /shared/telemetry_db ./telemetry-${{ matrix.targets.short-name }}-${{ github.run_id }}
+
+          sudo tar --owner=1000 --group=1000 -czf ./telemetry-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz ./telemetry-${{ matrix.targets.short-name }}-${{ github.run_id }}
+
+          if [ "${{ env.IS_ACT }}" != "true" ]; then
+            ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh storage@aixcc-diskman.adamdoupe.com "mkdir -p web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}"
+            scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh ./telemetry-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}
+          fi
+
+
+      - name: upload backup metadata
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' && env.IS_ACT != 'true' }}
+        run: |
+          DISKMAN_LOC="web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}"
+          ssh \
+            -o StrictHostKeychecking=no \
+            -i $GITHUB_WORKSPACE/ci_ssh \
+            storage@aixcc-diskman.adamdoupe.com \
+            "mkdir -p $DISKMAN_LOC"
+
+          scp \
+            -o StrictHostKeychecking=no \
+            -i $GITHUB_WORKSPACE/ci_ssh \
+            ./backup/*.{md,dot} \
+            storage@aixcc-diskman.adamdoupe.com:$DISKMAN_LOC/. || true
+
+          scp \
+            -o StrictHostKeychecking=no \
+            -i $GITHUB_WORKSPACE/ci_ssh \
+            /tmp/task_durations.html \
+            storage@aixcc-diskman.adamdoupe.com:$DISKMAN_LOC/. || true
+
+          scp \
+            -o StrictHostKeychecking=no \
+            -i $GITHUB_WORKSPACE/ci_ssh \
+            ./crs_scratch-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz \
+            storage@aixcc-diskman.adamdoupe.com:$DISKMAN_LOC/. || true
+
+          scp \
+            -o StrictHostKeychecking=no \
+            -i $GITHUB_WORKSPACE/ci_ssh \
+            ./shared_fuzzer_sync-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz \
+            storage@aixcc-diskman.adamdoupe.com:$DISKMAN_LOC/. || true
+
+          #scp \
+          #  -o StrictHostKeychecking=no \
+          #  -i $GITHUB_WORKSPACE/ci_ssh \
+          #  ./pydatatask-runner-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz \
+          #  storage@aixcc-diskman.adamdoupe.com:$DISKMAN_LOC/. || true
+
+      - name: store backup
+        id: store-backup
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        run: |
+          if [ "${{ env.IS_ACT }}" != "true" ]; then
+            ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh storage@aixcc-diskman.adamdoupe.com "mkdir -p web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}"
+          fi
+          # want to untar to something different each time
+          sudo chmod o+r -R ./backup/ || true
+          mv ./backup ./backup-${{ matrix.targets.short-name }}-${{ github.run_id }}
+          tar -czf backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz ./backup-${{ matrix.targets.short-name }}-${{ github.run_id }}
+          mv ./backup-${{ matrix.targets.short-name }}-${{ github.run_id }} ./backup
+
+          mv ./backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz ./backup
+          if [ "${{ env.IS_ACT }}" != "true" ]; then
+            rsync -e "ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh"  -azP ./backup/ storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}
+          fi
+
+      - name: generate summary
+        id: generate-summary
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        working-directory: ./artiphishell
+        run: |
+          set -x
+          echo "# Full pipeline CI of ${{ matrix.targets.name }} for ${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }} minutes" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "[📈 Task Execution Timeline](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/task_durations.html)" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "${{ github.event.inputs.monitor-docker }}" = "true" ]
+          then
+            echo "[📈 Docker Stats Timeline](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/container_plots/index.html)" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          # if [ "${{ github.event.inputs.inject-crash }}" = "true" ]
+          # then
+          #   echo "**Crash Injection Attempted**" | tee -a "$GITHUB_STEP_SUMMARY"
+          # fi
+          echo "### Run Artifacts" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full backup.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full shared.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/shared.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full shared_fuzzer_sync.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/shared_fuzzer_sync-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full crs_scratch.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/crs_scratch-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- [Full telemetry.tar.gz](https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/telemetry-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "" | tee -a "$GITHUB_STEP_SUMMARY"
+
+          pwd
+          ls -la
+          ls -la ./local_run/
+
+          BACKUP_DIR=../backup STORAGE_URL=https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }} ./local_run/generate_summary.py --target "${{ matrix.targets.short-name }}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ env.IS_ACT }}" != "true" ]; then
+            # Store the summary as well
+            scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh $GITHUB_STEP_SUMMARY storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/summary.md
+
+          if [ "${{ github.event.inputs.monitor-docker }}" = "true" ]
+          then
+            # Do the docker mon here to give it some time to finish
+            while [ -e /proc/$DOCKER_MON_PID ]
+            do
+                echo "Process: $DOCKER_MON_PID is still running (DockerMon)"
+                echo "AAA" > /tmp/STOP_THE_PYTHON_LOGGER
+                sleep 5
+            done
+            if [ -f /tmp/docker_mon.log ]
+            then
+              echo "Uploading docker_mon.log"
+              scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh /tmp/docker_mon.log storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/docker_mon.log
+              rm /tmp/docker_mon.log
+            fi
+            if [ -f /tmp/dump_stats.csv ]
+            then
+              scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh /tmp/dump_stats.csv storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/dump_stats.csv
+              rm /tmp/dump_stats.csv
+            fi
+            if [ -f /tmp/dump_labels.csv ]
+            then
+              scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh /tmp/dump_labels.csv storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/dump_labels.csv
+              rm /tmp/dump_labels.csv
+            fi
+            if [ -d /tmp/container_plots ]
+            then
+                echo "Uploading container plots"
+                scp -v -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh -r /tmp/container_plots/ storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/container_plots
+            fi
+          fi
+          fi
+
+      - name: Save results for CI UI
+        uses: shellphish-support-syndicate/ci-crs-actions@v2.0.0
+        continue-on-error: true
+        if: ${{ always() && env.IS_ACT != 'true' }}
+        with:
+          github-token: ${{ secrets.CI_DEPLOY_TOKEN }}
+          action: 'save-pipeline-results'
+          results_path: /tmp/results.json
+          cache: '/tmp/cache'
+
+      - name: Store results json data for all tasks
+        if: ${{ always() && env.IS_ACT != 'true' }}
+        working-directory: ./artiphishell
+        run: |
+          set -x
+          DISKMAN_LOC="web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}"
+          scp \
+            -o StrictHostKeychecking=no \
+            -i $GITHUB_WORKSPACE/ci_ssh \
+            /tmp/results.json \
+            storage@aixcc-diskman.adamdoupe.com:$DISKMAN_LOC/. || true
+
+      - name: Store results in a csv file on the server
+        if: ${{ always() && steps.generate-summary.conclusion == 'success' && github.ref == 'refs/heads/main' && env.IS_ACT != 'true' }}
+        working-directory: ./artiphishell
+        run: |
+          set -x
+          ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh storage@aixcc-diskman.adamdoupe.com "echo \"${{ github.run_id }},${{ github.sha }},${{ matrix.targets.short-name }},${{ env.PIPELINE_RUN_TIMEOUT_MINUTES }},${{ env.VDS_SUBMISSION_NUM }},${{ env.VDS_SUCCESS_NUM }},${{ env.VDS_PENDING_NUM }},${{ env.GP_SUBMISSION_NUM }},${{ env.GP_SUCCESS_NUM }},${{ env.GP_PENDING_NUM }},$(pd ls povguy.pov_report_path | wc -l),$(pd ls find_first_crash_commit.crashing_commit | wc -l)\" >> web/ci-status/status.csv"
+
+      - name: Upload github summary as artifact
+        if: ${{ always() }}
+        env:
+          GITHUB_SUMMARY: ${{ github.step_summary }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-summary-${{ matrix.targets.name }}-${{ github.run_id }}
+          path: ${{ env.GITHUB_SUMMARY }}
+
+
+      - name: kill all docker containers
+        if: ${{ always() }}
+        id: kill-all-docker-containers
+        run: |
+          sudo systemctl restart docker
+          docker rm -f $(docker ps -aq) || true
+
+      - name: Clean up backup
+        if: ${{ always() && steps.create-memfs.conclusion == 'success' }}
+        continue-on-error: true
+        run: |
+          set -x
+          lsof | grep /mnt/tmpfs || true
+          sudo umount /mnt/tmpfs
+
+      - name: Cleanup pipeline data
+        if: always()
+        working-directory: ./artiphishell
+        continue-on-error: true
+        run: |
+          pdl --unlock || rm -rf pipeline.lock
+
+      # - name: Stop any docker containers
+      #   if: ${{ always() }}
+      #   run: |
+      #     sudo systemctl restart docker
+      #     docker rm -f $(docker ps -aq) || true
+
+      - name: upload capi_lops
+        if: ${{ always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: capi_logs-${{ matrix.targets.name }}-${{ github.run_id }}
+          path: ./artiphishell/aixcc-infra/aixcc-sc-capi/capi_logs
+
+      - name: prep shared
+        id: prep-shared
+        if: ${{ false && always() && env.PIPELINE_RUN_SUCCESS == 'yes' }}
+        run: |
+          sudo tar --owner=1000 --group=1000 -czf ./shared.tar.gz /shared
+          sudo chmod 666 ./shared.tar.gz
+
+      - name: upload shared
+        id: upload-shared
+        if: ${{ false && always() && steps.prep-shared.conclusion == 'success' && env.IS_ACT != 'true' }}
+        run: |
+          ssh -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh storage@aixcc-diskman.adamdoupe.com "mkdir -p web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}"
+          scp -o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh ./shared.tar.gz storage@aixcc-diskman.adamdoupe.com:web/pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}
+
+      - name: setup component testing only for successful, main, short runs
+        if: ${{ always() && steps.generate-summary.conclusion == 'success' && steps.store-backup.conclusion == 'success' && steps.upload-shared.conclusion == 'success' && github.ref == 'refs/heads/main' && env.PIPELINE_RUN_TYPE == 'short' }}
+        run: |
+          set -x
+          echo $tasks
+          this_run_id=${{ github.run_id }}
+          SSH_ARGS="-o StrictHostKeychecking=no -i $GITHUB_WORKSPACE/ci_ssh"
+          for task in $tasks
+          do
+            echo $task
+            task_ran_name=${task}_RAN
+            echo $task_ran_name
+            did_task_run=${!task_ran_name}
+            if [ "$did_task_run" = "yes" ]
+            then
+              echo "$task ran"
+              ssh $SSH_ARGS storage@aixcc-diskman.adamdoupe.com "mkdir -p web/$task/${{ matrix.targets.short-name }}/$this_run_id && cd web/$task/${{ matrix.targets.short-name }}/$this_run_id && echo \"$this_run_id\" > ./run_id && ln -s ../../../pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/backup-${{ matrix.targets.short-name }}-${{ github.run_id }}.tar.gz ./backup.tar.gz && ln -s ../../../pipeline-backup/${{ matrix.targets.short-name }}/${{ github.run_id }}/shared.tar.gz ./shared.tar.gz"
+
+              # check if we're the latest
+              latest_id=$(ssh $SSH_ARGS storage@aixcc-diskman.adamdoupe.com "cat web/$task/${{ matrix.targets.short-name }}/latest/run_id" || echo "0")
+              echo "$latest_id latest_id"
+              if [ "$this_run_id" -gt "$latest_id" ]
+              then
+                echo "setting new link"
+                ssh $SSH_ARGS storage@aixcc-diskman.adamdoupe.com "cd web/$task/${{ matrix.targets.short-name }} && (unlink latest || true) && ln -s ./$this_run_id latest"
+              fi
+            fi
+          done
+
+      - name: Cleanup
+        if: always() && env.IS_ACT != 'true'
+        run: |
+          if [ -d artiphishell/meta-components/aixcc-sc-capi/cp_root ]
+          then
+            sudo rm -rf ./artiphishell/meta-components/aixcc-sc-capi/cp_root/*
+          fi
+          if [ -d artiphishell/meta-components/aixcc-sc-capi/capi_logs ]
+          then
+            sudo rm -rf artiphishell/meta-components/aixcc-sc-capi/capi_logs
+          fi
+
+          rm -rf ./backup
+          rm -rf ./prior-backup
+          rm -rf ./shared.tar.gz
+          rm -rf ./prior-backup.tar.gz
+          rm -rf ./prior-shared.tar.gz
+          rm -rf /tmp/step_summary.md
+
+          sudo rm -rf /crs_scratch/*
+          sudo rm -rf /shared/*
+
+          if [[ "${{ needs.extract-data.outputs.is-jit-worker }}" == 'true' ]] && [[ "${{ inputs.keep-worker-alive }}" != 'true' ]]; then
+            export NAME=$(cat /opt/worker-name.txt)
+
+          cat <<EOF > /tmp/remove-worker.sh
+          #!/bin/bash
+          curl -v 'https://shellphish-support-syndicate-workers.cf-a92.workers.dev/api/v1/github/worker/remove?token=${{ secrets.WORKER_TOKEN }}&name=$NAME'
+          EOF
+          # DO NOT REINDENT THE ABOVE LINE! IT WILL BREAK THE SCRIPT!
+
+            chmod +x /tmp/remove-worker.sh
+            cp /tmp/remove-worker.sh /home/runner/
+
+          cat <<EOF | sudo tee /home/runner/cancel-worker-removal.sh
+          #!/bin/bash
+          sudo rm -f /tmp/remove-worker.sh
+          sudo shutdown -c
+          EOF
+          # DO NOT REINDENT THE ABOVE LINE! IT WILL BREAK THE SCRIPT!
+
+            sudo chmod 777 /home/runner/cancel-worker-removal.sh
+
+            echo "!! Worker will terminate after this job !!"
+            if [[ "${{ env.PIPELINE_RUN_SUCCESS }}" == 'yes' ]]; then
+              # If the pipeline was successful, terminate in 15 minutes
+              sudo shutdown -h +15
+              echo "sudo /tmp/remove-worker.sh" | at now + 13 minutes
+            else
+              # Otherwise we keep the box around for 45 minutes to investigate
+              sudo shutdown -h +45
+              echo "sudo /tmp/remove-worker.sh" | at now + 43 minutes
+            fi
+          fi
+

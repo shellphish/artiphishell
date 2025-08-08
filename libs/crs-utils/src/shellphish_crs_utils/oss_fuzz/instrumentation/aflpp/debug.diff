@@ -1,0 +1,83 @@
+diff --git a/src/afl-fuzz-one.c b/src/afl-fuzz-one.c
+index fd5ed87c..eed05ff0 100644
+--- a/src/afl-fuzz-one.c
++++ b/src/afl-fuzz-one.c
+@@ -67,6 +67,7 @@ static int select_algorithm(afl_state_t *afl, u32 max_algorithm) {
+ 
+   }
+ 
++  ACTF("Selected algorithm %d", i_puppet);
+   return i_puppet;
+ 
+ }
+@@ -5086,6 +5087,7 @@ pacemaker_fuzzing:
+                  afl->queue_cur->fname, use_stacking);
+ #endif
+ 
++        ACTF("%s (%u ops)", afl->stage_name, use_stacking);
+         for (i = 0; i < use_stacking; ++i) {
+ 
+           switch (r = (select_algorithm(afl, r_max))) {
+@@ -6163,6 +6165,8 @@ void pso_updating(afl_state_t *afl) {
+ /* The entry point for the mutator, choosing the default mutator, and/or MOpt
+    depending on the configuration. */
+ u8 fuzz_one(afl_state_t *afl) {
++  ACTF(
++      "Running fuzz_one with afl->stop_soon = %d\n",afl->stop_soon);
+ 
+   int key_val_lv_1 = -1, key_val_lv_2 = -1;
+ 
+diff --git a/src/afl-fuzz-queue.c b/src/afl-fuzz-queue.c
+index 8db89775..25554c61 100644
+--- a/src/afl-fuzz-queue.c
++++ b/src/afl-fuzz-queue.c
+@@ -1030,6 +1030,7 @@ void cull_queue(afl_state_t *afl) {
+    go into config.h. */
+ 
+ u32 calculate_score(afl_state_t *afl, struct queue_entry *q) {
++  ACTF("Calculating score for %s", q->fname);
+ 
+   u32 cal_cycles = afl->total_cal_cycles;
+   u32 bitmap_entries = afl->total_bitmap_entries;
+diff --git a/src/afl-fuzz-run.c b/src/afl-fuzz-run.c
+index a3787e5c..e27be63d 100644
+--- a/src/afl-fuzz-run.c
++++ b/src/afl-fuzz-run.c
+@@ -104,6 +104,7 @@ fsrv_run_result_t __attribute__((hot)) fuzz_run_target(afl_state_t      *afl,
+   time_spent_start = (spec.tv_sec * 1000000000) + spec.tv_nsec;
+ #endif
+ 
++  ACTF("fuzz_run_target: %d", res);
+   return res;
+ 
+ }
+@@ -433,6 +434,7 @@ static void write_with_gap(afl_state_t *afl, u8 *mem, u32 len, u32 skip_at,
+ 
+ u8 calibrate_case(afl_state_t *afl, struct queue_entry *q, u8 *use_mem,
+                   u32 handicap, u8 from_queue) {
++  ACTF("calibrate_case: %s (length=%u)", q->fname, q->len);
+ 
+   u8 fault = 0, new_bits = 0, var_detected = 0, hnb = 0,
+      first_run = (q->exec_cksum == 0);
+@@ -931,6 +933,8 @@ void sync_fuzzers(afl_state_t *afl) {
+ 
+ u8 trim_case(afl_state_t *afl, struct queue_entry *q, u8 *in_buf) {
+ 
++  ACTF("trimming %s (length=%u)", q->fname, q->len);
++
+   u8  needs_write = 0, fault = 0;
+   u32 orig_len = q->len;
+   u64 trim_start_us = get_cur_time_us();
+diff --git a/src/afl-fuzz.c b/src/afl-fuzz.c
+index b7f99ddc..9e51936b 100644
+--- a/src/afl-fuzz.c
++++ b/src/afl-fuzz.c
+@@ -3193,7 +3193,7 @@ int main(int argc, char **argv_orig, char **envp) {
+       if (unlikely(afl->old_seed_selection)) {
+ 
+         while (++afl->current_entry < afl->queued_items &&
+-               afl->queue_buf[afl->current_entry]->disabled) {};
++               afl->queue_buf[afl->current_entry]->disabled) {}; // iterate past all disabled items to the next one.
+         if (unlikely(afl->current_entry >= afl->queued_items ||
+                      afl->queue_buf[afl->current_entry] == NULL ||
+                      afl->queue_buf[afl->current_entry]->disabled)) {

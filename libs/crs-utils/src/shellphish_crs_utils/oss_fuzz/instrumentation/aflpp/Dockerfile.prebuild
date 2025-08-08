@@ -1,0 +1,38 @@
+ARG OSS_FUZZ_BASE_BUILDER_IMAGE=
+
+FROM ${OSS_FUZZ_BASE_BUILDER_IMAGE}
+
+RUN apt-get update && apt-get install -y gcc g++
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
+    automake \
+    cmake \
+    git \
+    gcc-9-plugin-dev \
+    libstdc++-9-dev
+RUN apt-get update && apt-get install -y patchelf
+
+RUN mkdir -p $SRC/shellphish
+RUN git clone -b v4.30c  https://github.com/AFLplusplus/AFLplusplus $SRC/shellphish/aflplusplus
+RUN sed 's/void sync_fuzzers(afl_state_t \*afl) {/void sync_fuzzers(afl_state_t \*afl) { printf("SHELLPHISH: sync\\n"); /' -i $SRC/shellphish/aflplusplus/src/afl-fuzz-run.c
+RUN sed 's/\(if (likely(!afl->stop_soon && afl->sync_id)) {\)/printf("SHELLPHISH: pre-sync: afl->is_main_node: %d, afl->sync_time: %d\n"); \1/' -i $SRC/shellphish/aflplusplus/src/afl-fuzz-run.c
+
+COPY precompile_shellphish_aflpp /usr/local/bin/
+RUN precompile_shellphish_aflpp || (cat "$SRC/shellphish/aflplusplus/utils/aflpp_driver/aflpp_driver.c" && exit 1)
+
+# Make SURE the aflpp_driver.o has the symbols
+RUN strings $SRC/shellphish/aflplusplus/utils/aflpp_driver/aflpp_driver.o | grep "##SIG_AFL_PERSISTENT##"
+RUN strings $SRC/shellphish/aflplusplus/utils/aflpp_driver/aflpp_driver.o | grep "##SIG_AFL_DEFER_FORKSRV##"
+
+####### Rust my beloved #######
+RUN echo 1
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > /rustup.sh
+RUN bash /rustup.sh -y
+RUN rm -f /rustup.sh
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN cargo --help
+
+####### Nautilus #######
+COPY nautilus $SRC/nautilus
+RUN cd $SRC/nautilus && ./build.sh

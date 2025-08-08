@@ -1,0 +1,26 @@
+Now, you will analyze the IJON instrumentation applied to a specific function. Here is the diff containing the IJON instrumentation to be reviewed:
+
+<diff>
+{{diff}}
+</diff>
+
+And here is the original function source code:
+
+<function_source>
+{{function_source}}
+</function_source>
+
+{% if has_failed %}
+The following insertion markers failed to apply properly (they may be malformed), please generate corrected versions of them to be applied to the source code:
+You should always try to insert into the original <function_source> and not the <failed_blocks>. the <failed_blocks> are purely for reference.
+<failed_blocks>
+{{failed_blocks}}
+</failed_blocks>
+{% endif %}
+
+{% if compiler_error %}
+Here are the compilation errors encountered when compiling the code (ignore warnings):
+<compiler_error>
+{{compiler_error}}
+</compiler_error>
+{% endif %}

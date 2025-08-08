@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+
+WORKDIR=$PWD
+COMMIT_HASH=$(git rev-parse HEAD)
+cp -r $WORKDIR /out/original_workdir
+
+echo $WORKDIR > /out/workdir.txt
+echo $COMMIT_HASH > /out/commit_hash.txt
+
+export CC=clang
+export CXX=clang++
+
+# Let Clang silently skip unknown “-W…” flags (gcc onli) instead of erroring out
+export CFLAGS="$CFLAGS -Wno-unknown-warning-option -Wno-error=unknown-warning-option"
+export CXXFLAGS="$CXXFLAGS -Wno-unknown-warning-option -Wno-error=unknown-warning-option"
+
+echo "================================== Building bear =================================="
+# if ALLOW_BUILD_FAIL is set, we allow the build to fail
+if [[ -z "${ALLOW_BUILD_FAIL:-}" ]]; then
+    bear --config /bear_config.json -- compile.old
+else
+    bear --config /bear_config.json -- compile.old || true
+fi
+
+# Copy files or create empty ones
+for file in compile_commands.json link_commands.json ar_commands.json; do
+    [[ -f "$file" ]] && cp "$file" "/out/$file" || echo "{}" > "/out/$file"
+done
+
+
+echo "========================== Running clang-indexer full mode =========================="
+clang-indexer --output /out/full --compile-args /out/compile_commands.json 

@@ -1,0 +1,86 @@
+repo_classes:
+
+  ################### INPUTS ###################
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks: MetadataRepository
+  dedup_pov_reports: BlobRepository
+  dedup_pov_reports_representative_metadatas: MetadataRepository
+  project_metadatas: MetadataRepository
+  full_functions_indices: BlobRepository
+
+  ################### OUTPUTS ###################
+  points_of_interest: BlobRepository
+
+tasks:
+  poiguy:
+    failure_ok: true
+    job_quota:
+      cpu: 1
+      mem: "2Gi"
+    priority: 10000
+    # Avoid spamming pull requests when we launch many instances of this task
+    wait_for_image_pull: true
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse the ASAN results.
+
+    # "harness_queue" causes the pending poiguy jobs to be prioritized based on how many are queued for a given pov_guy_report_meta.harness_info_id
+    priority_function: "harness_queue"
+
+    links:
+      pov_guy_report_id:
+        repo: dedup_pov_reports
+        kind: InputId
+      pov_guy_report_meta:
+        repo: dedup_pov_reports_representative_metadatas
+        kind: InputMetadata
+      pov_report_path:
+        repo: dedup_pov_reports
+        kind: InputFilepath
+      full_functions_indices:
+        repo: full_functions_indices
+        kind: InputId
+        key: pov_guy_report_meta.project_id
+      project_metadata_path:
+        repo: project_metadatas
+        kind: InputFilepath
+        key: pov_guy_report_meta.project_id
+      project_id:
+        repo: project_metadatas
+        kind: InputId
+        key: pov_guy_report_meta.project_id
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: pov_guy_report_meta.project_id
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: pov_guy_report_meta.project_id
+
+      poi_report:
+        repo: points_of_interest
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-poi-guy'
+        host_mounts:
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export REPORT_ID={{ pov_guy_report_id | shquote }}
+          export POV_REPORT_ID={{ pov_guy_report_id | shquote }}
+          export PROJECT_ID={{ pov_guy_report_meta.project_id | shquote }}
+          export POV_REPORT_PATH={{ pov_report_path | shquote }}
+          export PROJECT_METADATA_PATH={{ project_metadata_path | shquote }}
+
+          export POI_REPORTS_DIR={{ poi_report | shquote }}
+
+          /poiguy/run-poiguy.sh

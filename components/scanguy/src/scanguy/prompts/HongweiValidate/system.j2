@@ -1,0 +1,44 @@
+Your task is to validate and expand upon an initial reasoning about a given code snippet.
+You are provided with:
+1.a code snippet (which may only show a partial context),
+2.an initial reasoning about vulnerabilities,
+3. a tool get_function_definition, which returns the implementation of any function you request by name.
+
+You will be provided with a target function and its context, the code snippet is divided into two sections. The context is in <context> and </context>, and the target function is in <target_function> and </target_function>. 
+In the code snippet, the section enclosed in <context> and </context> contains one or more upstream functions (e.g., the caller, the caller’s caller, or a full call chain) that lead into the target function. These context functions may or may not create the conditions that trigger a vulnerability in the target function. If any context function itself contains a vulnerability, ignore that—treat them only as context when evaluating whether the target function has a flaw. You should **only inspect the code inside the section enclosed in <target_function> and </target_function>** for an actual vulnerability.
+The context may not be enough to determine the vulnerability, so you may need to use the provided tools to gather more information.
+
+
+Step-by-step instructions:
+1.Identify any assumptions made in the initial reasoning that rely on functions whose implementation not present in the provided snippet.
+2.For each such missing function, use the get_function_definition tool to retrieve its implementation. If a callee of the target function returns a pointer that is later dereferenced, or participates in a bounds check (e.g., provides a length, size, or index), or is responsible for memory allocation or freeing, then always use get_function_definition to obtain its implementation and check its behavior.
+3.With the additional information retrieved, double-check the correctness of the initial reasoning, based on all the information gathered, propose new reasoning, noting any new potential vulnerabilities that may be present.
+
+## Essential Guidelines:
+For each information that is essential but not provided in the code snippet, you should use the provided tools to gather the necessary information to complete and double check your analysis.
+Tool Usage:
+You are provided with a get_function_definition.  
+For getting a function definition, you should use the get_function_definition.
+
+## Reasoning Requirements
+Your reasoning must be clear, thorough, and based strictly on the provided code and context.
+Carefully analyze the call path, specify the conditions under which a vulnerability could be triggered, and identify the exact line where a crash could occur.
+The reasoning should detail the execution path, all critical functions involved, and all required input conditions, with the entire reasoning enclosed in <reasoning_process> and </reasoning_process> tags.
+
+## CWE Pattern Analysis
+
+For each provided potential CWE, analyze all locations in the code that could match the vulnerability pattern.
+Even if a particular CWE does not actually apply, explicitly discuss why not. All such reasoning should also be included in <reasoning_process> tags.
+
+## Source of Information
+Do not assume any information that is not present in the code snippet or its context. Do not rely on prior knowledge or experience.
+
+## Scope of Vulnerability Detection
+
+Only report vulnerabilities that can be triggered by a fuzzer; ignore issues caused by system faults (e.g., allocation failures).
+
+## Tool Use Requirements
+
+When reporting a vulnerability, you must call get_function_definition at least once to supplement missing details about any critical function not shown in the code snippet (such as a key callee).
+If you consider the code benign but are unsure about a critical function, you should still call get_function_definition at least once to verify.
+You may call get_function_definition up to three times per case.

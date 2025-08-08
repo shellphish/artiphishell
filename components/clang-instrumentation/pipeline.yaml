@@ -1,0 +1,187 @@
+repo_classes:
+
+  ################### INPUTS ###################
+  crs_tasks_oss_fuzz_repos: { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  canonical_build_artifacts: { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  crs_tasks: MetadataRepository
+  base_project_metadatas: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  project_build_configurations: MetadataRepository
+  project_harness_infos: MetadataRepository
+  project_link_commands: BlobRepository
+  
+  ################### OUTPUTS ###################
+  # crashing_harness_inputs: BlobRepository
+  # crashing_harness_inputs_metadatas: MetadataRepository
+
+  ################ INTERMEDIATES ################
+  clang_instrumentation_build_artifacts: {cls: FilesystemRepository, required: false}
+  clang_instrumentation_harnesses: {cls: BlobRepository, required: false}
+  
+tasks:
+  clang_instrumentation_build:
+    priority: 2
+    job_quota:
+      cpu: 0.5
+      mem: "2Gi"
+
+    links:
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      meta:
+        repo: base_project_metadatas
+        kind: InputMetadata
+
+      # The aflpp_build happens on each set of project_analysis_source
+      project_oss_fuzz_repo:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+
+      project_link_commands:
+        repo: project_link_commands
+        kind: InputFilepath
+      
+      # OUTPUTS
+      clang_instrumentation_build_artifacts:
+        repo: clang_instrumentation_build_artifacts
+        kind: OutputFilepath
+    executable:
+      cls: Container
+      args:
+        image: aixcc-clang-instrumentation
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -x
+          set -e
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+          OSS_FUZZ_PROJECT_DIR={{ project_oss_fuzz_repo | shquote }}/projects/{{ crs_task.project_name | shquote }}/
+
+          BUILD_IMAGE_COMMAND="oss-fuzz-build-image --instrumentation griller $OSS_FUZZ_PROJECT_DIR"
+          # if IN_K8S is set, add --push
+          if [ ! -z "${IN_K8S:-}" ]; then
+            BUILD_IMAGE_COMMAND="$BUILD_IMAGE_COMMAND --push"
+          fi
+
+          BUILDER_IMAGE=$($BUILD_IMAGE_COMMAND | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$BUILDER_IMAGE" ]; then exit 1; fi
+          RUNNER_IMAGE=$($BUILD_IMAGE_COMMAND --build-runner-image | grep IMAGE_NAME: | awk '{print $2}')
+          if [ -z "$RUNNER_IMAGE" ]; then exit 1; fi
+
+          # the task service for building already handles the pulling of the project_analysis_sources so we don't
+          # need to do anything with those here
+          oss-fuzz-build \
+            --use-task-service \
+            --project-id {{ project_id | shquote }} \
+            --architecture {{ meta.get("architectures", ["x86_64"])[0] }} \
+            --sanitizer address \
+            --instrumentation griller \
+            --cpu ${INITIAL_BUILD_CPU:-6} \
+            --mem ${INITIAL_BUILD_MEM:-26Gi} \
+            --max-cpu ${INITIAL_BUILD_MAX_CPU:-10} \
+            --max-mem ${INITIAL_BUILD_MAX_MEM:-40Gi} \
+            "$OSS_FUZZ_PROJECT_DIR"
+
+          echo "${BUILDER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/builder_image"
+          echo "${RUNNER_IMAGE}" >> "${OSS_FUZZ_PROJECT_DIR}/artifacts/runner_image"
+
+          rsync -ra "${OSS_FUZZ_PROJECT_DIR}/artifacts/out/" {{ clang_instrumentation_build_artifacts | shquote }}/
+
+          bitcode_file=$(find {{ clang_instrumentation_build_artifacts | shquote }} -maxdepth 1 -name "*.bc" | head -n 1)
+          if [ -z "$bitcode_file" ]; then
+            echo "No bitcode file found in {{ clang_instrumentation_build_artifacts | shquote }}"
+            exit 1
+          fi
+
+          oss-fuzz-build-image --instrumentation griller_flag $OSS_FUZZ_PROJECT_DIR
+
+          opt-18 -strip-debug /shellphish/clang_instrumentation/src/runtime/runtime.bc -o /shellphish/clang_instrumentation/src/runtime/runtime.bc
+
+          for bc in $(find {{ clang_instrumentation_build_artifacts | shquote }} -maxdepth 1 -name "*.bc"); do
+            output_file="${bc}.instrumented.bc"
+            linked="${bc}.linked.bc"
+            final_out="{{ clang_instrumentation_build_artifacts | shquote }}/$(basename "$bc").out"
+            link_flags_path="{{ clang_instrumentation_build_artifacts | shquote }}/link_flags.txt"
+
+            # Instrument the bitcode
+            opt-18 -load-pass-plugin=/shellphish/clang_instrumentation/src/passes/FunctionCoverage.so \
+                  -passes=function-coverage -o "$output_file" "$bc"
+
+            if [ ! -f "$output_file" ]; then
+              echo "Failed to instrument $bc"
+              exit 1
+            fi
+
+            opt-18 -strip-debug "$output_file" -o "$output_file"
+            llvm-link-18 "$output_file" /shellphish/clang_instrumentation/src/runtime/runtime.bc -o "$linked"
+
+            # Get link flags
+            if [ -s "$link_flags_path" ]; then
+              flags=$(cat "$link_flags_path")
+            else
+              echo "No flags found in $link_flags_path, attempting to extract them..."
+              python3 /shellphish/clang_instrumentation/src/get_link_flags.py \
+                  {{ project_link_commands | shquote }} \
+                  "$(basename "$bc")" "$link_flags_path"
+
+              if [ -s "$link_flags_path" ]; then
+                flags=$(cat "$link_flags_path")
+              else
+                echo "Failed to extract flags for $bc"
+                flags=""
+              fi
+            fi
+
+            if [ -z "$flags" ]; then
+              echo "Flags parameter not set for $bc"
+            fi
+
+            # Run instrumentation with extracted flags
+            mkdir -p /shared/final_bin/
+            python3 /shellphish/clang_instrumentation/src/run_instrumentation.py \
+                --project_id {{project_id}} \
+                --oss_fuzz_project_path "$OSS_FUZZ_PROJECT_DIR" \
+                --bitcode "$linked" \
+                --flags "$flags -lpthread" \
+                --output_file "$final_out"
+
+            # If initial run failed, try using LLM to regenerate flags and retry
+            if [ ! -f "$final_out" ]; then
+              echo "Initial linking failed for $bc, retrying with LLM-assisted flag discovery..."
+              python3 /shellphish/clang_instrumentation/src/get_compile_flags.py \
+                  --project_id {{project_id}} \
+                  --oss_fuzz_project_path "$OSS_FUZZ_PROJECT_DIR" \
+                  --bitcode "$linked" \
+                  --output_file "$link_flags_path" \
+                  --flags "$flags -lpthread" \
+                  --linker_json {{ project_link_commands | shquote }}
+
+              if [ -s "$link_flags_path" ]; then
+                flags=$(cat "$link_flags_path")
+              else
+                echo "LLM-assisted flag generation failed for $bc"
+                flags=""
+              fi
+
+              if [ -z "$flags" ]; then
+                echo "Flags still not set after LLM fallback for $bc"
+              fi
+
+              python3 /shellphish/clang_instrumentation/src/run_instrumentation.py \
+                  --project_id {{project_id}} \
+                  --oss_fuzz_project_path "$OSS_FUZZ_PROJECT_DIR" \
+                  --bitcode "$linked" \
+                  --flags "$flags -lpthread" \
+                  --output_file "$final_out"
+            fi
+          done

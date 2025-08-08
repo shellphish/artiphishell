@@ -1,0 +1,46 @@
+# Current Task
+Right now we are working on the following specific task:
+Think step by step and you must do a good job other wise my career is in danger
+{{ current_step.description }}
+{% if current_step.name == "summarize_harness" %}
+    ## Harness code
+    {{ harness_code }}
+{% endif %}
+{% if current_step.name == "refine_seed" %}
+    {{ jazzer_sanitizer_description }}
+{% endif %}
+{% if current_step.name == "determine_reachibility" %}
+   ## Call chains
+    {% for call_chain in call_chains %}
+         # Call chain {{ loop.index }}
+        {% for function in call_chain %}
+            {% if loop.first %} {{ function }} {% else %} -> {{ function }} {% endif %}
+        {% endfor %}
+    {% endfor %}
+    # Code of functions in the call chains
+    {% for function_code in functions_on_call_chains %}
+        ```
+        {{ function_code }}
+        ```
+    {% endfor %}
+{% endif %}
+{% if current_step.name == "summarize_script" %}
+    ## Script
+    {{ previous_script }}
+{% endif %}
+
+{# If we are retrying because we failed this attempt #}
+{% if last_attempt %}
+    # Previous Attempt Review
+    {% if last_attempt.critic_review %}
+        The last attempt failed with the following feedback.
+        ```
+        {{ last_attempt.critic_review.feedback }}
+        ```
+
+        Please take that feedback into consideration and try again to complete the task again!
+    {% endif %}
+{% endif %}
+
+# Output Format
+{{ output_format }}

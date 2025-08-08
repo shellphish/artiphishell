@@ -1,0 +1,7 @@
+---
+library: false 
+warnOnImplicitThis: false
+name: dummy-java
+version: 0.0.1
+dependencies:
+  codeql/java-all: "*"

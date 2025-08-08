@@ -1,0 +1,21 @@
+After completing the analysis, you MUST output a bug hunter report in the specified format.
+
+```
+<report>
+  <verdict>...</verdict>
+  <description>
+    ...
+  </description>
+  <exploit_plan>
+    ...
+  </exploit_plan>
+</report>
+```
+
+<!-- Guidelines for output generation: -->
+1. For <verdict>, replace the "..." with either TP if you believe the original warning is a True Positive, or FP, if you believe the original warning is a False Positive.
+2. For <description>, replace the "..." with an overview of the vulnerability, and why you think it is either a TP or an FP.
+3. For <exploit_plan>, replace "..." with a detailed description of how you would write an input that trigger the identified vulnerability.
+
+<!-- Example: -->
+<PLACEHOLDER_FOR_EXAMPLE_REPORTS_BY_LANGUAGE>

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# preserve the bash environment
+# tracestate="$(set +o); $(shopt -p)"
+# echo "PREVIOUSLY SET VARIABLES: $-"
+# echo "################ RESTORE COMMANDS: #################"
+# echo "set +vx; eval \"$tracestate\""
+# echo "####################################################"
+
+# set -eux
+
+
+# echo "Running Antl4-guy on the java source code"
+
+# CURR_DIR=$(pwd)
+# echo "CURR_DIR is $CURR_DIR"
+
+# if [[ $FUZZING_LANGUAGE == "jvm" ]]; then
+#     echo "=== Running antlr4-guy ==="
+#     export ARTIPHISHELL_TELEMETRY_OPTIONAL=1
+#     python3 /antlr4-guy/run-java.py --mode=full --project-source=. --canonical_build_artifact --output-dir=$OUT/antlr-out/antlr-guy-results &> $OUT/antlr4-guy.log
+#     python3 /function-index-generator/indexer.py --mode="full" --input-target-functions-json-dir=$OUT/antlr-out/antlr-guy-results --output-target-functions-index=$OUT/antlr-out/func-index-results  --output-functions-by-file-index-json=$OUT/antlr-out/func-index-json
+#     python3 /jazzer_modifications/find_instrumentation.py --func_report=$OUT/antlr-out/func-index-results --packages_in_scope=$OUT/antlr-out/classes_in_scope.json
+#     python3 /jazzer_modifications/extract_classes.py
+# fi
+
+# restore the bash environment
+# set +vx; eval "$tracestate"
+
+/usr/local/bin/compile.old

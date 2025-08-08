@@ -1,0 +1,21 @@
+Please analyze the crash report and propose the root cause of the crash or choose a tool to further analyze the crash.
+Your root cause should be exact and specific.
+
+{% if retry and tools_used > 4 %}
+<YELL>
+YOU DID NOT CALL propose_root_cause TO END THE TASK.
+</YELL>
+{% endif %}
+
+{% if retry and tools_used < 4 %}
+<YELL>
+YOU DID NOT USE ENOUGH TOOLS TO ANALYZE THE CRASH.
+</YELL>
+{% endif %}
+
+{% if force %}
+<YELL>
+YOU ARE OUTPUTTING A ROOT CAUSE BUT NOT CALLING propose_root_cause TO END THE TASK.
+CALL propose_root_cause TO END THE TASK.
+</YELL>
+{% endif %}

@@ -1,0 +1,43 @@
+# TASK: REACH THE TARGET FUNCTION {{ target_name }}
+
+If you haven't yet discovered a call trace to the target function, please do so.
+You MUST first explore the code from the harness until you have seen a call in the code of the application before you are allowed to write a grammar.
+If you have already discovered this call, please write a grammar that reaches the target function {{ target_name }}?
+Otherwise, resume your exploration.
+Lastly, if you have already written a grammar, please evaluate its success using the coverage tool.
+If the target function is not reached, backtrack up the call trace using the coverage to discover where the grammar is stuck.
+
+# HARNESS CODE ( {{ harness_index }} )
+```
+{{ harness_source_code }}
+```
+
+# TARGET FUNCTION ({{ target_name }})
+```
+{{ target }}
+```
+
+{% if example_grammars %}
+# EXAMPLE GRAMMARS ILLUSTRATING THE GRAMMAR FORMAT
+{% for example_grammar in example_grammars %}
+```python
+{{ example_grammar }}
+```
+{% endfor %}
+{% endif %}
+
+
+# SARIF REPORT RESULTS TO CONFIRM
+
+You are being asked to confirm and trigger the vulnerabilities found in the SARIF report below to reproduce the crash.
+The results in the SARIF report are the following:
+```
+{{ sarif_report_results }}
+```
+
+{% if memories %}
+# MEMORIES
+{% for i, memory in enumerate(memories) %}
+{{i}}. {{ memory }}
+{% endfor %}
+{% endif %}

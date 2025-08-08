@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+if [[ -f "$SHUTTING_DOWN" && -z "$IN_SHUTDOWN_SCRIPT" ]]; then
+	echo "Job shutting down, no more docker allowed" >&2
+	exit 1
+fi
+
+if [[ -n "$IN_K8S" ]]; then
+    if [[ "$1" != "build" ]] \
+		&& [[ "$1" != "pull" ]] \
+		&& [[ "$1" != "push" ]] \
+		&& [[ "$1" != "inspect" ]] \
+		&& [[ "$1" != "tag" ]] \
+		&& [ -z "$SILENCE_DOCKER_WARNING" ] \
+		&& [ -z "$ALLOW_RAW_DOCKER_USAGE" ]; then
+		if [ -z "$USING_CRS_UTILS" ]; then
+			echo "Warning: When running in Kubernetes, only 'docker build|pull|push|tag|inspect' command is allowed. Other container operations should be handled through the crs_utils library. If you know what you are doing you can export ALLOW_RAW_DOCKER_USAGE=1 to suppress this warning." >&2
+		else
+			echo "Warning: You are using crs_utils in ~~raw docker mode~~. If you know what you are doing you can export ALLOW_RAW_DOCKER_USAGE=1 to suppress this warning." >&2
+		fi
+    fi
+	if [ ! -f "$HOME/.docker/.successful-login" ] || [ ! -z $(find "$HOME/.docker/.successful-login" -mmin +30) ]; then
+		# TODO retry on failure?
+		echo "Logging into docker registry $DOCKER_LOGIN_SERVER" 1>&2
+		(.docker.wrapped info >/dev/null 2>&1 \
+			&& .docker.wrapped login -u $DOCKER_LOGIN_USERNAME -p $DOCKER_LOGIN_PASSWORD $DOCKER_LOGIN_SERVER 1>&2 \
+			&& .docker.wrapped info >/dev/null 2>&1 \
+			&& touch "$HOME/.docker/.successful-login") || true
+		if [ ! -z "$DOCKER_LOGIN_USERNAME2" ]; then
+			.docker.wrapped login -u $DOCKER_LOGIN_USERNAME2 -p $DOCKER_LOGIN_PASSWORD2 $DOCKER_LOGIN_SERVER2 1>&2 2>/dev/null || true
+		fi
+	fi
+fi
+
+if [[ -n "$SHUTDOWN_SCRIPT" ]]; then
+	if ! grep 'automatic docker ownership' "$SHUTDOWN_SCRIPT" &>/dev/null; then
+		echo "docker rm -f \$(docker ps -aq --filter label=owner_task=${TASK_NAME} --filter label=owner_job=${JOB_ID} --filter label=owner_replica=${REPLICA_ID}) 2>/dev/null || true  # automatic docker ownership" >>"$SHUTDOWN_SCRIPT"
+	fi
+fi
+
+DOCKER_CMD="$1"
+shift
+the_args=
+case "$DOCKER_CMD" in run|build) the_args="${DOCKER_EXTRA_ARGS_SHELLPHISH}" ;; esac
+case "$DOCKER_CMD" in run) the_args+=" --label owner_task=${TASK_NAME} --label owner_job=${JOB_ID} --label owner_replica=${REPLICA_ID}" ;; esac
+case "$DOCKER_CMD" in build) test -z "$ABSOLUTELY_NO_INTERNET" || the_args+=" --build-arg ISOLATED=1" ;; esac
+.docker.wrapped "$DOCKER_CMD" $the_args "$@"
+RESULT=$?
+
+case "$DOCKER_CMD" in load|build|tag|commit) test -n "$DOCKER_SYNC" && curl -s "${DOCKER_SYNC}" ;; esac
+
+exit $RESULT

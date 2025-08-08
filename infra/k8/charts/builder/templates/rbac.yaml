@@ -1,0 +1,33 @@
+{{- if .Values.serviceAccount.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "builder.fullname" . }}-node-labeler
+  labels:
+    {{- include "builder.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "1"
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "builder.fullname" . }}-node-labeler
+  labels:
+    {{- include "builder.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "2"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "builder.fullname" . }}-node-labeler
+subjects:
+- kind: ServiceAccount
+  name: {{ include "builder.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }} 

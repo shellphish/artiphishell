@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "api.fullname" . }}
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "api.labels" . | nindent 8 }}
+        {{- if .Values.podPacking.enabled }}
+        support.shellphish.net/packing-group: {{ .Values.podPacking.group | quote }}
+        {{- end }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.podPacking.enabled }}
+      topologySpreadConstraints:
+      - maxSkew: {{ .Values.podPacking.maxSkew }}
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            support.shellphish.net/packing-group: {{ .Values.podPacking.group | quote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: {{ .Values.podPacking.weight }}
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  support.shellphish.net/packing-group: {{ .Values.podPacking.group | quote }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "api.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.global.deployment_registry.value }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: AGENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: agent-secret
+                  key: AGENT_SECRET
+            - name: IN_K8S
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.global.otel_exporter_otlp_endpoint.value }}
+            - name: API_COMPONENTS_USE_DUMMY_DATA
+              value: {{ .Values.global.api_components_use_dummy_data.value | quote }}
+            - name: ARTIPHISHELL_API_USERNAME
+              value: {{ .Values.global.artiphish_api_username.value | quote }}
+            - name: ARTIPHISHELL_API_PASSWORD
+              value: {{ .Values.global.artiphish_api_password.value | quote }}
+            - name: COMPETITION_SERVER_URL
+              value: {{ .Values.global.competition_server_url.value | quote }}
+            - name: COMPETITION_SERVER_API_ID
+              value: {{ .Values.global.competition_server_api_id.value | quote }}
+            - name: COMPETITION_SERVER_API_KEY
+              value: {{ .Values.global.competition_server_api_key.value | quote }}
+            - name: AZURE_STORAGE_ACCOUNT_NAME
+              value: {{ .Values.global.azure_storage.storage_account_name | quote }}
+            - name: AZURE_STORAGE_CONTAINER_NAME
+              value: {{ .Values.global.azure_storage.storage_container_name | quote }}
+            - name: AZURE_STORAGE_STS_TOKEN
+              value: {{ .Values.global.azure_storage.sts_token | quote }}
+            - name: AZURE_STORAGE_CONNECTION_STRING
+              value: {{ .Values.global.azure_storage.connection_string | quote }}
+            - name: DEPLOYMENT_NAME
+              value: {{ .Values.global.deployment_name.value | quote }}
+            - name: NUM_CONCURRENT_TASKS
+              value: {{ .Values.global.num_concurrent_tasks.value | quote }}
+            - name: AIXCC_LITELLM_HOSTNAME
+              value: {{ .Values.global.aixcc_litellm_hostname.value }}
+          {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: artiphishell-global-env
+              
+          ports:
+            - name: http
+              containerPort: {{ .Values.tailscaleservice.port }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

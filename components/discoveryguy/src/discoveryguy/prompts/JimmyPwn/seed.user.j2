@@ -1,0 +1,31 @@
+{{REPORT}}
+
+
+
+{% if FEEDBACK %}
+Feedback from Last Run:
+<feedback>
+{{FEEDBACK}}
+</feedback>
+{% endif %}
+
+{% if FAILED_SCRIPTS %}
+<failed_scripts>
+{% for item in FAILED_SCRIPTS %}
+<failed_script>
+{{item}}
+</failed_script>
+{% endfor %}
+</failed_scripts>
+{% endif%}
+
+{% if BAD_SCRIPTS %}
+<bad_scripts>
+{% for item in BAD_SCRIPTS %}
+<bad_script>
+{{item}}
+</bad_script>
+{% endfor %}
+</bad_script>
+{% endif %}
+

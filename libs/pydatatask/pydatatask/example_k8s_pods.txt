@@ -1,0 +1,584 @@
+
+'start_time': datetime.datetime(2025, 2, 15, 20, 20, tzinfo=tzlocal())}}, {'api_version': None,
+'kind': None,
+'metadata': {'annotations': None,
+'creation_timestamp': datetime.datetime(2025, 2, 15, 20, 20, 21, tzinfo=tzlocal()),
+'deletion_grace_period_seconds': None,
+'deletion_timestamp': None,
+'finalizers': None,
+'generate_name': None,
+'generation': None,
+'labels': {'app': 'artiphishell',
+'job': '1',
+'preemptable': 'true',
+'replica': '8',
+'task': 'sanity_check'},
+'managed_fields': [{'api_version': 'v1',
+'fields_type': 'FieldsV1',
+'fields_v1': {'f:metadata': {'f:labels': {'.': {},
+'f:app': {},
+'f:job': {},
+'f:preemptable': {},
+'f:replica': {},
+'f:task': {}}},
+'f:spec': {'f:containers': {'k:{"name":"main"}': {'.': {},
+'f:args': {},
+'f:command': {},
+'f:env': {'.': {},
+'k:{"name":"NODE_IP"}': {'.': {},
+'f:name': {},
+'f:valueFrom': {'.': {},
+'f:fieldRef': {}}}},
+'f:image': {},
+'f:imagePullPolicy': {},
+'f:name': {},
+'f:resources': {'.': {},
+'f:limits': {'.': {},
+'f:cpu': {},
+'f:memory': {}},
+'f:requests': {'.': {},
+'f:cpu': {},
+'f:memory': {}}},
+'f:securityContext': {'.': {},
+'f:privileged': {}},
+'f:terminationMessagePath': {},
+'f:terminationMessagePolicy': {},
+'f:volumeMounts': {'.': {},
+'k:{"mountPath":"/shared"}': {'.': {},
+'f:mountPath': {},
+'f:name': {}}}}},
+'f:dnsPolicy': {},
+'f:enableServiceLinks': {},
+'f:nodeSelector': {},
+'f:restartPolicy': {},
+'f:schedulerName': {},
+'f:securityContext': {},
+'f:terminationGracePeriodSeconds': {},
+'f:tolerations': {},
+'f:volumes': {'.': {},
+'k:{"name":"shared"}': {'.': {},
+'f:hostPath': {'.': {},
+'f:path': {},
+'f:type': {}},
+'f:name': {}}}}},
+'manager': 'OpenAPI-Generator',
+'operation': 'Update',
+'subresource': None,
+'time': datetime.datetime(2025, 2, 15, 20, 20, 20, tzinfo=tzlocal())},
+{'api_version': 'v1',
+'fields_type': 'FieldsV1',
+'fields_v1': {'f:status': {'f:conditions': {'k:{"type":"ContainersReady"}': {'.': {},
+'f:lastProbeTime': {},
+'f:lastTransitionTime': {},
+'f:status': {},
+'f:type': {}},
+'k:{"type":"Initialized"}': {'.': {},
+'f:lastProbeTime': {},
+'f:lastTransitionTime': {},
+'f:status': {},
+'f:type': {}},
+'k:{"type":"PodReadyToStartContainers"}': {'.': {},
+'f:lastProbeTime': {},
+'f:lastTransitionTime': {},
+'f:status': {},
+'f:type': {}},
+'k:{"type":"Ready"}': {'.': {},
+'f:lastProbeTime': {},
+'f:lastTransitionTime': {},
+'f:status': {},
+'f:type': {}}},
+'f:containerStatuses': {},
+'f:hostIP': {},
+'f:hostIPs': {},
+'f:phase': {},
+'f:podIP': {},
+'f:podIPs': {'.': {},
+'k:{"ip":"10.224.2.75"}': {'.': {},
+'f:ip': {}}},
+'f:startTime': {}}},
+'manager': 'kubelet',
+'operation': 'Update',
+'subresource': 'status',
+'time': datetime.datetime(2025, 2, 15, 20, 20, 22, tzinfo=tzlocal())}],
+'name': 'artiphishell-sanity-check-1-8',
+'namespace': 'default',
+'owner_references': None,
+'resource_version': '87612',
+'self_link': None,
+'uid': '942d9751-f49c-47e6-9531-4ae969d51e52'},
+'spec': {'active_deadline_seconds': None,
+'affinity': None,
+'automount_service_account_token': None,
+'containers': [{'args': ['\n'
+'
+set -e\n'
+'
+set -x\n'
+'\n'
+"export REPLICA_ID='8'\n"
+"export TASK_NAME='sanity_check'\n"
+"export JOB_ID='1'\n"
+"export MEM_QUOTA='2147483648'\n"
+'\n'
+"export CPU_QUOTA='100000'\n"
+'\n'
+"export NPROC_VAL='1'\n"
+'\n'
+'export '
+"PDT_AGENT_SECRET='53886916647692233818086060528930473818019'\n"
+'\n'
+'export '
+"PDT_AGENT_URL='http://pydatatask-agent:8080'\n"
+'\n'
+'export IN_K8S=1\n'
+'export '
+'GITHUB_CREDS_PATH=/shared/secret/github\n'
+'export '
+'DOCKER_HOST=tcp://docker-builder:2375\n'
+'export '
+'DOCKER_IMAGE_PREFIX=artiphishellcidev2jaresmgo.azurecr.io/\n'
+'export '
+'DOCKER_REGISTRY=artiphishellcidev2jaresmgo.azurecr.io\n'
+'export '
+'DOCKER_LOGIN_SERVER=artiphishellcidev2jaresmgo.azurecr.io\n'
+'export '
+'DOCKER_LOGIN_USERNAME=artiphishellcidev2jaresmgo\n'
+'export '
+'DOCKER_LOGIN_PASSWORD=ZVokxKy3sePGgJEsxeCx6reXNfRilKuz3Em9HRhXNW+ACRDkRfbe\n'
+'export '
+'DOCKER_LOGIN_SERVER2=artiphishell.azurecr.io\n'
+'export '
+'DOCKER_LOGIN_USERNAME2=ARTIPHISHELL-K8-PULL-aburne22asuriteasuedu\n'
+'export '
+'DOCKER_LOGIN_PASSWORD2=f5AUWRZ7Qj3fH45cjp98qA5QkTIGdYytavfdtnq79T+ACRCl1OCs\n'
+'export API_COMPONENTS_USE_DUMMY_DATA=1\n'
+'export OSS_FUZZ_CACHE_TARGET_BUILDS=1\n'
+'export '
+'OSS_FUZZ_CACHE_PREFIX=artiphishell.azurecr.io/\n'
+'export USE_LLM_API=1\n'
+'export '
+'AIXCC_LITELLM_HOSTNAME=http://wiseau.seclab.cs.ucsb.edu:666/\n'
+'export LITELLM_KEY=sk-artiphishell\n'
+'export '
+'RETRIEVAL_API=http://beatty.unfiltered.seclab.cs.ucsb.edu:48751\n'
+'export '
+'EMBEDDING_API=http://beatty.unfiltered.seclab.cs.ucsb.edu:49152\n'
+'export '
+'INFLUXDB_URL=http://telemetrydb:8086\n'
+'export '
+'INFLUXDB_TOKEN=shellphish-influxdb-token\n'
+'export INFLUXDB_BUCKET=artiphishell\n'
+'export INFLUXDB_ORG=artiphishell\n'
+'\n'
+'\n'
+'
+export '
+'SHUTDOWN_SCRIPT=/tmp/pydatatask-root-shutdown_script-rfupuhbg\n'
+'
+export '
+'SHUTTING_DOWN=/tmp/pydatatask-root-shutting_down-pzstznxk\n'
+'
+echo "export IN_SHUTDOWN_SCRIPT=1" '
+'>$SHUTDOWN_SCRIPT\n'
+'
+touch $SHUTDOWN_SCRIPT\n'
+'
+shutdown_func() {\n'
+'
+touch $SHUTTING_DOWN\n'
+'
+echo "Shutting down now"\n'
+'
+set +e\n'
+'
+. $SHUTDOWN_SCRIPT\n'
+'
+}\n'
+'
+sigterm_func() {\n'
+'
+shutdown_func\n'
+'
+exit 1\n'
+'
+}\n'
+"
+trap 'sigterm_func' TERM\n"
+'
+\n'
+'\n'
+'
+'
+'URL="http://pydatatask-agent:8080/data/sanity_check/sanity_check_input_path/1"\n'
+'
+FILENAME="$(mktemp)"\n'
+'
+ERR_FILENAME=$(mktemp)\n'
+'
+if [ -d "$FILENAME" ]; then '
+'echo "mk_http_get target $FILENAME is a '
+'directory" && false; fi\n'
+'\n'
+'
+for i in $(seq 1 3); do\n'
+'
+wget -v -O- $URL --header '
+'"Cookie: '
+'secret=53886916647692233818086060528930473818019" '
+'>>$FILENAME 2>>$ERR_FILENAME || \\\n'
+'
+curl -f -v $URL '
+'--header "Cookie: '
+'secret=53886916647692233818086060528930473818019" '
+'>>$FILENAME 2>>$ERR_FILENAME || \\\n'
+'
+(echo "download of '
+'$URL failed:" && cat $ERR_FILENAME '
+'$FILENAME\n'
+'
+\n'
+'
+'
+'URL="http://pydatatask-agent:8080/errors/data/sanity_check/sanity_check_input_path/1"\n'
+'
+FILENAME="$(mktemp)"\n'
+'
+ERR_FILENAME=$(mktemp)\n'
+'
+if [ -d "$FILENAME" ]; then '
+'echo "mk_http_get target $FILENAME is a '
+'directory" && false; fi\n'
+'\n'
+'
+for i in $(seq 1 3); do\n'
+'
+wget -q -O- $URL --header '
+'"Cookie: '
+'secret=53886916647692233818086060528930473818019" '
+'>>$FILENAME 2>>$ERR_FILENAME || \\\n'
+'
+curl -f  $URL --header '
+'"Cookie: '
+'secret=53886916647692233818086060528930473818019" '
+'>>$FILENAME 2>>$ERR_FILENAME || \\\n'
+'
+(echo "download of '
+'$URL failed:" && cat $ERR_FILENAME '
+'$FILENAME\n'
+'
+\n'
+'
+false)\n'
+'
+CUR_DOWNLOAD_FAILED=$?\n'
+'
+if [ $CUR_DOWNLOAD_FAILED '
+'-eq 0 ]; then break; fi\n'
+'
+RETRY_DELAY=$((i * 10))\n'
+'
+echo "download failed, '
+'retrying in $RETRY_DELAY seconds"\n'
+'
+sleep $RETRY_DELAY\n'
+'
+done\n'
+'
+rm $ERR_FILENAME\n'
+'
+mv $FILENAME "/dev/stderr" || '
+'cat $FILENAME >"/dev/stderr" && rm -f '
+'$FILENAME\n'
+'
+\n'
+'
+false)\n'
+'
+CUR_DOWNLOAD_FAILED=$?\n'
+'
+if [ $CUR_DOWNLOAD_FAILED '
+'-eq 0 ]; then break; fi\n'
+'
+RETRY_DELAY=$((i * 10))\n'
+'
+echo "download failed, '
+'retrying in $RETRY_DELAY seconds"\n'
+'
+sleep $RETRY_DELAY\n'
+'
+done\n'
+'
+rm $ERR_FILENAME\n'
+'
+mv $FILENAME '
+'"/tmp/pydatatask-root-1-zip-kcxtwhne" || '
+'cat $FILENAME '
+'>"/tmp/pydatatask-root-1-zip-kcxtwhne" && '
+'rm -f $FILENAME\n'
+'
+\n'
+'
+mkdir -p '
+'/tmp/pydatatask-root-input-sanity_check_input_path-1-elkotxyw\n'
+'
+cd '
+'/tmp/pydatatask-root-input-sanity_check_input_path-1-elkotxyw\n'
+'
+tar -xf '
+'/tmp/pydatatask-root-1-zip-kcxtwhne\n'
+'
+cd -\n'
+'
+\n'
+'
+set +e\n'
+'
+(\n'
+'
+set -e\n'
+'
+set -u\n'
+'
+echo "Hack The Planet!"\n'
+'echo "Sanity check input: '
+'/tmp/pydatatask-root-input-sanity_check_input_path-1-elkotxyw"\n'
+'ls -laR '
+'/tmp/pydatatask-root-input-sanity_check_input_path-1-elkotxyw\n'
+'sleep infinity\n'
+'\n'
+'
+)\n'
+'
+RETCODE=$?\n'
+'
+ANY_UPLOADS_FAILED=0\n'
+'
+shutdown_func\n'
+'
+if [ $ANY_UPLOADS_FAILED -ne 0 ]; '
+'then\n'
+'
+echo "Some uploads failed. '
+'Exiting."\n'
+'
+exit 1\n'
+'
+fi\n'
+'
+exit $RETCODE\n'
+'
+'],
+'command': ['/bin/sh', '-c'],
+'env': [{'name': 'NODE_IP',
+'value': None,
+'value_from': {'config_map_key_ref': None,
+'field_ref': {'api_version': 'v1',
+'field_path': 'status.hostIP'},
+'resource_field_ref': None,
+'secret_key_ref': None}}],
+'env_from': None,
+'image': 'artiphishell.azurecr.io/aixcc-dependencies-base',
+'image_pull_policy': 'Always',
+'lifecycle': None,
+'liveness_probe': None,
+'name': 'main',
+'ports': None,
+'readiness_probe': None,
+'resize_policy': None,
+'resources': {'claims': None,
+'limits': {'cpu': '1',
+'memory': '2147483648'},
+'requests': {'cpu': '1',
+'memory': '2147483648'}},
+'restart_policy': None,
+'security_context': {'allow_privilege_escalation': None,
+'app_armor_profile': None,
+'capabilities': None,
+'privileged': False,
+'proc_mount': None,
+'read_only_root_filesystem': None,
+'run_as_group': None,
+'run_as_non_root': None,
+'run_as_user': None,
+'se_linux_options': None,
+'seccomp_profile': None,
+'windows_options': None},
+'startup_probe': None,
+'stdin': None,
+'stdin_once': None,
+'termination_message_path': '/dev/termination-log',
+'termination_message_policy': 'File',
+'tty': None,
+'volume_devices': None,
+'volume_mounts': [{'mount_path': '/shared',
+'mount_propagation': None,
+'name': 'shared',
+'read_only': None,
+'recursive_read_only': None,
+'sub_path': None,
+'sub_path_expr': None},
+{'mount_path': '/var/run/secrets/kubernetes.io/serviceaccount',
+'mount_propagation': None,
+'name': 'kube-api-access-zbzm7',
+'read_only': True,
+'recursive_read_only': None,
+'sub_path': None,
+'sub_path_expr': None}],
+'working_dir': None}],
+'dns_config': None,
+'dns_policy': 'ClusterFirst',
+'enable_service_links': True,
+'ephemeral_containers': None,
+'host_aliases': None,
+'host_ipc': None,
+'host_network': None,
+'host_pid': None,
+'host_users': None,
+'hostname': None,
+'image_pull_secrets': [{'name': 'acr-docker-secret'},
+{'name': 'ci-acr-pull-secret'}],
+'init_containers': None,
+'node_name': 'aks-fzz-33724103-vmss000000',
+'node_selector': {'support.shellphish.net/allow-fuzzing': 'true',
+'support.shellphish.net/only-fuzzing': 'true',
+'support.shellphish.net/pool': 'fuzzing'},
+'os': None,
+'overhead': None,
+'preemption_policy': 'PreemptLowerPriority',
+'priority': 0,
+'priority_class_name': None,
+'readiness_gates': None,
+'resource_claims': None,
+'resources': None,
+'restart_policy': 'Never',
+'runtime_class_name': None,
+'scheduler_name': 'default-scheduler',
+'scheduling_gates': None,
+'security_context': {'app_armor_profile': None,
+'fs_group': None,
+'fs_group_change_policy': None,
+'run_as_group': None,
+'run_as_non_root': None,
+'run_as_user': None,
+'se_linux_change_policy': None,
+'se_linux_options': None,
+'seccomp_profile': None,
+'supplemental_groups': None,
+'supplemental_groups_policy': None,
+'sysctls': None,
+'windows_options': None},
+'service_account': 'default',
+'service_account_name': 'default',
+'set_hostname_as_fqdn': None,
+'share_process_namespace': None,
+'subdomain': None,
+'termination_grace_period_seconds': 30,
+'tolerations': [{'effect': 'NoSchedule',
+'key': 'support.shellphish.net/only-fuzzing',
+'operator': 'Equal',
+'toleration_seconds': None,
+'value': 'true'},
+{'effect': 'NoExecute',
+'key': 'node.kubernetes.io/not-ready',
+'operator': 'Exists',
+'toleration_seconds': 300,
+'value': None},
+{'effect': 'NoExecute',
+'key': 'node.kubernetes.io/unreachable',
+'operator': 'Exists',
+'toleration_seconds': 300,
+'value': None},
+{'effect': 'NoSchedule',
+'key': 'node.kubernetes.io/memory-pressure',
+'operator': 'Exists',
+'toleration_seconds': None,
+'value': None}],
+'topology_spread_constraints': None,
+'volumes': [{'aws_elastic_block_store': None,
+'azure_disk': None,
+'azure_file': None,
+'cephfs': None,
+'cinder': None,
+'config_map': None,
+'csi': None,
+'downward_api': None,
+'empty_dir': None,
+'ephemeral': None,
+'fc': None,
+'flex_volume': None,
+'flocker': None,
+'gce_persistent_disk': None,
+'git_repo': None,
+'glusterfs': None,
+'host_path': {'path': '/shared', 'type': ''},
+'image': None,
+'iscsi': None,
+'name': 'shared',
+'nfs': None,
+'persistent_volume_claim': None,
+'photon_persistent_disk': None,
+'portworx_volume': None,
+'projected': None,
+'quobyte': None,
+'rbd': None,
+'scale_io': None,
+'secret': None,
+'storageos': None,
+'vsphere_volume': None},
+{'aws_elastic_block_store': None,
+'azure_disk': None,
+'azure_file': None,
+'cephfs': None,
+'cinder': None,
+'config_map': None,
+'csi': None,
+'downward_api': None,
+'empty_dir': None,
+'ephemeral': None,
+'fc': None,
+'flex_volume': None,
+'flocker': None,
+'gce_persistent_disk': None,
+'git_repo': None,
+'glusterfs': None,
+'host_path': None,
+'image': None,
+'iscsi': None,
+'name': 'kube-api-access-zbzm7',
+'nfs': None,
+'persistent_volume_claim': None,
+'photon_persistent_disk': None,
+'portworx_volume': None,
+'projected': {'default_mode': 420,
+'sources': [{'cluster_trust_bundle': None,
+'config_map': None,
+'downward_api': None,
+'secret': None,
+'service_account_token': {'audience': None,
+'expiration_seconds': 3607,
+'path': 'token'}},
+{'cluster_trust_bundle': None,
+'config_map': {'items': [{'key': 'ca.crt',
+'mode': None,
+'path': 'ca.crt'}],
+'name': 'kube-root-ca.crt',
+'optional': None},
+'downward_api': None,
+'secret': None,
+'service_account_token': None},
+{'cluster_trust_bundle': None,
+'config_map': None,
+'downward_api': {'items': [{'field_ref': {'api_version': 'v1',
+'field_path': 'metadata.namespace'},
+'mode': None,
+'path': 'namespace',
+'resource_field_ref': None}]},
+'secret': None,
+'service_account_token': None}]},
+'quobyte': None,
+'rbd': None,
+'scale_io': None,
+'secret': None,
+'storageos': None,
+'vsphere_volume': None}]},
+'status': {'conditions': [{'last_probe_time': None,

@@ -1,0 +1,28 @@
+After completing the analysis, you MUST output a root cause report in the specified format with function clusters.
+
+```
+<root_cause_report>
+ <function>
+    <name>func1</name>
+  </function>
+  <function>
+    <name>func2</name>
+  </function>
+  <description>...</description>
+</root_cause_report>
+```
+
+<!-- Guidelines for output generation: -->
+1. For <description>, replace the "..." with a detailed root-cause analysis explaining the cause of the bug or issue. This section should summarize the problem clearly and concisely.
+2. for <description> you should specify how each function contributes to the issue.
+
+<!-- Example: -->
+<root_cause_report>
+ <function>
+    <name>my_strcpy</name>
+  </function>
+  <function>
+    <name>my_main</name>
+  </function>
+  <description>In the my_main function, an invalid pointer is passed to my_strcpy function. Both functions need to be patched to resolve the issue.</description>
+</root_cause_report>

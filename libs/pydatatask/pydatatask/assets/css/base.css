@@ -1,0 +1,71 @@
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --status-running: #2ecc71;
+    --status-success: #3498db;
+    --status-failed: #e74c3c;
+    --status-warning: #9b59b6;
+    --status-pending: #95a5a6;
+    --border-color: #e0e0e0;
+    --background-color: #ffffffe6;
+    --gradient-primary: linear-gradient(145deg, #ffffff, #f5f5f5);
+    --gradient-secondary: linear-gradient(145deg, #f5f5f5, #e8e8e8);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --header-height: 80px;
+    --sidebar-width: 400px;
+}
+
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --status-running: #2ecc71;
+    --status-success: #3498db;
+    --status-failed: #e74c3c;
+    --status-warning: #9b59b6;
+    --status-pending: #95a5a6;
+    --border-color: #404040;
+    --background-color: #000000e6;
+    --gradient-primary: linear-gradient(145deg, #1a1a1a, #2d2d2d);
+    --gradient-secondary: linear-gradient(145deg, #2d2d2d, #363636);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+    --glass-bg: rgba(45, 45, 45, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Responsive typography */
+html {
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    html {
+        font-size: 14px;
+    }
+} 

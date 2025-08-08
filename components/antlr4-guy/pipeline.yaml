@@ -1,0 +1,188 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  java_crs_tasks_analysis_sources:  { cls: FilesystemRepository, required: true }
+  delta_mode_tasks: MetadataRepository
+
+  crs_tasks_oss_fuzz_repos:         { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  crs_tasks_cancelled:              { cls: MetadataRepository }
+  commit_functions_jsons_dirs:      { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  full_functions_jsons_dirs:        { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+
+  canonical_build_artifacts: { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  canonical_build_delta_artifacts: { cls: FilesystemRepository, compress_backend: true, compress_backup: true }
+  canonical_build_delta_failures: {cls: MetadataRepository}
+  # diff_ranker_outputs: BlobRepository
+
+
+tasks:
+  antlr4_full_java_parser:
+    job_quota:
+      max: 0.45
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse java
+    links:
+      canonical_build_artifact_path:
+        repo: canonical_build_artifacts
+        kind: InputFilepath
+      project_source_path:
+        repo: java_crs_tasks_analysis_sources
+        kind: InputFilepath
+      project_id:
+        repo: java_crs_tasks_analysis_sources
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-antlr4-parser
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          python /shellphish/antlr4/run-java-bottom-up.py \
+                    --mode full \
+                    --canonical-build-artifact {{ canonical_build_artifact_path | shquote }} \
+                    --project-source {{ project_source_path | shquote }} \
+                    --output-dir {{ full_functions_jsons_dir | shquote }}
+
+  antlr4_commit_java_parser:
+    priority: 10000
+    job_quota:
+      max: 0.8
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse java
+    links:
+      full_functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+      canonical_build_delta_artifacts_path:
+        repo: canonical_build_delta_artifacts
+        kind: InputFilepath
+      project_source_path:
+        repo: java_crs_tasks_analysis_sources
+        kind: InputFilepath
+      project_id:
+        repo: java_crs_tasks_analysis_sources
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputFilepath
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      commit_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-antlr4-parser
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          chown -R root:root {{ project_source_path | shquote }}
+
+          head_commit_id=$(git -C {{ project_source_path | shquote }} rev-parse HEAD)
+          cp -r {{project_source_path | shquote}} ./project_source_path_local
+          git -C ./project_source_path_local checkout HEAD^1
+          
+          python /shellphish/antlr4/run-java-bottom-up.py \
+                    --mode full \
+                    --canonical-build-artifact {{ canonical_build_delta_artifacts_path | shquote }} \
+                    --project-source ./project_source_path_local \
+                    --output-dir ./base_functions_jsons
+          
+          python diff.py \
+                    --base-dir ./base_functions_jsons \
+                    --target-dir {{ full_functions_jsons_dir | shquote }} \
+                    --output-dir {{ commit_functions_jsons_dir | shquote }} \
+                    --commit-id "$head_commit_id" 
+          
+  antlr4_commit_java_parser_rollback:
+    priority: 10000
+    job_quota:
+      max: 0.8
+    annotations:
+      authors:
+        - ammonia
+      maturity: fullyIntegrated
+      doc: |
+        This task runs to parse java
+    links:
+      canonical_build_artifact_path:
+        repo: canonical_build_artifacts
+        kind: InputFilepath
+      canonical_build_delta_failure:
+        repo: canonical_build_delta_failures
+        kind: InputMetadata
+      project_source_path:
+        repo: java_crs_tasks_analysis_sources
+        kind: InputFilepath
+      project_id:
+        repo: java_crs_tasks_analysis_sources
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      delta_mode_task:
+        repo: delta_mode_tasks
+        kind: InputFilepath
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      commit_functions_jsons_dir:
+        repo: commit_functions_jsons_dirs
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-antlr4-parser
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -e
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          python /shellphish/antlr4/run-java-bottom-up.py \
+                  --mode commit \
+                  --canonical-build-artifact {{ canonical_build_artifact_path | shquote }} \
+                  --project-source {{ project_source_path | shquote }} \
+                  --output-dir {{ commit_functions_jsons_dir | shquote }}
+
+                          

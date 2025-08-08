@@ -1,0 +1,48 @@
+{
+    "name": "ASAN2Report Dev Container",
+    "build": {
+      "dockerfile": "../Dockerfile",
+      "context": "../",
+      "args": {
+        "IMAGE_PREFIX": "ghcr.io/shellphish-support-syndicate/",
+        "SOURCE_REPO": "https://github.com/shellphish-support-syndicate/artiphishell"
+      }
+    },
+    "runArgs": [
+      "-t"
+    ],
+    "workspaceMount": "source=${localWorkspaceFolder}/,target=/asan2report/,type=bind,consistency=cached",
+    "workspaceFolder": "/asan2report/",
+    "mounts": [
+      "source=${localWorkspaceFolder}/../../libs/,target=/shellphish/libs/,type=bind,consistency=cached",
+      "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+      "source=/shared/,target=/shared,type=bind,consistency=cached",
+      "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
+    "containerEnv": {
+      "PYTHONBREAKPOINT": "ipdb.set_trace",
+      "TERM": "xterm-256color"
+    },
+    "customizations": {
+      "env": {
+        // "LITELLM_KEY": "$LITELLM_KEY",
+        // "AIXCC_LITELLM_HOSTNAME": "$AIXCC_LITELLM_HOSTNAME",
+        // "USE_LLM_API": "false"
+      },
+      "vscode": {
+        "extensions": [
+          "github.copilot", 
+          "ms-azuretools.vscode-docker",
+          "ms-vscode.vscode-remote-extensionpack",
+          "ms-python.python"
+        ],
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash"
+        }
+      }
+    },
+    "forwardPorts": [
+      8050, 
+      8080
+    ]
+  }

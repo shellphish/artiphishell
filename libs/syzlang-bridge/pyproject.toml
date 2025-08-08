@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "syzlang_bridge"
+dynamic = ["version"]
+authors = [
+    { name = "zolutal" }
+]
+description = "Library for interfacing with syzkaller grammar from python"
+requires-python = ">=3.8"
+
+dependencies = [ ]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.license]
+file = "LICENSE"
+
+[tool.setuptools.packages]
+find = {}
+

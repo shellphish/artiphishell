@@ -1,0 +1,28 @@
+You are given the following initial report:
+
+{{INITIAL_CONTEXT_REPORT}}
+
+
+{% if REFINE_THIS %}
+
+This is the git diff of the patch that previously failed to fix the bug:
+
+<git_diff>
+{{REFINE_THIS}}
+</git_diff>
+
+{% endif %}
+
+IMPORTANT: 
+ - You should focus on identifying the underlying cause of the bug, not just the surface symptoms.
+ - You MUST NOT stop until you think you have collected ALL the information to clearly identify the root cause of the bug and build the report.
+ - You should limit the use of tools to gather additional information to only when you think you are stuck and need more information to proceed.
+ - At this step, DO NOT use code to propose fixes.
+ - The fixes MUST target the code of the application rather than modifying the harness used to fuzz it. In other words, any function named "LLVMFuzzerTestOneInput" CANNOT BE MODIFIED!
+ - The fixes CAN span across multiple files and functions if you think it is necessary!
+
+ {% if REFINE_THIS %}
+ - The final report MUST include a description of why the previous patch did not work.
+ {% endif %}
+
+{{output_format}}

@@ -1,0 +1,33 @@
+cp_name: harden-demo3
+cp_sources:
+  linux-kernel:
+    address: https://github.com/shellphish-support-syndicate/targets-semis-harden-demo3-linux-kernel-source.git
+    ref: main
+docker_image: ghcr.io/shellphish-support-syndicate/exemplar-harden-demo3
+harnesses:
+  id_1:
+    binary: out/even_neil_can_hack_this
+    name: even_neil_can_hack_this
+    source: src/harnesses/even_neil_can_hack_this.c
+  id_2:
+    binary: out/even_nilo_can_hack_this
+    name: even_nilo_can_hack_this
+    source: src/harnesses/even_nilo_can_hack_this.c
+  id_3:
+    binary: out/even_jay_can_hack_this
+    name: even_jay_can_hack_this
+    source: src/harnesses/even_jay_can_hack_this.c
+  id_4:
+    binary: out/even_justin_can_hack_this
+    name: even_justin_can_hack_this
+    source: src/harnesses/even_justin_can_hack_this.c
+language: c
+sanitizers:
+  id_1: 'KASAN: slab-out-of-bounds in legacy_parse_param'
+  id_2: 'KASAN: stack-out-of-bounds in do_select'
+  id_3: 'KASAN: slab-out-of-bounds in do_csum'
+  id_4: 'KASAN: double-free'
+shellphish:
+  known_sources:
+    linux_kernel:
+      - relative_path: src/linux-kernel

@@ -1,0 +1,30 @@
+Here is the previously applied patch containing the aijon instrumentation:
+
+<applied_diff>
+{{applied_diff}}
+</applied_diff>
+
+And here's error that was encountered when compiling the code ONLY PAY ATTENTION TO THE ERRORS (ignore warnings):
+<compiler_error>
+{{compiler_error}}
+</compiler_error>
+
+{% if retry %}
+<YELL>
+THE LINE NUMBER WAS NOT FOUND IN THE CODE.
+</YELL>
+{% endif %}
+
+{% if bad_block %}
+<YELL>
+YOUR IJON INSTRUMENTATION WAS NOT PROPERLY FORMATTED.
+</YELL>
+{% endif %}
+
+{% if has_failed %}
+Here are the annotations that failed to apply properly (they may be malformed), please generate corrected versions of them to be applied to the source code:
+
+<failed_blocks>
+{{failed_blocks}}
+</failed_blocks>
+{% endif %}

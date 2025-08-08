@@ -1,0 +1,2 @@
+!docker-compose.yaml
+./tests/artifacts/nginx

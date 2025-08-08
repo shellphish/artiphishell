@@ -1,0 +1,26 @@
+/**
+ * @id cpp/find_vars_and_fields
+ * @kind problem
+ * @name Finds local variables and field accesses in a given function
+ * @severity information
+ * This query finds all the usages of an enum type in the codebase.
+ */
+
+ import cpp
+
+
+predicate is_target_function(Function f) {
+{% for i, name in enumerate(target_functions) %}
+  {% if i > 0 %}or {% endif %}f.hasGlobalName({{ json.dumps(name) }})
+{% endfor %}
+}
+
+from VariableAccess e
+ where
+  is_target_function(e.getEnclosingFunction())
+  and
+  (
+    exists(BuiltInType t | e.getTarget().getType().resolveTypedefs() = t)
+  )
+
+  select e.getTarget(), e.getTarget().getType().resolveTypedefs(), e.getTarget().getName(), "This expression is a variable or field access inside target function $@", e.getEnclosingFunction()

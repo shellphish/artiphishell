@@ -1,0 +1,26 @@
+{{- if .Values.tailscaleingress.enabled -}}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ include "api.fullname" . }}
+  annotations:
+    # TODO(FINALDEPLOY): Make sure this is correct
+    # TODO do not hardcode this
+    tailscale.com/hostname: "binary-blade-final.tail7e9b4c.ts.net"
+    "tailscale.com/experimental-forward-cluster-traffic-via-ingress": "true"
+spec:
+  ingressClassName: tailscale
+  tls:
+    - hosts:
+        - "binary-blade-final.tail7e9b4c.ts.net"
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tailscale-{{ include "api.fullname" $ }}
+                port:
+                  number: 80
+{{- end -}}

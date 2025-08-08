@@ -1,0 +1,553 @@
+#!/bin/bash -u
+# Copyright 2018 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+################################################################################
+cd $OUT
+
+set -eux
+
+if (( $# > 0 )); then
+  FUZZ_TARGETS="$@"
+else
+  FUZZ_TARGETS="$(find . -maxdepth 1 -type f -executable -printf '%P\n' | \
+      grep -v -x -F \
+      -e 'llvm-symbolizer' \
+      -e 'jazzer_agent_deploy.jar' \
+      -e 'jazzer_driver' \
+      -e 'jazzer_driver_with_sanitizer' \
+      -e 'sanitizer_with_fuzzer.so')"
+fi
+
+COVERAGE_OUTPUT_DIR=${COVERAGE_OUTPUT_DIR:-$OUT}
+
+DUMPS_DIR="$COVERAGE_OUTPUT_DIR/dumps"
+FUZZER_STATS_DIR="$COVERAGE_OUTPUT_DIR/fuzzer_stats"
+TEXTCOV_REPORT_DIR="$COVERAGE_OUTPUT_DIR/textcov_reports"
+LOGS_DIR="$COVERAGE_OUTPUT_DIR/logs"
+SEEDS_STATUS_LOGS="$LOGS_DIR/seeds_status_logs.txt"
+# in NOT aggregate mode, we want fine grained stats for each seed
+PER_SEED_TRACING_TIME="$LOGS_DIR/per_seeds_tracing_time.txt"
+# in aggregate mode, we want to know how long it took to trace ALL seeds
+ALL_SEEDS_TRACING_TIME="$LOGS_DIR/all_seeds_tracing_time.txt"
+PLATFORM=linux
+REPORT_PLATFORM_DIR="$COVERAGE_OUTPUT_DIR/report/$PLATFORM"
+
+for directory in $FUZZER_STATS_DIR $TEXTCOV_REPORT_DIR $REPORT_PLATFORM_DIR; do
+  rm -rf $directory
+  mkdir -p $directory
+done
+
+# Create logs directory (if it doesn't exist)
+if [ ! -d "$LOGS_DIR" ]; then
+  mkdir -p $LOGS_DIR
+fi
+
+# Create dumps directory (if it doesn't exist)
+if [ ! -d "$DUMPS_DIR" ]; then
+  mkdir -p $DUMPS_DIR
+fi
+
+# Create the file where we store the exit status of each seed (if it doesn't exist)
+touch $SEEDS_STATUS_LOGS
+
+PROFILE_FILE="$DUMPS_DIR/merged.profdata"
+COVERAGE_TARGET_FILE="$FUZZER_STATS_DIR/coverage_targets.txt"
+
+# Timeout for running a single fuzz target.
+TIMEOUT=1h
+
+# Read timeout per seed from environment variable, default to 100
+# TODO: make sure that the first seed does not time out
+TIMEOUT_PER_SEED=${TIMEOUT_PER_SEED:-180}
+
+# Number of CPUs available, this is needed for running tests in parallel.
+# Set the max number of parallel jobs to be the CPU count and a max of 10.
+NPROC=$(nproc)
+MAX_PARALLEL_COUNT=10
+
+CORPUS_DIR=${CORPUS_DIR:-"/corpus"}
+
+
+function run_fuzz_target {
+  local target=$1
+
+  # '%1m' will produce separate dump files for every object. For example, if a
+  # fuzz target loads a shared library, we will have dumps for both of them.
+  local profraw_file="$DUMPS_DIR/$target.%1m.profraw"
+  local profraw_file_mask="$DUMPS_DIR/$target.*.profraw"
+  local profdata_file="$DUMPS_DIR/$target.profdata"
+  local corpus_real="$CORPUS_DIR/${target}"
+  local corpus_dummy="$OUT/dummy_corpus_dir_for_${target}"
+  rm -rf $corpus_dummy && mkdir -p $corpus_dummy
+
+  local args=" -timeout=$TIMEOUT_PER_SEED "
+  
+  # Iterates through all the seeds in the corpus
+  # and runs the fuzzer on each seed
+  # This is done to avoid the fuzzer to crash on the first seed
+  # and to get the coverage of all the seeds
+  start_time_batch=$(date +%s%3N)
+  for seed in $(ls $corpus_real); do
+    seed_path="$corpus_real/$seed"
+    seed_num=$(echo "$seed_path" | awk -F'-' '{print $NF}')
+    
+    # DO NOT TOUCH THE NAME OF THIS FILE
+    profraw_file="$DUMPS_DIR/$target.$seed_num.profraw"
+    export LLVM_PROFILE_FILE=$profraw_file
+
+    echo "Running $target with seed $seed_path"
+    set +e
+    start_time=$(date +%s%3N)
+    timeout --preserve-status $TIMEOUT $OUT/sigsegv_condom $OUT/$target $args $seed_path &> $LOGS_DIR/$target.log
+    exit_code=$?
+    end_time=$(date +%s%3N)
+    elapsed_time=$(python -c "print(($end_time - $start_time) / 1000)")
+    set -e
+    # LOG THIS SEED'S EXIT CODE
+    echo "$seed $exit_code" >> $SEEDS_STATUS_LOGS
+    echo "$seed $elapsed_time" >> $PER_SEED_TRACING_TIME
+  done
+
+  end_time_batch=$(date +%s%3N)
+  elapsed_time_batch=$(python -c "print(($end_time_batch - $start_time_batch) / 1000)")
+  echo "Elapsed time for batch: $elapsed_time_batch seconds"
+  echo "all_seeds_tracing_time $elapsed_time_batch" >> $ALL_SEEDS_TRACING_TIME
+
+  #ls -lh $DUMPS_DIR/
+  if (( $? != 0 )); then
+    cat $LOGS_DIR/$target.log
+  fi
+
+  # Remove profraw files that have 0 size 
+  all_profraws=$(ls $profraw_file_mask)
+  for profraw in $all_profraws; do
+    if (( $(du -c $profraw | tail -n 1 | cut -f 1) == 0 )); then
+      echo "Removing empty profraw file: $profraw"
+      rm $profraw
+    fi
+  done
+
+  # If there are no profraw files left after we are cleaning, let's return 0
+  if [[ $(ls $profraw_file_mask | wc -l) == 0 ]]; then
+    echo "No profraw files left after cleaning, returning 0"
+    return 0
+  fi
+
+  #rm -rf $corpus_dummy
+  if (( $(du -c $profraw_file_mask | tail -n 1 | cut -f 1) == 0 )); then
+    # Skip fuzz targets that failed to produce profile dumps.
+    return 0
+  fi
+
+  # If necessary translate to latest profraw version.
+  if [[ $target == *"@"* ]]; then
+    # Extract fuzztest binary name from fuzztest wrapper script.
+    target=(${target//@/ }[0])
+  fi
+  profraw_update.py $OUT/$target -i $profraw_file_mask
+  llvm-profdata merge -j=1 -sparse $profraw_file_mask --failure-mode all -o $profdata_file
+
+  # Delete unnecessary and (potentially) large .profraw files.
+  rm $profraw_file_mask
+}
+
+function run_pintool_fuzz_target {
+  local target=$1
+
+  # '%1m' will produce separate dump files for every object. For example, if a
+  # fuzz target loads a shared library, we will have dumps for both of them.
+  local profraw_file="$DUMPS_DIR/$target.%1m.profraw"
+  local profraw_file_mask="$DUMPS_DIR/$target.*.profraw"
+  local profdata_file="$DUMPS_DIR/$target.profdata"
+  local corpus_real="$CORPUS_DIR/${target}"
+  local corpus_dummy="$OUT/dummy_corpus_dir_for_${target}"
+  rm -rf $corpus_dummy && mkdir -p $corpus_dummy
+
+  local args=" -timeout=$TIMEOUT_PER_SEED "
+  
+  # Iterates through all the seeds in the corpus
+  # and runs the fuzzer on each seed
+  # This is done to avoid the fuzzer to crash on the first seed
+  # and to get the coverage of all the seeds
+  start_time_batch=$(date +%s%3N)
+  for seed in $(ls $corpus_real); do
+    seed_path="$corpus_real/$seed"
+    seed_num=$(echo "$seed_path" | awk -F'-' '{print $NF}')
+    
+    # DO NOT TOUCH THE NAME OF THIS FILE
+    profraw_file="$DUMPS_DIR/$target.$seed_num.profraw"
+    export LLVM_PROFILE_FILE=$profraw_file
+
+    echo "Running $target with seed $seed_path"
+    set +e
+    start_time=$(date +%s%3N)
+    ## get inlines
+    echo -n > $OUT/inlined_functions_offset
+    get-inlines.sh $OUT/$target $OUT/inlined_functions_offset || true
+    ## RUUUN ##
+    out_file="$(basename $OUT/$target)-functions-$(basename $seed_path).csv-$(hostname)"
+    offsets_file="$DUMPS_DIR/$(basename $OUT/$target)-functions-$(basename $seed_path).offsets" # this file lists all the offsets to functions defined in the binary
+    
+    if [ "${PINTRACER_FUNCTIONS}" == 1 ]; then 
+      nm -C $1 | grep -E " (T|t) " | grep -vE " (__sanitizer::|__sanitizer_internal|__sanitizer_cov|__sanitizer_weak|wrapped_qsort|__interception::|___interceptor_|__interceptor_|__cxa_guard|__asan::|__asan_|__lsan::|__lsan_|__ubsan::|__ubsan_|__msan::|__msan_|fuzzer::|__Fuzzer::chrono|std::__Fuzzer::|initializeValueProfRuntimeRecord|writeFileWithoutReturn|__llvm_profile_write_file|lprofSuspendSigKill)" | cut -d ' ' -f1 | sed -E 's/^0+/0x0/g'| sort -u  > $offsets_file
+    else
+      if [ "${PINTRACER_FUNCTIONS}" == 0 ]; then 
+        disass_file="dis.asm"
+        objdump -d -Mintel $OUT/$target > $disass_file
+        echo -n > $offsets_file
+        grep -E 'call\s+r' $disass_file | sed 's/:.*call\s*/ /g'  | uniq | tr -s " "| cut -f2 -d" " >> $offsets_file # CALLS
+        grep -E 'jmp\s+r'  $disass_file | sed 's/:.*jmp\s*/ /g'   | uniq | tr -s " "| cut -f2 -d" " >> $offsets_file # JMPS
+      fi 
+    fi 
+
+    timeout --preserve-status $TIMEOUT $PIN_ROOT/pin -follow_execv -t $OUT/pintracer/fun-q-lo.so \
+        -output $out_file \
+        -trace_calls $PINTRACER_FUNCTIONS \
+        -trace_inlined $PINTRACER_INLINES \
+        -debug_mode 1 \
+        -addresses $offsets_file \
+        -inlines_path $OUT/inlined_functions_offset \
+        -- $OUT/$target $args $seed_path &> $LOGS_DIR/$target.log
+        
+
+    cat $LOGS_DIR/$target.log
+    exit_code=$?
+    end_time=$(date +%s%3N)
+    elapsed_time=$(python -c "print(($end_time - $start_time) / 1000)")
+    set -e
+    # LOG THIS SEED'S EXIT CODE
+    if [ "${PINTRACER_FUNCTIONS}" == 1 ]; then 
+      cat $out_file | pintool-json-calls.sh $OUT/$target $(which llvm-symbolizer) $OUT/$out_file.json  
+    else 
+      if [ "${PINTRACER_FUNCTIONS}" == 0 ]; then 
+        cat $out_file | pintool-json-inds.sh $OUT/$target $(which llvm-symbolizer) $OUT/$out_file.json  
+      fi 
+    fi
+    
+    cp $OUT/$out_file.json $DUMPS_DIR/merged.profdata
+    echo "$seed $exit_code" >> $SEEDS_STATUS_LOGS
+    echo "$seed $elapsed_time" >> $PER_SEED_TRACING_TIME
+  done
+
+  end_time_batch=$(date +%s%3N)
+  elapsed_time_batch=$(python -c "print(($end_time_batch - $start_time_batch) / 1000)")
+  echo "Elapsed time for batch: $elapsed_time_batch seconds"
+  echo "all_seeds_tracing_time $elapsed_time_batch" >> $ALL_SEEDS_TRACING_TIME
+  #ls -lh $DUMPS_DIR/
+  if (( $? != 0 )); then
+    cat $LOGS_DIR/$target.log
+  fi
+}
+
+function run_java_myroco_fuzz_target {
+  local target=$1
+
+  local exec_file="$DUMPS_DIR/seed.exec"
+  local class_dump_dir="$DUMPS_DIR/${target}_classes/"
+  mkdir -p "$class_dump_dir"
+  local corpus_real="$CORPUS_DIR/${target}"
+  # lets turn SEEDS_STATUS_LOGS into a environment variable
+  export SEEDS_STATUS_LOGS
+  # -merge=1 requires an output directory, create a new, empty dir for that.
+  local corpus_dummy="$OUT/dummy_corpus_dir_for_${target}"
+  rm -rf $corpus_dummy && mkdir -p $corpus_dummy
+
+
+  local args="-timeout=$TIMEOUT_PER_SEED"
+
+  # get millisecond epoch timestamp
+  start_time=$(date +%s%3N)
+  # If the file .myroco.lock exists in /shellphish/myroco, that means that myroco is already 
+  # up and running
+  if [ -f /shellphish/myroco/.myroco.lock ]; then
+    echo "myroco is already up and running..."
+    # Nothing to do here, myroco is already up and running.
+  else
+    # NOTE: myroco does not read -timeout from the args
+    $OUT/$target $args &> $LOGS_DIR/$target.log &
+    # Wait for the .myroco.lock file to be created
+    while [ ! -f /shellphish/myroco/.myroco.lock ]; do
+      sleep 1
+    done
+  fi
+
+  # Wait for seed.exec to appear in $DUMPS_DIR
+  while [ ! -f $DUMPS_DIR/seed.exec ]; do
+    sleep 0.01
+  done
+
+  end_time=$(date +%s%3N)
+  elapsed_time=$(python -c "print(($end_time - $start_time) / 1000)")
+  echo "Elapsed time for seed: $elapsed_time seconds"
+  echo "$CURR_SEED_NAME $elapsed_time" >> $PER_SEED_TRACING_TIME
+}
+
+function run_java_fuzz_target {
+  local target=$1
+
+  local exec_file="$DUMPS_DIR/$target.exec"
+  local class_dump_dir="$DUMPS_DIR/${target}_classes/"
+  mkdir "$class_dump_dir"
+  local corpus_real="$CORPUS_DIR/${target}"
+
+  # -merge=1 requires an output directory, create a new, empty dir for that.
+  local corpus_dummy="$OUT/dummy_corpus_dir_for_${target}"
+  rm -rf $corpus_dummy && mkdir -p $corpus_dummy
+  
+  # Check if the YAJTA_COVERAGE is true 
+  if [[ $YAJTA_COVERAGE == "true" ]]; then
+    # Get the realpath of the file in the corpus 
+    local seed_file=$(realpath $corpus_real/*)
+    echo "Running $target with seed $seed_file"
+    #local yajta_args="from-bootstrap-classloader=true|print=values|output=$DUMPS_DIR/yajta.log"
+    #local yajta_args="output=$DUMPS_DIR/yajta.log|excludes=com.code_intelligence"
+    local yajta_args=""
+    local yajta_args="output=$DUMPS_DIR/yajta.log|excludes=$YAJTA_EXCLUDES"
+    if [[ $COVLIB_CRASH_MODE == "true" ]]; then
+      local args="-timeout=$TIMEOUT_PER_SEED \
+        --instrumentation_excludes=** \
+        --additional_jvm_args=-javaagent\\:/opt/yajta-2.0.0-jar-with-dependencies.jar=$yajta_args \
+        $seed_file"
+    else 
+      local args="-timeout=$TIMEOUT_PER_SEED --nohooks \
+        --instrumentation_excludes=** \
+        --additional_jvm_args=-javaagent\\:/opt/yajta-2.0.0-jar-with-dependencies.jar=$yajta_args \
+        $seed_file"
+    fi
+  else
+    # Use 100s timeout instead of 25s as code coverage builds can be very slow.
+    local jacoco_args="destfile=$exec_file,classdumpdir=$class_dump_dir,excludes=com.code_intelligence.jazzer.*\\:sun.tools.*\\:*.sun.tools.*"
+    local args="-merge=1 -timeout=$TIMEOUT_PER_SEED --nohooks \
+        --additional_jvm_args=-javaagent\\:/opt/jacoco-agent.jar=$jacoco_args \
+        $corpus_dummy $corpus_real"
+  fi
+
+  start_time=$(date +%s%3N)
+  if [[ $YAJTA_COVERAGE == "true" ]]; then
+    set +e
+    # NOTE: if we are using Yajta, let's ignore the exit code of the execution.
+    # echo "Running $OUT/$target $args" > $LOGS_DIR/cmd.log
+    timeout $TIMEOUT $OUT/$target $args &> $LOGS_DIR/$target.log
+    set -e
+  else
+    timeout $TIMEOUT $OUT/$target $args &> $LOGS_DIR/$target.log
+  fi
+  end_time=$(date +%s%3N)
+  elapsed_time=$(python -c "print(($end_time - $start_time) / 1000)")
+  echo "Elapsed time for all seeds: $elapsed_time seconds"
+  echo "all_seeds_tracing_time $elapsed_time" >> $ALL_SEEDS_TRACING_TIME
+  
+  if (( $? != 0 )); then
+    echo "Error occured while running $target:"
+    cat $LOGS_DIR/$target.log
+  fi
+
+  # If we are using YAJTA, we don't need to generate the XML report
+  if [[ $YAJTA_COVERAGE == "true" ]]; then
+    mv $DUMPS_DIR/yajta.log $DUMPS_DIR/jacoco.xml
+    return 0
+  fi
+
+  if (( $(du -c $exec_file | tail -n 1 | cut -f 1) == 0 )); then
+    # Skip fuzz targets that failed to produce .exec files.
+    echo "$target failed to produce .exec file."
+    return 0
+  fi
+}
+
+# Run each fuzz target, generate raw coverage dumps.
+for fuzz_target in $FUZZ_TARGETS; do
+
+  if [[ $FUZZING_LANGUAGE == "jvm" ]]; then
+    # Continue if not a fuzz target.
+    if [[ $FUZZING_ENGINE != "none" ]]; then
+      grep "LLVMFuzzerTestOneInput" $fuzz_target > /dev/null 2>&1 || continue
+    fi
+
+    echo "Running $fuzz_target"
+    # Log the target in the targets file.
+    echo ${fuzz_target} >> $COVERAGE_TARGET_FILE
+
+    # Run the coverage collection.
+    # If the MYROCO_COVERAGE flag is set, we run the run_java_myroco_fuzz_target
+    if [[ $MYROCO_COVERAGE == "true" ]]; then
+      echo "Running myroco coverage for $fuzz_target"
+      run_java_myroco_fuzz_target $fuzz_target &
+    else
+      run_java_fuzz_target $fuzz_target &
+    fi
+  
+  else
+    # Continue if not a fuzz target.
+    if [[ $FUZZING_ENGINE != "none" ]]; then
+      grep "LLVMFuzzerTestOneInput" $fuzz_target > /dev/null 2>&1 || continue
+    fi
+
+    echo "Running $fuzz_target"
+    # Log the target in the targets file.
+    echo ${fuzz_target} >> $COVERAGE_TARGET_FILE
+
+    if [[ $PINTRACER_COVERAGE == "true" ]]; then
+      echo "Running pintracer coverage for $fuzz_target"
+      run_pintool_fuzz_target $fuzz_target & # TODO: write 
+
+    else
+      # Run the coverage collection.
+      run_fuzz_target $fuzz_target &
+    fi
+
+    # Rewrite object if its a FUZZTEST target
+    if [[ $fuzz_target == *"@"* ]]; then
+      # Extract fuzztest binary name from fuzztest wrapper script.
+      fuzz_target=(${fuzz_target//@/ }[0])
+    fi
+  fi
+
+
+  # Limit the number of processes to be spawned.
+  n_child_proc=$(jobs -rp | wc -l)
+  while [[ "$n_child_proc" -eq "$NPROC" || "$n_child_proc" -gt "$MAX_PARALLEL_COUNT" ]]; do
+    sleep 4
+    n_child_proc=$(jobs -rp | wc -l)
+  done
+done
+
+# Wait for background processes to finish.
+wait
+  
+if [[ $FUZZING_LANGUAGE == "jvm" ]]; then
+
+  # From this point on the script does not tolerate any errors.
+  set -e
+
+  # Merge .exec files from the individual targets.
+  # if we are using myroco use the proper name 
+  if [[ $MYROCO_COVERAGE == "true" ]]; then
+    merged_exec=$DUMPS_DIR/myroco.merged.exec
+  else
+    merged_exec=$DUMPS_DIR/jacoco.merged.exec
+  fi
+
+  # if we are using YAJTA coverage, we don't need to merge the exec files
+  if [[ $YAJTA_COVERAGE == "true" ]]; then
+    echo "=== Exiting early, as we are using YAJTA coverage ==="
+    exit 0
+  fi
+
+  #echo "Found $(ls $DUMPS_DIR/*.exec | wc -l) .exec files"
+  echo "Merging .exec files into $merged_exec"
+  # Assert that we have ONLY one .exec 
+  if [[ $(ls $DUMPS_DIR/*.exec | wc -l) != 1 ]]; then
+    echo "Wrong number of .exec files found, expected 1, found $(ls $DUMPS_DIR/*.exec | wc -l)"
+    exit 1
+  fi
+
+  # Get the name of the first .exec file
+  first_exec_file=$(ls $DUMPS_DIR/*.exec | head -n 1)
+  #java -jar /opt/jacoco-cli.jar merge $DUMPS_DIR/*.exec \
+  #    --destfile $merged_exec
+  mv $first_exec_file $merged_exec
+  # Log stats on the merged exec file
+  ls -lh $merged_exec
+
+  classes_dir=$DUMPS_DIR/classes
+  # if classes_dir exists, skip the following
+  if [ ! -d $classes_dir ]; then
+    # Prepare classes directory for jacoco process
+    mkdir $classes_dir
+    # Only copy class files found in $OUT/$SRC to ensure they are
+    # lively compiled from the project, avoiding inclusion of
+    # dependency classes. This also includes the fuzzer classes.
+    # NOTE: optimized version, it could be a bit less reliable in extracting class names...
+    find "$OUT/$SRC" -type f -name '*.class' ! -name 'module-info.class' -print0 | xargs -0 -P "$(nproc)" -I {} bash -c '
+      class_file="$1"
+      out_dir="$2"
+      src_dir="$3"
+      classes_dir="$4"
+      
+      # Compute relative path by stripping $OUT/$SRC prefix
+      relative_path="${class_file#$out_dir/$src_dir/}"
+      # Remove .class extension
+      relative_path="${relative_path%.class}"
+      
+      if [ -n "$relative_path" ]; then
+        # Create target directory and copy the file
+        mkdir -p "$classes_dir/$(dirname "$relative_path")"
+        cp "$class_file" "$classes_dir/${relative_path}.class"
+      fi
+    ' _ {} "$OUT" "$SRC" "$classes_dir"
+  fi
+
+  # Heuristically determine source directories based on Maven structure.
+  # Always include the $SRC root as it likely contains the fuzzer sources.
+  sourcefiles_args=(--sourcefiles $OUT/$SRC)
+  source_dirs=$(find $OUT/$SRC -type d -name 'java')
+  for source_dir in $source_dirs; do
+    sourcefiles_args+=(--sourcefiles "$source_dir")
+  done
+
+  # Generate HTML and XML reports.
+  xml_report=$REPORT_PLATFORM_DIR/index.xml
+  java -jar /opt/jacoco-cli.jar report $merged_exec \
+      --xml $xml_report \
+      --classfiles $classes_dir \
+      "${sourcefiles_args[@]}"
+  
+  if [ ! -f $xml_report ]; then
+    echo "Failed to generate XML report"
+    #ls -l $CORPUS_DIR/$fuzz_target/
+    exit 1
+  fi
+
+  # Log stats on the XML report
+  ls -lh $xml_report
+
+  # Also serve the raw exec file and XML report, which can be useful for
+  # automated analysis.
+  if [[ $MYROCO_COVERAGE == "true" ]]; then
+    cp $merged_exec $REPORT_PLATFORM_DIR/myroco.exec
+    cp $xml_report $REPORT_PLATFORM_DIR/myroco.xml
+    cp $xml_report $TEXTCOV_REPORT_DIR/myroco.xml
+    cp $xml_report $DUMPS_DIR/myroco.xml
+  else
+    cp $merged_exec $REPORT_PLATFORM_DIR/jacoco.exec
+    cp $xml_report $REPORT_PLATFORM_DIR/jacoco.xml
+    cp $xml_report $TEXTCOV_REPORT_DIR/jacoco.xml
+    cp $xml_report $DUMPS_DIR/jacoco.xml
+  fi
+
+  set +e
+
+else
+
+  # From this point on the script does not tolerate any errors.
+  set -e
+
+  # If we are not using pintool coverage then we have to merge the profdata files
+  # otherwise we already have our results :)
+  if [[ $PINTRACER_COVERAGE == "false" ]]; then
+
+    # If there are no .profdata to merge, we are done 
+    if [[ $(ls $DUMPS_DIR/*.profdata | wc -l) == 0 ]]; then
+      echo "No .profdata files to merge, emitting empty"
+      touch $PROFILE_FILE
+    else
+      llvm-profdata merge -sparse $DUMPS_DIR/*.profdata -o $PROFILE_FILE
+    fi
+
+    set +e
+  fi
+
+fi

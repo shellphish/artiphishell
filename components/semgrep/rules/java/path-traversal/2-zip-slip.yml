@@ -1,0 +1,229 @@
+rules:
+
+    #### normalize() missing #### 
+    ## SHELLPHISH_TARGET: apache-commons-full
+  - id: java.path-traversal.zip-slip.resolve-no-normalize
+    message: "Potential Zip Slip: Path.resolve(...) without normalization"
+    severity: ERROR
+    metadata:
+      description: |
+        Detects use of Path.resolve(...) with a ZIP or TAR entry name without normalization. 
+        If the entry name contains '../', and the result isn't normalized, the file could be written outside the intended directory (Zip Slip).
+        This rule attempts to detect both inline chaining and split-line patterns.
+      cwe: PathTraversal
+      vuln_type: "path-traversal"
+    languages: [java]
+    patterns:
+      # Match any resolve() call
+      - pattern: $BASE.resolve($ARG)
+      
+      # Exclude immediate chaining with normalize()
+      - pattern-not: $BASE.resolve($ARG).normalize()
+      # - pattern-not: $BASE.resolve($ARG).normalize().$CHAIN
+      - pattern-not: $VAR = $BASE.resolve($ARG).normalize()
+      
+      # # Exclude split-line normalization patterns
+      # - pattern-not-inside: |
+      #     $VAR = $BASE.resolve($ARG);
+      #     return $VAR.normalize();
+          
+      # - pattern-not-inside: |
+      #     $VAR = $BASE.resolve($ARG);
+      #     $VAR = $VAR.normalize();
+          
+      # - pattern-not-inside: |
+      #     $VAR = $BASE.resolve($ARG);
+      #     ...
+      #     $VAR.normalize();
+          
+      # - pattern-not-inside: |
+      #     $VAR = $BASE.resolve($ARG);
+      #     ...
+      #     return $VAR.normalize();
+          
+      # - pattern-not-inside: |
+      #     $VAR = $BASE.resolve($ARG);
+      #     ...
+      #     $RESULT = $VAR.normalize();
+      
+      # # Exclude try-catch patterns with normalization
+      # - pattern-not-inside: |
+      #     try {
+      #       ...
+      #       $VAR = $BASE.resolve($ARG);
+      #       ...
+      #       $VAR.normalize();
+      #       ...
+      #     } catch (...) { 
+      #       ...
+      #     }
+
+
+    ## SHELLPHISH_TARGET: zt-zip full
+  - id: java.path-traversal.zip-slip.unchecked-file-without-validation
+    message: "Potential Zip Slip: File constructed without canonical path validation"
+    severity: ERROR
+    metadata:
+      description: |
+        Flags cases where a File is constructed from a base directory and user-controlled name,
+        but no canonical containment check is performed. This may allow Zip Slip-style path traversal
+        if the input includes `../` and the resulting file is written.
+      cwe: PathTraversal
+      vuln_type: "path-traversal"
+    languages:
+      - java
+    patterns:
+      - pattern: File $F = new File($DIR, $NAME);
+      - pattern-not-inside: |
+          if ($X.getCanonicalPath().$METHOD($Y.getCanonicalPath())) { ... }
+      - pattern-inside: |
+          ... {
+            ...
+            File $F = new File($DIR, $NAME);
+            ...
+          }
+   ### Some false positive results in zt-zip
+  - id: java.path-traversal.zip-slip.zipentry-file-write
+    message: "Zip Slip vulnerability: writing ZipEntry directly to disk without sanitization"
+    severity: ERROR
+    metadata:
+      description: |
+        Detects code that writes ZipEntry contents directly using its name as a path, without verifying it stays inside target directory.
+        This may lead to overwriting arbitrary files on the system (Zip Slip).
+      cwe: PathTraversal
+      vuln_type: "path-traversal"
+    languages: [java]
+    patterns:
+      - pattern-either:
+          - pattern: new File($OUTDIR, $ENTRY.getName())
+          - pattern: new File($OUTDIR, sanitize($ENTRY.getName()))
+          - pattern: new File($OUTDIR, helper($ENTRY))
+  
+    ##TODO: need to check examples in wild for below rules!  no results hit so far zt-zip
+
+    #### normalize() there but some checks missing ####
+  - id: java.path-traversal.zip-slip.resolve-with-normalize-but-no-check
+    message: "Potential Zip Slip: Path.resolve(...).normalize() used without validation"
+    severity: ERROR
+    metadata:
+      description: |
+        Detects use of Path.resolve(...).normalize() with archive entry names where the resulting path is not checked 
+        against the parent directory. Normalizing is not sufficient without verifying containment.
+      cwe: PathTraversal
+      vuln_type: "path-traversal"
+    languages: [java]
+    patterns:
+      - pattern: $RESOLVED = $PARENT.resolve($NAME).normalize()
+      - pattern-not-inside: $RESOLVED.startsWith($PARENT)
+
+
+
+  - id: java.path-traversal.zip-slip.direct-outputstream
+    message: "Potential Zip Slip: FileOutputStream created with resolved entry path"
+    severity: ERROR
+    metadata:
+      description: |
+        Detects creation of FileOutputStream using resolved ZIP/TAR entry names, where resolution 
+        might be vulnerable to Zip Slip if normalization or containment checks are missing.
+      cwe: PathTraversal
+      vuln_type: "path-traversal"
+    languages: [java]
+    patterns:
+      - pattern: new FileOutputStream($TARGET)
+      - pattern-inside: $TARGET = $PARENT.resolve($ENTRY.getName());
+      - pattern-not-inside: $TARGET = $PARENT.resolve($ENTRY.getName()).normalize();
+
+    
+  - id: java.path-traversal.zip-slip.file-new-with-entry
+    message: "Potential Zip Slip: new File(...) used with archive entry name"
+    severity: WARNING
+    metadata:
+      description: |
+        Detects File creation from ZIP/TAR entry names. If the name includes '../' and the path is not validated or normalized, 
+        the result could be a directory traversal vulnerability (Zip Slip).
+      cwe: PathTraversal
+      vuln_type: "path-traversal"
+    languages: [java]
+    pattern-either:
+      - pattern: new File($DIR, $OBJ.map($ENTRY.getName()))
+      - pattern: new File($DIR, $OBJ.transform($ENTRY.getName()))
+      - pattern: new File($DIR, sanitize($ENTRY.getName()))
+      - pattern: new File($DIR, normalize($ENTRY.getName()))
+      - pattern: new File($DIR, $FUNC($ENTRY.getName()))
+
+
+
+  - id: java.path-traversal.zip-slip.to-realpath-used-without-check
+    message: "Potential Zip Slip: Path.toRealPath() used without validating it stays within base directory"
+    severity: WARNING
+    metadata:
+      description: |
+        toRealPath() resolves symlinks and cleans paths, but unless followed by a containment check against a trusted base, path traversal may still occur.
+      tags: [security, path-traversal, zipslip, symlink, CWE-22]
+      vuln_type: "path-traversal"
+    languages: [java]
+    patterns:
+      - pattern: $RESOLVED = $PARENT.resolve($NAME).toRealPath(...)
+      - pattern-not-inside: $RESOLVED.startsWith($PARENT)
+
+  - id: java.path-traversal.zip-slip.filenameutils-normalize-no-check
+    message: "Potential Zip Slip: FilenameUtils.normalize used without validation"
+    severity: INFO
+    metadata:
+      description: |
+        Apache Commons IO FilenameUtils.normalize cleans up dangerous path components, but must be followed by containment check or filtering to avoid Zip Slip.
+      cwe: PathTraversal
+      vuln_type: "path-traversal"
+    languages: [java]
+    patterns:
+      - pattern-either:
+          - pattern: $SAFE_PATH = FilenameUtils.normalize($ENTRY.getName())
+          - pattern: $SAFE_PATH = new File($DIR, $ENTRY.getName()).toPath().normalize()
+      - pattern-not-inside: $SAFE_PATH.startsWith($BASEDIR)
+
+  - id: java.path-traversal.zip-slip.canonical-path-no-check
+    message: "Potential Zip Slip: Canonical path used without containment check"
+    severity: INFO
+    metadata:
+      description: |
+        Detects use of getCanonicalPath() to retrieve file paths without proper containment checks such as startsWith().
+      tags: [security, path-traversal, zipslip, containment, canonical]
+      vuln_type: "path-traversal"
+    languages: [java]
+    patterns:
+      - pattern: $VAR1 = $FILE1.getCanonicalPath();
+      - pattern: $VAR2 = $FILE2.getCanonicalPath();
+      - pattern-not-inside: $VAR1.startsWith($VAR2)
+      - pattern-not-inside: $VAR2.startsWith($VAR1)
+      - pattern-not-inside: $VAR1.toString().startsWith($VAR2.toString())
+      - pattern-not-inside: $VAR2.toString().startsWith($VAR1.toString())
+
+
+
+  # === TAR-Specific Rule ===
+
+  - id: java.path-traversal.zip-slip.tarentry-write-check
+    message: "Zip Slip via TAR: TarArchiveEntry.getName() used without sanitization"
+    severity: INFO
+    metadata:
+      description: |
+        Detects creation of files from TarArchiveEntry.getName() without checking for path traversal components.
+        This may allow writing outside of the intended destination path.
+      tags:
+        - security
+        - path-traversal
+        - zipslip
+        - tar
+        - CWE-22
+        - archive
+      vuln_type: "path-traversal"
+    languages:
+      - java
+    patterns:
+      - pattern: new File($OUTDIR, $TARENTRY.getName())
+      - pattern-inside: |
+          TarArchiveEntry $TARENTRY = ...;
+      - pattern-not-inside: |
+          if (!$TARENTRY.getName().contains("..")) { ... }
+
+#TODO: Add rule for .. or // and stuff like that

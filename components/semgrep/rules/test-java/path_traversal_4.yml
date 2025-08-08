@@ -1,0 +1,40 @@
+rules:
+  - id: path_traversal_canonical_paths
+    pattern-either:
+      # Pattern 1: Two canonical paths without proper validation
+      - patterns:
+          - pattern: $PATH1 = $FILE1.getCanonicalPath();
+          - pattern: $PATH2 = $FILE2.getCanonicalPath();
+          - pattern-not: if (!$PATH1.startsWith($PATH2)) { ... }
+          - pattern-not: if (!$PATH2.startsWith($PATH1)) { ... }
+          - pattern-not: if ($PATH1.startsWith($PATH2) == false) { ... }
+          - pattern-not: if ($PATH2.startsWith($PATH1) == false) { ... }
+      
+      # Pattern 2: Canonical path used with substring operations
+      - patterns:
+          - pattern: $PATH = $FILE.getCanonicalPath();
+          - pattern: $RESULT = $PATH.substring($INDEX);
+          - pattern-not: if ($RESULT.contains("..")) { ... }
+          - pattern-not: if ($RESULT.indexOf("..") != -1) { ... }
+      
+      # Pattern 3: Canonical path with direct file operations
+      - patterns:
+          - pattern: $PATH = $FILE.getCanonicalPath();
+          - pattern: new File($PATH + $SUFFIX);
+          - pattern-not: validatePath($PATH)
+          - pattern-not: if (!isValidPath($PATH)) { ... }
+    
+    message: >-
+      PathTraversal vulnerability detected: Canonical paths are being manipulated 
+      without complete security validation. This could allow attackers to access 
+      files outside intended directories. Always validate paths using startsWith() 
+      or a similar security check before file operations.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      vuln_type: "path-traversal"
+      cwe: "CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('PathTraversal')"
+      references:
+        - https://owasp.org/www-community/attacks/Path_Traversal
+        - https://snyk.io/research/zip-slip-vulnerability

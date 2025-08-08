@@ -1,0 +1,104 @@
+# Default values for agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# Image configuration
+image:
+  pullPolicy: Always
+
+# Define the container ports
+containerPorts:
+  - name: http
+    containerPort: 4000
+    protocol: TCP
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets:
+  - name: acr-docker-secret
+  - name: ci-acr-pull-secret
+
+# This is to override the chart name.
+nameOverride: "opensearch-dashboard"
+fullnameOverride: "opensearch-dashboard"
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "opensearch-dashboard-sa"
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # Internal service for port 8080
+  type: ClusterIP
+  port: 5601
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 6Gi
+  requests:
+    cpu: 1300m
+    memory: 3Gi
+
+# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe: {} # TODO this should be setup
+readinessProbe: {}
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+env:
+  - name: DISABLE_SECURITY_PLUGIN
+    value: "true"
+  - name: OPENSEARCH_HOSTS
+    value: '["http://opensearch:9200"]' 
+  - name: OPENSEARCH_DASHBOARDS_SKIP_CSP_WARNING
+    value: "true"
+  - name: OPENSEARCH_SECURITY_ENABLED
+    value: "false"
+  - name: OPENSEARCH_DASHBOARDS_ENABLE_CSP_HEADER
+    value: "false"
+
+nodeSelector:
+  support.shellphish.net/only-critical: "true"
+
+tolerations:
+  - key: "support.shellphish.net/only-critical"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+affinity: {}
+
+podPacking:
+  enabled: true
+  group: "critical"
+  maxSkew: 4
+  weight: 100

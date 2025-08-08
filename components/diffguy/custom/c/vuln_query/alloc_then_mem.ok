@@ -1,0 +1,47 @@
+import cpp
+import semmle.code.cpp.dataflow.new.DataFlow
+import semmle.code.cpp.pointsto.CallGraph
+
+predicate edge(Function src, Function dst) {
+  src = dst or
+  allCalls(src, dst)
+}
+
+predicate allocatingFunction(Function f) {
+  f.hasGlobalName("malloc") or
+  f.hasGlobalName("calloc") or
+  f.hasGlobalName("realloc")
+}
+
+predicate memFunction(Function f) {
+  f.hasGlobalName("memcpy") or
+  f.hasGlobalName("memset")
+}
+
+predicate callsAllocationEventually(Function caller) {
+  exists(Function alloc |
+    edge+(caller, alloc) and
+    allocatingFunction(alloc)
+  )
+}
+
+predicate callsMem(Function caller) {
+  exists(Function alloc |
+    edge(caller, alloc) and
+    memFunction(alloc)
+  )
+}
+
+predicate memFuncAfterAlloc(Function f) {
+  exists(Call allocCall, Call memCall |
+    allocCall.getEnclosingFunction() = f and
+    memCall.getEnclosingFunction() = f and
+    callsAllocationEventually(allocCall.getTarget()) and
+    callsMem(memCall.getTarget()) and
+    allocCall.getLocation().getStartLine() < memCall.getLocation().getStartLine()
+  )
+}
+
+from Function candidate
+where memFuncAfterAlloc(candidate) // and candidate.getName().matches("%ngx_sendfile_r%")
+select candidate.getLocation() as id, candidate.getName() as name, "This function calls a mem func after alloc function." as note

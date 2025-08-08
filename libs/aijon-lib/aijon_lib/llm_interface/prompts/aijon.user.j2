@@ -1,0 +1,25 @@
+{% if retry %}
+<YELL>
+YOUR OUTPUT DID NOT FOLLOW THE FORMAT OF:
++ LINE_NUMBER_TO_INSERT_AFTER IJON_XXX(YYY, ZZZ, ...)
+TRY AGAIN.
+</YELL>
+{% endif %}
+
+{% if curly_braces %}
+<YELL>
+DONT ADD NEW CURLY BRACES.
+IT CANNOT BE ALLOWED.
+JUST INSERT A SINGLE ANNOTATION PER LINE
+{% endif %}
+
+Here's the C/C++ code block you need to instrument:
+
+<code_block>
+{{code}}
+</code_block>
+
+And here's the Point-Of-Interest (POI) report for your reference:
+<poi_report>
+{{poi_report}}
+</poi_report>

@@ -1,0 +1,127 @@
+repo_classes:
+
+  ################### INPUTS ###################
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks: MetadataRepository
+  sarif_reports: BlobRepository
+  sarif_metadatas: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  crs_tasks_oss_fuzz_repos: FilesystemRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  full_functions_by_file_index_jsons: BlobRepository
+  crs_tasks_analysis_sources: FilesystemRepository
+
+  ################### OUTPUTS ###################
+  sarif_retry_metadatas: MetadataRepository
+  sarif_heartbeat_paths: MetadataRepository
+
+tasks:
+
+  sarifguy_reasonable:
+    job_quota:
+      cpu: 1
+      mem: "2Gi"
+    priority: 10000
+    failure_ok: true
+    annotations:
+      authors:
+        - degrigis
+        - r00tus3r
+      maturity: fullyIntegrated
+
+    links:
+      sarif_path:
+        repo: sarif_reports
+        kind: InputFilepath
+
+      sarif_meta:
+        repo: sarif_metadatas
+        kind: InputMetadata
+      
+      sarif_meta_path:
+        repo: sarif_metadatas
+        kind: InputFilepath
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+        key: sarif_meta.pdt_task_id
+
+      crs_task:
+        repo: crs_tasks
+        kind: InputMetadata
+        key: sarif_meta.pdt_task_id
+
+      crs_tasks_analysis_source:
+        repo: crs_tasks_analysis_sources
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      oss_fuzz_project:
+        repo: crs_tasks_oss_fuzz_repos
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+        key: sarif_meta.pdt_task_id
+        
+      functions_by_file_index_json:
+        repo: full_functions_by_file_index_jsons
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      functions_index:
+        repo: full_functions_indices
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      functions_jsons_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+        key: sarif_meta.pdt_task_id
+
+      sarif_retry_metadata:
+        repo: sarif_retry_metadatas
+        kind: OutputFilepath
+        content_keyed_md5: true
+      
+      sarif_heartbeat_path:
+        repo: sarif_heartbeat_paths
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: 'aixcc-sarifguy'
+        host_mounts:
+          "/shared": "/shared"
+        template: |
+          set -x
+
+          export CRS_TASK_NUM={{ crs_task.concurrent_target_num | default('1') }}
+
+          export LOCAL_RUN=False
+          export SARIF_META={{ sarif_meta_path | shquote }}
+          export SARIF_PATH={{ sarif_path | shquote }}
+          export SARIFGUYMODE='reasonable'
+          export OUT_FILE_PATH={{ sarif_retry_metadata | shquote }}
+          export SARIF_HEARTBEAT_PATH={{ sarif_heartbeat_path | shquote }}
+          export PROJECT_NAME={{ crs_task.project_name | shquote }}
+          export OSS_FUZZ_REPO_PATH={{ oss_fuzz_project | shquote }}
+          export OSS_FUZZ_PROJECT_SRC={{ crs_tasks_analysis_source | shquote }}
+          export FUNCTIONS_BY_FILE_INDEX={{ functions_by_file_index_json | shquote }}
+          export FUNCTIONS_INDEX={{ functions_index | shquote }}
+          export TARGET_FUNCTIONS_JSONS_DIR={{ functions_jsons_dir | shquote }}
+
+          # Emit the heartbeat
+          echo "Emitting heartbeat to $SARIF_HEARTBEAT_PATH"
+          echo -e "sarifguy_heartbeat:\n  timestamp: $(date -Iseconds)\n  project_name: $PROJECT_NAME" > $SARIF_HEARTBEAT_PATH
+          
+          /src/run.sh
+          
+
+          sleep 10
+

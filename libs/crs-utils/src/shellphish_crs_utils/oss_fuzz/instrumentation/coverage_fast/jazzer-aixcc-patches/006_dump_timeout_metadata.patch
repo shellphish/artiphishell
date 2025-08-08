@@ -1,0 +1,31 @@
+diff --git a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+index 61efbe68..dd79699b 100644
+--- a/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
++++ b/src/main/java/com/code_intelligence/jazzer/driver/FuzzTargetRunner.java
+@@ -129,7 +129,7 @@ public final class FuzzTargetRunner {
+   private static final ArgumentsMutator mutator;
+   private static final ReproducerTemplate reproducerTemplate;
+   private static Consumer<Throwable> fatalFindingHandlerForJUnit;
+-
++  private static boolean timeout_seed;
+   static {
+     FuzzTargetHolder.FuzzTarget fuzzTarget = FuzzTargetHolder.fuzzTarget;
+     lifecycleMethodsInvoker = fuzzTarget.lifecycleMethodsInvoker;
+@@ -226,6 +226,17 @@ public final class FuzzTargetRunner {
+         System.out.println("[MYROCO] Timeout occurred after " + timeout + " seconds. Skipping this seed.");
+         // Cancel the task and shutdown the executor
+         future.cancel(true);
++        try{
++          String SEEDS_STATUS_LOGS = System.getenv("SEEDS_STATUS_LOGS");
++          if (SEEDS_STATUS_LOGS == null){
++            System.out.println("[MYROCO] The environment variable SEEDS_STATUS_LOGS is not set. Please set it to the path where you want to store the logs");
++          }else{
++            Files.write(Paths.get(SEEDS_STATUS_LOGS), (input_name + " " + "420" + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
++          }
++        } catch (IOException e1) {
++          System.out.println("[MYROCO] Failed to write timeout code to statusfile the file : ");
++          e1.printStackTrace();
++        }
+         // Lets dump empty coverage for the seed
+         // ackchyually Lukas wants what ever it covers in the time
+         //CoverageRecorder.resetCoverage();

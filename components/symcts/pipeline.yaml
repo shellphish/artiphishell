@@ -1,0 +1,125 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rhelmot/pydatatask/main/schema/pipeline.json
+
+repo_classes:
+  targets_with_sources:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: true
+  target_metadatas: MetadataRepository
+  target_harness_infos: MetadataRepository
+
+  symcts_symcc_built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+  symcts_aflpp_built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+  symcts_aflpp_upstream_built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+  symcts_aflpp_upstream_cmplog_built_targets:
+    cls: FilesystemRepository
+    compress_backend: true
+    compress_backup: false
+
+  symcts_seeds: BlobRepository
+  symcts_seeds_metadata: MetadataRepository
+  symcts_crashes: BlobRepository
+  symcts_crashes_metadata: MetadataRepository
+
+lockstep: |
+  set -x
+  echo core | sudo tee /proc/sys/kernel/core_pattern
+  echo 0 | sudo tee /proc/sys/kernel/core_uses_pid
+  sudo /bin/bash -c 'cd /sys/devices/system/cpu && echo performance | tee cpu*/cpufreq/scaling_governor || true'
+  # docker pull ghcr.io/shellphish-support-syndicate/aixcc-dependencies-base
+  # docker pull ghcr.io/shellphish-support-syndicate/aixcc-component-base
+  (
+    docker pull ghcr.io/shellphish-support-syndicate/aixcc-dependencies-base && \
+    docker pull ghcr.io/shellphish-support-syndicate/aixcc-component-base
+  )
+  PULLED=$?
+  # if pulled or FORCE_REBUILD is set, then rebuild the base images
+  if [ $PULLED -ne 0 ] || [ -n "$FORCE_REBUILD" ]; then
+    echo "Failed to pull the base images. Rebuilding them."
+    (
+      cd ../../../local_run/
+      ./rebuild_local.sh
+      docker tag aixcc-dependencies-base ghcr.io/shellphish-support-syndicate/aixcc-dependencies-base
+      docker tag aixcc-component-base ghcr.io/shellphish-support-syndicate/aixcc-component-base
+      docker push ghcr.io/shellphish-support-syndicate/aixcc-component-base
+      docker push ghcr.io/shellphish-support-syndicate/aixcc-dependencies-base
+      cd -
+    )
+  fi
+
+  export PULLED=0
+  docker pull ghcr.io/shellphish-support-syndicate/aixcc-crs-utils || export PULLED=1
+  
+  # if pulled or FORCE_REBUILD is set, then rebuild the base images
+  if [ $PULLED -ne 0 ] || [ -n "$FORCE_REBUILD" ]; then
+    echo "Failed to pull the base images. Rebuilding them."
+    (
+      cd ../../common/crs-utils
+      docker build -t aixcc-crs-utils .
+      docker tag aixcc-crs-utils ghcr.io/shellphish-support-syndicate/aixcc-crs-utils
+      docker push ghcr.io/shellphish-support-syndicate/aixcc-crs-utils
+    )
+  fi
+  docker tag ghcr.io/shellphish-support-syndicate/aixcc-crs-utils aixcc-crs-utils
+
+  docker tag ghcr.io/shellphish-support-syndicate/aixcc-dependencies-base aixcc-dependencies-base
+  docker tag ghcr.io/shellphish-support-syndicate/aixcc-component-base aixcc-component-base
+
+  docker pull ghcr.io/shellphish-support-syndicate/aixcc-symcts
+  SYMCTS_PULLED=$?
+
+  if [ $SYMCTS_PULLED -ne 0 ] || [ -n "$FORCE_REBUILD" ]; then
+    docker build -t aixcc-symcts .
+    docker tag aixcc-symcts ghcr.io/shellphish-support-syndicate/aixcc-symcts
+    docker push ghcr.io/shellphish-support-syndicate/aixcc-symcts
+  fi
+  docker tag ghcr.io/shellphish-support-syndicate/aixcc-symcts aixcc-symcts
+
+imports:
+  symcts_build_symcc:
+    path: ./pipeline_build_symcc.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      built_targets: symcts_symcc_built_targets
+
+  symcts_build_aflpp:
+    path: ./pipeline_build_aflpp.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      built_targets: symcts_aflpp_built_targets
+
+  symcts_build_aflpp_upstream:
+    path: ./pipeline_build_aflpp_upstream.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      built_targets: symcts_aflpp_upstream_built_targets
+      cmplog_built_targets: symcts_aflpp_upstream_cmplog_built_targets
+      
+  symcts_fuzz:
+    path: ./pipeline_fuzz.yaml
+    repos:
+      targets_with_sources: targets_with_sources
+      target_metadatas: target_metadatas
+      target_harness_infos: target_harness_infos
+
+      symcts_symcc_built_targets: symcts_symcc_built_targets
+      symcts_aflpp_built_targets: symcts_aflpp_built_targets
+      symcts_aflpp_upstream_built_targets: symcts_aflpp_upstream_built_targets
+      symcts_aflpp_upstream_cmplog_built_targets: symcts_aflpp_upstream_cmplog_built_targets
+
+      seeds: symcts_seeds
+      seeds_metadata: symcts_seeds_metadata
+      crashes: symcts_crashes
+      crashes_metadata: symcts_crashes_metadata

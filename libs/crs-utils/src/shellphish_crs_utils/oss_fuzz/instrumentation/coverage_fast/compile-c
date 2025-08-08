@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# preserve the bash environment
+tracestate="$(shopt -po; shopt -p)"
+echo "PREVIOUSLY SET VARIABLES: $-"
+echo "################ RESTORE COMMANDS: #################"
+echo "set +vx; eval \"$tracestate\""
+echo "####################################################"
+
+set -eux
+
+cp $SRC/shellphish/sigsegv_condom $OUT/sigsegv_condom
+chmod +x $OUT/sigsegv_condom
+md5sum $OUT/sigsegv_condom
+
+cp -r /shellphish/blobs/pin-external-3.31-98869-gfa6f126a8-gcc-linux $OUT/pin
+mkdir -p $OUT/pintracer/
+cp $SRC/shellphish/pintracer/obj-intel64/fun-q-lo.so $OUT/pintracer/fun-q-lo.so
+
+# cp -r /shellphish/blobs/DynamoRIO-Linux-11.3.0-1 $OUT/dynamorio
+# mkdir -p $OUT/riotracer
+# cp $SRC/shellphish/riotracer/libtracer.so $OUT/riotracer/libtracer.so
+
+# restore the bash environment
+eval "$tracestate"
+echo "VARS after restore: $-"
+set -x
+
+/usr/local/bin/compile.old

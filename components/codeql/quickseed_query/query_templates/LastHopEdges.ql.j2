@@ -1,0 +1,27 @@
+import java
+import semmle.code.java.frameworks.javaee.ejb.EJBRestrictions
+
+predicate is_target_function(Callable c) { 
+    {% for i, full_name in enumerate(sink_methods) %}
+     {% if i > 0 %}or {% endif %}c.getQualifiedName().matches("{{ full_name }}")
+    {% endfor %}
+    {% if sanitizer_name == "CommandInjection" %}
+    or c instanceof RuntimeExecMethod
+    {% endif %}
+}
+
+query predicate edges(Callable caller, Callable callee) {
+  caller.polyCalls(callee)
+}
+
+from Callable caller, Callable callee
+where
+  is_target_function(callee) and
+  edges(caller, callee) and
+  caller.fromSource()
+select
+  caller.getQualifiedName() as source_qualified_name,
+  callee.getQualifiedName() as target_qualified_name,
+  caller.getLocation() as source_location,
+  callee.getLocation() as target_location,
+  "{{ sanitizer_name }}"

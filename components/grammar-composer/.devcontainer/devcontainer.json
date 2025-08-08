@@ -1,0 +1,37 @@
+{
+  "name": "Grammar-Composer Dev Container",
+  "runArgs": ["--privileged"],
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "../"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder}/,target=/shellphish/grammar-composer,type=bind,consistency=cached",
+  "workspaceFolder": "/shellphish/grammar-composer",
+  "postStartCommand": "maturin develop --release --strip --manifest-path /shellphish/libs/nautilus/nautilus_python/Cargo.toml",
+  "mounts": [
+    "source=${localWorkspaceFolder}/../../libs/,target=/shellphish/libs/,type=bind,consistency=cached",
+    "source=/aixcc-backups/,target=/aixcc-backups,type=bind,consistency=cached",
+    "source=/shared/,target=/shared,type=bind,consistency=cached",
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "customizations": {
+    "env": {
+    },
+    "vscode": {
+      "extensions": [
+        "github.copilot",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.vscode-remote-extensionpack",
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ],
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      }
+    }
+  },
+  "forwardPorts": [
+    8050,
+    8080
+  ]
+}

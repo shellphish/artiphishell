@@ -1,0 +1,74 @@
+repo_classes:
+  crs_tasks: MetadataRepository
+  project_metadatas: MetadataRepository
+  full_mode_tasks: MetadataRepository
+  delta_mode_tasks: MetadataRepository
+  crs_tasks_cancelled: MetadataRepository
+  full_functions_indices: BlobRepository
+  full_functions_jsons_dirs: FilesystemRepository
+  
+  vuln_model_report: {cls: BlobRepository, required: false}
+
+tasks:
+  vuln_model_scan:
+    job_quota:
+      cpu: 1
+      mem: 4Gi
+    max_concurrent_jobs: 40
+
+    node_labels:
+      "support.shellphish.net/only-gpu": "true"
+    node_taints:
+      "support.shellphish.net/only-gpu": "true"
+    node_affinity:
+      "support.shellphish.net/only-gpu": "true"
+
+    links:
+      functions_index_id:
+        repo: full_functions_indices
+        kind: InputId
+
+      functions_json_dir:
+        repo: full_functions_jsons_dirs
+        kind: InputFilepath
+
+      project_id:
+        repo: crs_tasks
+        kind: InputId
+      project_cancel:
+        repo: crs_tasks_cancelled
+        kind: Cancel
+      project_metadata:
+        repo: project_metadatas
+        kind: InputMetadata
+      crs_task_metadata:
+        repo: crs_tasks
+        kind: InputMetadata
+
+      vuln_model_report_path:
+        repo: vuln_model_report
+        kind: OutputFilepath
+
+    executable:
+      cls: Container
+      args:
+        image: aixcc-vuln-model
+        host_mounts:
+          "/var/run/docker.sock": "/var/run/docker.sock"
+          "/shared/": "/shared/"
+        template: |
+          set -ex
+
+          export CRS_TASK_NUM={{ crs_task_metadata.concurrent_target_num | default('1') }}
+          
+          export PROJECT_ID={{ project_id | shquote }}
+          export PROJECT_NAME={{ crs_task_metadata.project_name | shquote }}
+          export FUNCTIONS_JSON_DIR={{ functions_json_dir | shquote }}
+          export LANGUAGE={{ project_metadata.language | shquote }}
+          export TASK_TYPE={{crs_task_metadata.type | shquote}}
+
+          cd /app/
+
+          /app/run_scan.sh
+
+          cp /app/result_all.json {{ vuln_model_report_path | shquote }}

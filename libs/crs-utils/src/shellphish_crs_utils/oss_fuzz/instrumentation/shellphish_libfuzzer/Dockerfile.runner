@@ -1,0 +1,21 @@
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE}
+
+RUN apt-get update && apt-get install -y software-properties-common
+RUN apt-get update && apt-get install -y jq rsync openssh-client curl build-essential python3-dev
+RUN pip3 install pyyaml requests pydantic rich
+
+RUN mkdir -p /shellphish
+
+RUN echo "kw1=\"FUZZ\"" > /shellphish/dict.txt
+
+COPY minimize_corpus_and_same_node_sync.sh /shellphish/minimize_corpus_and_same_node_sync.sh
+# RUN ls -al /out
+# COPY instrumentation_and_strings.py /shellphish/instrumentation_and_strings.py
+
+# TODO: move this to prebuild and use wheels to install
+# TODO: maybe just get dicts from Nicola
+# COPY libcodeql /shellphish/libs/libcodeql
+# RUN pip3 install -e /shellphish/libs/libcodeql
+# COPY crs-utils /shellphish/libs/crs-utils
+# RUN pip3 install -e /shellphish/libs/crs-utils

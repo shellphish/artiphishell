@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shellphish-analysis-graph"
+version = "0.0.1"
+authors = [
+    {name = "Lukas Dresel", email = "friend@you.com"},
+]
+description = "A library to manage and query the analysis graph. Holds information about a variety of program analysis results of a target program."
+readme="README.md"
+requires-python=">=3.10"
+
+dependencies = [
+    "defusedxml",
+    "gitpython",
+    "jinja2",
+    "neomodel",
+    "pyunionfind",
+    "networkx",
+]
+
+[project.scripts]
+ag-afl = "analysis_graph.cli.afl:main"
+ag-grammars = "analysis_graph.grammars:main"
+ag-cfg = "analysis_graph.cfg:main"
+ag-coverage = "analysis_graph.coverage:main"
+ag-install-all-labels = "analysis_graph:install_all_labels"
+ag-wipe-project-id-nodes = "analysis_graph:wipe_all_nodes_cli"
+ag-info = "analysis_graph:get_analysis_graph_info_cli"

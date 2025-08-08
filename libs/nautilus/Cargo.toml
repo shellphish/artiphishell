@@ -1,0 +1,12 @@
+[workspace]
+
+members = [
+  "forksrv",
+  "grammartec",
+  "fuzzer",
+  "revolver_mutator",
+  "nautilus_python",
+  "watchtower"
+]
+
+default-members = ["fuzzer", "revolver_mutator", "watchtower"]
