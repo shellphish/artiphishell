@@ -27,7 +27,7 @@ MODEL = {
     2: 'o3',
     3: 'claude-3.5-sonnet',
 }[int(os.getenv("REPLICA_ID", "0"))]
-BUDGET = 'grammar-openai-budget'
+BUDGET = 'grammar-openai-budget' if MODEL == 'o3' else 'grammar-budget'
 MAX_TOKENS = 8192 if MODEL == 'claude-3.5-sonnet' else 16384
 
 handler = logging.StreamHandler()
