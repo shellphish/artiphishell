@@ -13,10 +13,10 @@ service:
 resources:
   limits:
     cpu: 10000m
-    memory: 10Gi
+    memory: 32Gi
   requests:
     cpu: 5000m
-    memory: 6Gi
+    memory: 20Gi
 
 volumeMounts:
 - name: host-shared
