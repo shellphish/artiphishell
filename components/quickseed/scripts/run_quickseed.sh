@@ -114,6 +114,7 @@ mkdir -p "${QUICKSEED_LOG}"
 # Generate log filename with random number
 log_file="${QUICKSEED_LOG}/quickseed_${RANDOM}.log"
 
+set -o pipefail # otherwise tee will not fail if QuickSeed fails
 if [ ! -z "${LOCAL_RUN}" ]; then
   ipython --pdb $(which QuickSeed) -- "${QUICKSEED_ARGS[@]}" --local-run 2>&1 | tee "${log_file}"
   exit_code=$?

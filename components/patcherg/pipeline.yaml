@@ -99,5 +99,6 @@ tasks:
           export LOGS={{ saved_logs | shquote }}
           export TEMP_LOGS="${TEMP_DIR}/patcherg.log"
 
+          set -o pipefail # make sure the tee fails if patcherg fails
           /patcherg/scripts/run_patcherg.sh 2>&1 | tee -a "${TEMP_DIR}"/patcherg.log
           rm -rf "${TEMP_DIR}"

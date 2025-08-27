@@ -340,7 +340,9 @@ DISKMAN_LOC="web/pipeline-backup/${REAL_TARGET_NAME}/${RUN_ID}"
 
 export STORAGE_URL=https://aixcc-diskman.adamdoupe.com/iKbr6hfymftxL7pr3FEX/pipeline-backup/${REAL_TARGET_NAME}/${RUN_ID}
 
+set -o pipefail
 time /app/local_run/generate_summary.py --target "$REAL_TARGET_NAME" | tee -a "$GITHUB_STEP_SUMMARY"
+set +o pipefail
 if [ ! -f /tmp/results.json ]; then
   touch /tmp/results.json
 fi
