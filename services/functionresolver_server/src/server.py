@@ -33,7 +33,7 @@ tasks_store = {}
 # Every project is well-identified by the pair (cp_name, project_id)
 FUNCTION_RESOLVERS: Dict[str, LocalFunctionResolver] = {}
 
-WORKDIR = "/app/functionresolver_server_workdir/"
+WORKDIR = "/shared/functionresolver_server_workdir/"
 
 @app.get("/health")
 async def health(
