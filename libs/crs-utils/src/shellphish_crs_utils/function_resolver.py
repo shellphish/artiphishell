@@ -7,6 +7,7 @@ from enum import Enum
 from functools import lru_cache
 import json
 import threading
+import traceback
 import jq
 import sys
 import logging
@@ -1008,16 +1009,29 @@ class RemoteFunctionResolver(FunctionResolver):
         result = r.json()
         if result.get("status", None) == "error" and result.get('data', None) == 'Server not initialized':
             return False
-        
+
         return True
 
-    def _make_request(self, endpoint: str, data: dict) -> dict:
+    def _make_request(self, endpoint: str, data: dict, retries=5) -> dict:
+        tries = 0
         while True:
-            r = requests.post(f"{self.url}/{endpoint}", data=data)
-            if r.status_code != 200:
-                # These are always critical errors we must fix
-                assert False, f"Internal Server Error in /{endpoint} : {r.text}"
-            result = r.json()
+            try:
+                r = requests.post(f"{self.url}/{endpoint}", data=data)
+                if r.status_code != 200:
+                    # These are always critical errors we must fix
+                    assert False, f"Internal Server Error in /{endpoint} : {r.text}"
+                result = r.json()
+            except Exception as ex:
+                traceback.print_exc()
+                if tries >= retries:
+                    return {
+                        'status': 'error',
+                        'message': f"Failed to connect to function resolver after {tries} tries: {ex}\n{traceback.format_exc()}",
+                    }
+                time.sleep(30)
+                tries += 1
+                continue
+
             if result.get("status", None) == "error" and result.get('data', None) == 'Server not initialized':
                 log.warning(f"Function resolver server not initialized, waiting 30 seconds before retrying /{endpoint}")
                 time.sleep(30)
